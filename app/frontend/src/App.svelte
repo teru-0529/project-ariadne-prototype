@@ -3,5 +3,13 @@
 </main>
 
 <style>
-  /* Put your standard CSS here */
+  :global(body) {
+    margin: 0;
+    font-family: sans-serif;
+  }
+
+  main {
+    padding: 2rem;
+    color: white;
+  }
 </style>
