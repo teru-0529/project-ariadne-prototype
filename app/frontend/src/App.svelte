@@ -1,19 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Events, WML } from "@wailsio/runtime";
+  import { WML } from "@wailsio/runtime";
 
   const wailsVersion = "v3.0.0-beta.12";
 
-  let time: string = $state("Listening for Time event...");
-
   onMount(() => {
-    Events.On("time", (v: any) => {
-      // On a narrow screen the full RFC1123 stamp is too wide for the footer, so
-      // show just the clock time there (matching the CSS breakpoint).
-      const full = v.data;
-      const compact = (full.match(/\d{1,2}:\d{2}:\d{2}/) || [full])[0];
-      time = window.matchMedia("(max-width: 640px)").matches ? compact : full;
-    });
     // Wire up data-wml-openURL links (logos + footer "Docs" link).
     WML.Reload();
   });
@@ -76,7 +67,6 @@
         points="12 6 12 12 16 14"
       /></svg
     >
-    <span>{time}</span>
   </span>
   <a
     class="footer-docs"
