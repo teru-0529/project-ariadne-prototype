@@ -6,11 +6,6 @@
 
   let time: string = $state("Listening for Time event...");
 
-  let titleNameEl: HTMLElement;
-  let toastEl: HTMLElement;
-  let resultEl: HTMLElement;
-  let toastTimer: ReturnType<typeof setTimeout>;
-
   onMount(() => {
     Events.On("time", (v: any) => {
       // On a narrow screen the full RFC1123 stamp is too wide for the footer, so
@@ -22,38 +17,6 @@
     // Wire up data-wml-openURL links (logos + footer "Docs" link).
     WML.Reload();
   });
-
-  // Crossfade the framework word in the heading ("Wails + Svelte") to the name
-  // the user entered ("Wails + <name>"): the old word fades out while the new one
-  // fades in over the same spot.
-  function swapTitleName(name: string): void {
-    const current = titleNameEl.querySelector(
-      ".title-name-text:not(.is-outgoing)",
-    );
-    if (!current || current.textContent === name) {
-      return;
-    }
-    const incoming = document.createElement("span");
-    incoming.className = "title-name-text is-entering";
-    incoming.textContent = name;
-    current.classList.add("is-outgoing");
-    titleNameEl.appendChild(incoming);
-    // Force a reflow so the transitions run from the starting state.
-    void incoming.offsetWidth;
-    incoming.classList.remove("is-entering");
-    current.classList.add("is-leaving");
-    current.addEventListener("transitionend", () => current.remove(), {
-      once: true,
-    });
-  }
-
-  // Pop the toast with the message Go returned, then auto-dismiss it.
-  function showToast(message: string): void {
-    resultEl.innerText = message;
-    toastEl.classList.add("is-visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove("is-visible"), 4000);
-  }
 </script>
 
 <main class="container">
@@ -68,9 +31,9 @@
 
   <h1 class="title">
     <span class="title-accent">Wails +</span>
-    <span class="title-name" bind:this={titleNameEl}
-      ><span class="title-name-text">Svelte</span></span
-    >
+    <span class="title-name">
+      <span class="title-name-text">Svelte</span>
+    </span>
   </h1>
   <p class="subtitle">
     Build beautiful cross-platform apps with Go and Svelte.
@@ -134,11 +97,6 @@
     >
   </a>
 </footer>
-
-<div class="toast" bind:this={toastEl} role="status" aria-live="polite">
-  <span class="toast-label">From Go</span>
-  <span aria-label="result" class="toast-msg" bind:this={resultEl}></span>
-</div>
 
 <style>
   /* Put your standard CSS here */
