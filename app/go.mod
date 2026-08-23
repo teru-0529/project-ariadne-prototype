@@ -1,4 +1,4 @@
-module changeme
+module ariadne
 
 go 1.25.0
 
