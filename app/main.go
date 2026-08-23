@@ -37,9 +37,6 @@ func main() {
 	app := application.New(application.Options{
 		Name:        "app",
 		Description: "A demo of using raw HTML & CSS",
-		Services: []application.Service{
-			application.NewService(&GreetService{}),
-		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
