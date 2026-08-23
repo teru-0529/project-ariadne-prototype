@@ -5,6 +5,8 @@ import (
 
 	"log"
 
+	"ariadne/backend/services"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -31,6 +33,9 @@ func main() {
 		Description: "A demo of using raw HTML & CSS",
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
+		},
+		Services: []application.Service{
+			application.NewService(&services.AppService{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
