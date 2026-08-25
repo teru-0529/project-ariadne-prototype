@@ -1,0 +1,53 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-25T23:00:00+09:00"
+
+elements:
+  taskId:
+    name: タスクID
+    type: ULID
+    description: タスクを特定するID
+    example: "01F8MECHZX3TBDSZ7XRADM79XE"
+
+  title:
+    name: タイトル
+    type: STRING
+    description: タスクのタイトル
+    example: "タスクのタイトル"
+    constraints:
+      maxLength: 50
+
+  description:
+    name: 説明
+    type: TEXT
+    description: タスクの説明
+    example: "タスクの詳細な説明です。"
+    constraints:
+      minLength: 10
+
+  status:
+    name: 状態
+    type: ENUM
+    description: タスクの状態
+    example: "TODO"
+    values:
+      - TODO:
+          name: 未着手
+      - IN_PROGRESS:
+          name: 進行中
+      - DONE:
+          name: 完了
+
+  priority:
+    name: 優先度
+    type: INTEGER
+    description: タスクの優先度,数値が小さいほど優先
+    example: 1
+    constraints:
+      minimum: 1
+      maximum: 5
+
+  recordDateTime:
+    name: レコード管理日時
+    type: DATETIME
+    description: レコードの生成・更新時にシステムが管理する日時
+    example: "2023-10-01T12:00:00+09:00"
