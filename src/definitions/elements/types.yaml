@@ -1,0 +1,231 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-25T23:00:00+09:00"
+
+types:
+  PROVIDED_ID:
+    name: 提供ID
+    description: 呼び出し側から提供される文字列識別子
+    identifier: true
+    constraints:
+      required:
+        - maxLength
+      optional:
+        - minLength
+        - regex
+    postgresql:
+      type: varchar
+    openapi:
+      type: string
+    recommendations:
+      - naming:
+          - "*Id"
+          - "*No"
+
+  SEQUENCE_ID:
+    name: 連番ID
+    description: システムにより自動採番される数値識別子
+    identifier: true
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: bigint
+    openapi:
+      type: integer
+      format: int64
+    recommendations:
+      - naming:
+          - "*Id"
+          - "*No"
+
+  ULID:
+    name: ULID
+    description: 順序性ありのシステムにより生成識別子
+    identifier: true
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: char
+    openapi:
+      type: string
+    recommendations:
+      - naming:
+          - "*Id"
+          - "*No"
+
+  FIXED_STRING:
+    name: 固定長文字列
+    description: 固定長の文字列
+    identifier: false
+    constraints:
+      required:
+        - length
+      optional:
+        - regex
+    postgresql:
+      type: char
+    openapi:
+      type: string
+    recommendations: []
+
+  STRING:
+    name: 文字列
+    description: 最大長を持つ可変長の文字列
+    identifier: false
+    constraints:
+      required:
+        - maxLength
+      optional:
+        - minLength
+        - regex
+    postgresql:
+      type: varchar
+    openapi:
+      type: string
+    recommendations: []
+
+  TEXT:
+    name: テキスト
+    description: 最大長を定めない文字列
+    identifier: false
+    constraints:
+      required: []
+      optional:
+        - minLength
+        - regex
+    postgresql:
+      type: text
+    openapi:
+      type: string
+    recommendations: []
+
+  INTEGER:
+    name: 整数
+    description: 整数値
+    identifier: false
+    constraints:
+      required: []
+      optional:
+        - minimum
+        - maximum
+    postgresql:
+      type: bigint
+    openapi:
+      type: integer
+      format: int64
+    recommendations: []
+
+  DECIMAL:
+    name: 実数
+    description: 実数値
+    identifier: false
+    constraints:
+      required:
+        - precision
+        - scale
+      optional:
+        - minimum
+        - maximum
+    postgresql:
+      type: numeric
+    openapi:
+      type: number
+    recommendations: []
+
+  BOOLEAN:
+    name: 真偽値
+    description: 真または偽の値
+    identifier: false
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: boolean
+    openapi:
+      type: boolean
+    recommendations:
+      - naming:
+          - "is*"
+          - "has*"
+          - "can*"
+          - "should*"
+
+  ENUM:
+    name: 列挙型
+    description: 定義時に固定される有限かつ離散的な値集合
+    identifier: false
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: enum
+    openapi:
+      type: string
+    recommendations:
+      - naming:
+          - "*Type"
+
+  CODE:
+    name: コード値
+    description: 運用中に値集合が変化する可能性のある有限かつ離散的な値
+    identifier: false
+    constraints:
+      required:
+        - maxLength
+      optional:
+        - minLength
+        - regex
+    postgresql:
+      type: varchar
+    openapi:
+      type: string
+    recommendations:
+      - naming:
+          - "*Code"
+
+  DATE:
+    name: 日付
+    description: 日付値
+    identifier: false
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: date
+    openapi:
+      type: string
+    recommendations:
+      - naming:
+          - "*Date"
+
+  TIME:
+    name: 時刻
+    description: 時刻値
+    identifier: false
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: time
+    openapi:
+      type: string
+    recommendations:
+      - naming:
+          - "*Time"
+
+  DATETIME:
+    name: 日時
+    description: プロジェクトで定めたタイムゾーンにもとづく日時
+    identifier: false
+    constraints:
+      required: []
+      optional: []
+    postgresql:
+      type: timestamp with time zone
+    openapi:
+      type: string
+      format: date-time
+    recommendations:
+      - naming:
+          - "*DateTime"
