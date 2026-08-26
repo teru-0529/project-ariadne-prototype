@@ -1,5 +1,7 @@
 formatVersion: "1.0"
 updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: elements
 
 elements:
   taskId:

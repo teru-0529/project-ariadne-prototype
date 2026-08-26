@@ -15,7 +15,7 @@ Prototype では項目定義を編集する UI、YAML の読み書き機能、Va
 
 - 項目定義で何を管理するか
 - 論理 Type と Element の責務
-- 正本 YAML の構造
+- 正本 YAML の構造（共通ヘッダー `formatVersion` / `updatedAt` / `domain` / `kind` を含む）
 - 配置・命名
 - YAML 間の整合性ルール
 - OAS / DDL への受け渡し方針
@@ -260,7 +260,9 @@ ULID の26文字等、生成ロジックが知ればよい詳細を `types.yaml`
 
 ``` yaml
 formatVersion: "1.0"
-updatedAt: "..."
+updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: types
 
 types:
   ...
@@ -319,7 +321,9 @@ Warning とする。
 
 ``` yaml
 formatVersion: "1.0"
-updatedAt: "..."
+updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: elements
 
 elements:
   ...
@@ -441,6 +445,37 @@ OAS / DDL は別のモデルであり、将来それぞれ `formatVersion`
 を持つ場合でも、Item Definition Format
 と同じバージョンにする必要はない。
 
+### 10.1 `domain` / `kind`
+
+ARIADNE が管理する正本 YAML は、ファイル名や配置場所だけに依存せず、ファイル自身が「どの設計領域の、何の定義か」を宣言できるようにする。
+
+- `domain`：どの設計領域に属するかを表す
+- `kind`：その領域の中で何の定義かを表す
+
+Phase 2 の項目定義では以下とする。
+
+| ファイル | `domain` | `kind` |
+| --- | --- | --- |
+| `types.yaml` | `elements` | `types` |
+| `elements.yaml` | `elements` | `elements` |
+
+Phase 2 の正本 YAML の共通ヘッダーは以下の形となる。
+
+``` yaml
+formatVersion: "1.0"
+updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: types     # types.yaml の場合
+```
+
+`elements.yaml` の場合は `kind: elements` とする。
+
+`domain` / `kind` は機械向けの自己記述情報であり、ファイル名やディレクトリ構成を置き換えるものではない。配置・命名とあわせて、正本 YAML の種別を明確にするために使用する。
+
+OAS / DDL は別のモデルであり、将来それぞれ `formatVersion`
+を持つ場合でも、Item Definition Format
+と同じバージョンにする必要はない。
+
 ## 11. Validation Rules v0.1
 
 Prototype では Validator
@@ -466,6 +501,8 @@ Prototype では Validator
 | `V-16` | Element / EnumValue キーを同一概念のまま rename しない | 運用ルール |
 | `V-17` | `updatedAt` が各ファイルに存在する | Error |
 | `V-18` | `updatedAt` が ISO 8601 形式である | Error |
+| `V-19` | `domain` が存在し、値が `elements` である | Error |
+| `V-20` | `kind` が存在し、定義種別と一致する（`types` / `elements`） | Error |
 
 ### 11.1 Constraint Validation
 
