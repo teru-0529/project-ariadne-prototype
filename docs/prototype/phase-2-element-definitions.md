@@ -70,7 +70,7 @@ src/definitions/elements/elements.yaml
 Type は以下を管理する。
 
 - 論理型の名称・説明
-- 識別子として利用可能か
+- API 上の識別子として利用可能か
 - 利用可能な constraint
 - PostgreSQL へのマッピング
 - OpenAPI へのマッピング
@@ -165,8 +165,13 @@ ARIADNE の標準 Type は以下の14種類とする。
 - `SEQUENCE_ID`：システム／DB により自動採番される数値識別子
 - `ULID`：順序性を持つシステム生成識別子
 
-`identifier: true` は「単独識別子として利用可能」を意味し、PK
-を意味しない。 複合キー等は DDL 側で扱う。
+`identifier: true` は、その Type を使用する Element が
+API 上の識別子（例：Path Parameter）として利用可能であることを示す。
+
+単独主キー・単独一意キーであることは意味しない。
+複合識別子の一要素として利用してもよい。
+
+PK / UNIQUE / 複合キー等のデータベース上の制約は DDL 側で扱う。
 
 ### 5.2 ENUM と CODE
 

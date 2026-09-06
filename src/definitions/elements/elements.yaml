@@ -53,3 +53,126 @@ elements:
     type: DATETIME
     description: レコードの生成・更新時にシステムが管理する日時
     example: "2023-10-01T12:00:00+09:00"
+
+  receivedOrderNo:
+    name: 受注番号
+    type: FIXED_STRING
+    identifier: true
+    description: 受注を特定する番号
+    constraints:
+      length: 17
+    regex: "ORD-[0-9]{8}-[0-9]{3}"
+    example: "ORD-20230827-001"
+
+  orderDate:
+    name: 受注日
+    type: DATE
+    description: 受注が発生した日付
+    example: "2023-08-27"
+
+  userId:
+    name: ユーザーID
+    type: PROVIDED_ID
+    description: システムのユーザーを特定するID
+    constraints:
+      length: 5
+    regex: "U[0-9]{4}"
+    example: "U0672"
+
+  customerId:
+    name: 顧客ID
+    type: PROVIDED_ID
+    description: 顧客を特定するID
+    constraints:
+      length: 8
+    regex: "C[0-9]{7}"
+    example: "C1234567"
+
+  comment:
+    name: 摘要
+    type: TEXT
+    description: 受注に関する補足情報
+    example: "至急対応が必要。"
+
+  orderDetailNo:
+    name: 明細番号
+    type: INTEGER
+    identifier: true
+    description: 受注内で明細を識別する番号
+    constraints:
+      minimum: 1
+    example: 1
+
+  productNo:
+    name: 商品番号
+    type: PROVIDED_ID
+    description: 商品を特定する番号
+    regex: "P[0-9]{6}"
+    example: "P123456"
+
+  quantity:
+    name: 数量
+    type: INTEGER
+    description: 受注数、出荷済数、キャンセル数などの数量
+    constraints:
+      minimum: 0
+    example: 10
+
+  price:
+    name: 金額
+    type: INTEGER
+    description: 販売単価、想定原価などの金額
+    constraints:
+      minimum: 0
+    example: 1000
+
+  profitRate:
+    name: 利益率
+    type: DECIMAL
+    description: 販売単価と想定原価から計算される利益率
+    constraints:
+      minimum: 0.0
+      maximum: 100.0
+    example: 22.5
+
+  requestId:
+    name: リクエストID
+    type: FIXED_STRING
+    description: リクエストを識別するID
+    constraints:
+      length: 36
+    regex: "[a-zA-Z0-9\\-]{36}"
+    example: "123e4567-e89b-12d3-a456-426614174000"
+
+  url:
+    name: URL
+    type: STRING
+    description: |
+      ファイルをダウンロードするためのURL。
+      一時ストレージに保存されたファイルへのアクセスに使用される。
+    regex: "https?://[a-zA-Z0-9\\-\\.]+(/[a-zA-Z0-9\\-\\._~:/?#\\[\\]@!$&'()*+,;=]*)?"
+    example: "https://example.com/downloads/orders_export_20230827.csv"
+
+  orderShipmentId:
+    name: 受注出荷番号
+    type: SEQUENCE_ID
+    description: 出荷情報の受注反映時に受注領域で採番する連番
+    example: 32
+
+  orderStatus:
+    name: 受注ステータス
+    type: CODE
+    description: 受注の状態を表すコード
+    example: "CONFIRMED"
+
+  urgent:
+    name: 至急フラグ
+    type: BOOLEAN
+    description: 至急対応が必要かを示すフラグ
+    example: true
+
+  desiredDeliveryTime:
+    name: 希望納品時刻
+    type: TIME
+    description: 顧客が希望する納品時刻
+    example: "15:30:00"
