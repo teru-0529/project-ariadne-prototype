@@ -11,6 +11,7 @@ parameters:
   orderPic:
     element: userId
     description: 受注担当者。
+    example: U1234
 
   customerId:
     element: customerId
@@ -20,3 +21,7 @@ parameters:
     element: requestId
     headerName: X-Request-ID
     description: リクエストを識別するID。
+
+  detailNo:
+    element: orderDetailNo
+    description: 受注明細番号。

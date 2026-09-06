@@ -73,6 +73,7 @@ variants:
         name: 未出荷・未キャンセル数
         description: |
           受注数のうち、まだ出荷またはキャンセルされていない数量。
+        example: 5
 
 parentVariants:
   WithDetails:
@@ -101,6 +102,13 @@ api:
           details:
             required: true
             minItems: 1
+            example:
+              - productNo: P123456
+                quantity: 10
+                sellingPrice: 1000
+              - productNo: P654321
+                quantity: 5
+                sellingPrice: 1200
 
       response:
         resource: Order
