@@ -1,0 +1,147 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T05:46:00+09:00"
+domain: api
+kind: subresource
+
+resource: OrderDetail
+parent: Order
+
+name: 受注明細
+
+description: |
+  受注に紐づく明細情報を表すサブリソース。
+
+properties:
+  detailNo:
+    element: orderDetailNo
+    required: true
+    readOnly: true
+    name: 明細番号
+    description: 登録時に自動採番される明細番号。
+
+  productNo:
+    element: productNo
+    required: true
+    name: 商品番号
+
+  quantity:
+    element: quantity
+    required: true
+    name: 受注数
+
+  shippingQuantity:
+    element: quantity
+    readOnly: true
+    name: 出荷済数
+
+  cancelQuantity:
+    element: quantity
+    readOnly: true
+    name: キャンセル数
+
+  remainingQuantity:
+    element: quantity
+    readOnly: true
+    name: 受注残
+    description: |
+      受注数から出荷済数およびキャンセル数を差し引いた数量。
+
+  sellingPrice:
+    element: price
+    required: true
+    name: 販売単価
+
+  costPrice:
+    element: price
+    readOnly: true
+    name: 想定原価
+
+  profitRate:
+    element: profitRate
+    readOnly: true
+    name: 想定利益率
+
+variants:
+  Summary:
+    exclude:
+      - sellingPrice
+      - costPrice
+      - profitRate
+
+    overrides:
+      remainingQuantity:
+        name: 未出荷・未キャンセル数
+        description: |
+          受注数のうち、まだ出荷またはキャンセルされていない数量。
+
+parentVariants:
+  WithDetails:
+    add:
+      details:
+        array:
+          resource: OrderDetail
+        name: 受注明細
+        description: |
+          受注に含まれる明細情報。
+
+api:
+  createOrder:
+    path: /orders
+
+    post:
+      summary: 受注登録
+
+      description: |
+        受注情報と1件以上の受注明細を登録する。
+
+      request:
+        resource: Order
+        variant: WithDetails
+        overrides:
+          details:
+            required: true
+            minItems: 1
+
+      response:
+        resource: Order
+
+      externalDocs:
+        url: ./docs/order-create.md
+        description: 受注登録の詳細仕様
+
+  details:
+    path: /orders/{received_order_no}/details
+
+    get:
+      summary: 受注明細一覧取得
+
+      description: |
+        指定された受注に紐づく明細情報を取得する。
+
+      response:
+        array:
+          resource: OrderDetail
+          variant: Summary
+
+    post:
+      summary: 受注明細追加
+
+      description: |
+        指定された受注に1件以上の受注明細を追加する。
+
+      request:
+        array:
+          resource: OrderDetail
+          minItems: 1
+
+      response:
+        resource: Order
+
+  detail:
+    path: /orders/{received_order_no}/details/{detail_no}
+
+    delete:
+      summary: 受注明細削除
+
+      description: |
+        指定された受注明細を削除する。

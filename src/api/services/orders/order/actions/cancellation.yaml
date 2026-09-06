@@ -1,0 +1,52 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T17:50:00+09:00"
+domain: api
+kind: action
+
+action: Cancellation
+
+name: 受注キャンセル
+
+description: |
+  1つの受注に対する明細単位のキャンセルを登録する。
+
+resources:
+  Cancellation:
+    properties:
+      details:
+        array:
+          resource: CancellationDetail
+          minItems: 1
+        required: true
+        name: キャンセル対象明細
+
+  CancellationDetail:
+    properties:
+      detailNo:
+        element: orderDetailNo
+        required: true
+
+      quantity:
+        element: quantity
+        required: true
+        name: キャンセル数量
+        description: 今回キャンセルする数量。
+
+api:
+  collection:
+    path: /orders/{received_order_no}/cancellations
+
+    post:
+      summary: 受注キャンセル登録
+
+      description: |
+        指定された受注に対して明細単位のキャンセルを登録する。
+        対象となる受注明細のキャンセル数を増加し、受注残を減少させる。
+
+      request:
+        resource: Cancellation
+
+      response:
+        array:
+          resource: OrderDetail
+          variant: Summary

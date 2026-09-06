@@ -1,0 +1,142 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T05:46:00+09:00"
+domain: api
+kind: resource
+
+resource: Order
+
+name: 受注
+
+description: |
+  受注情報を表すメインリソース。
+
+properties:
+  orderNo:
+    element: receivedOrderNo
+    required: true
+    readOnly: true
+    name: 受注番号
+    description: 登録時に自動採番される受注番号。
+
+  orderDate:
+    element: orderDate
+    required: true
+    readOnly: true
+    name: 受注日
+    description: 登録時に自動設定される受注日。
+
+  orderPic:
+    element: userId
+    required: true
+    name: 受注担当者
+    description: この受注を担当するユーザーのID。
+
+  customerId:
+    element: customerId
+    required: true
+    name: 顧客ID
+
+  orderStatus:
+    element: orderStatus
+    required: true
+    readOnly: true
+    name: 受注ステータス
+
+  urgent:
+    element: urgent
+    name: 至急
+
+  notes:
+    element: comment
+    name: 摘要
+    description: 受注に関する補足情報。
+    example: 要注意顧客。
+
+  desiredDeliveryTime:
+    element: desiredDeliveryTime
+    name: 希望納品時刻
+
+variants:
+  Summary:
+    exclude:
+      - urgent
+      - notes
+      - desiredDeliveryTime
+
+    add:
+      price:
+        element: price
+        readOnly: true
+        name: 受注金額
+        description: 受注明細の販売金額合計。
+
+      detailCount:
+        element: quantity
+        readOnly: true
+        name: 明細件数
+        description: 受注明細の件数。
+
+  DateUpdate:
+    include:
+      - orderDate
+
+api:
+  collection:
+    path: /orders
+
+    get:
+      summary: 受注一覧取得
+
+      description: |
+        条件に一致する受注情報を取得する。
+
+      pagination: true
+
+      queryParameters:
+        - orderPic
+        - customerId
+
+      response:
+        array:
+          resource: Order
+          variant: Summary
+
+  member:
+    path: /orders/{received_order_no}
+
+    get:
+      summary: 受注取得
+
+      description: |
+        指定された受注番号の受注情報を取得する。
+
+      response:
+        resource: Order
+
+    put:
+      summary: 受注更新
+
+      description: |
+        指定された受注情報を全体更新する。
+
+      request:
+        resource: Order
+
+      response:
+        resource: Order
+
+  date:
+    path: /orders/{received_order_no}/date
+
+    patch:
+      summary: 受注日変更
+
+      description: |
+        指定された受注の受注日を変更する。
+
+      request:
+        resource: Order
+        variant: DateUpdate
+
+      response:
+        resource: Order

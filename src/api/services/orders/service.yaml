@@ -1,0 +1,13 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-26T22:00:00+09:00"
+domain: api
+kind: service
+
+service: order-management
+name: 受注サービス
+
+description: |
+  受注および顧客情報を管理するサービス。
+
+requestHeaders:
+  - requestId

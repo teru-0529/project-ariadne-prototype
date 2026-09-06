@@ -1,0 +1,22 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T23:12:00+09:00"
+domain: api
+kind: parameters
+
+parameters:
+  receivedOrderNo:
+    element: receivedOrderNo
+    description: 受注番号。
+
+  orderPic:
+    element: userId
+    description: 受注担当者。
+
+  customerId:
+    element: customerId
+    description: 顧客ID。
+
+  requestId:
+    element: requestId
+    headerName: X-Request-ID
+    description: リクエストを識別するID。
