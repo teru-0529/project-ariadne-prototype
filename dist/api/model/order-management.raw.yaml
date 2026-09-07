@@ -453,6 +453,14 @@ customs:
             readOnly: true
             name: ダウンロードURL
 
+      ValidationError:
+        properties:
+          errorDescription:
+            elementRef: $description
+            required: true
+            readOnly: true
+            name: エラー内容
+
     api:
       export:
         path: /orders/export
@@ -471,5 +479,14 @@ customs:
             resourceRef: $ExportCondition
 
           response:
-            status: 201
-            resourceRef: $ExportResult
+            success:
+              status: 202
+              description: エクスポート正常終了
+              resourceRef: $ExportResult
+            errors:
+              - status: 400
+                description: 入力チェックエラー
+                array:
+                  resourceRef: $ValidationError
+              - status: 409
+                description: 処理コンフリクト

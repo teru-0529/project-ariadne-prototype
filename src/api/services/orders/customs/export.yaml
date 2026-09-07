@@ -27,6 +27,14 @@ resources:
         readOnly: true
         name: ダウンロードURL
 
+  ValidationError:
+    properties:
+      errorDescription:
+        element: description
+        required: true
+        readOnly: true
+        name: エラー内容
+
 api:
   export:
     path: /orders/export
@@ -45,5 +53,14 @@ api:
         resource: ExportCondition
 
       response:
-        status: 201
-        resource: ExportResult
+        success:
+          status: 202
+          description: エクスポート正常終了
+          resource: ExportResult
+        errors:
+          - status: 400
+            description: 入力チェックエラー
+            array:
+              resource: ValidationError
+          - status: 409
+            description: 処理コンフリクト

@@ -228,7 +228,10 @@ Custom では以下を許容する。
 - 任意の深さの Path
 - Resource 横断的な API
 - Custom-local Resource
-- 明示的な Response Status
+- 明示的な Success Response Status
+- 0件以上の明示的な Error Response
+- Response ごとの description
+- Response Body の Resource / Resource Array / Body なし
 
 Custom は Service スコープとし、特定 Main Resource には従属させない。
 
@@ -549,8 +552,24 @@ Prototype で利用する HTTP Method は以下とする。
 | PATCH | 200 | 部分更新 |
 | DELETE | 204 | Response Body なし |
 
-Main Resource の新規登録 POST では `Location` Header
-を自動生成する方針とする。
+標準 API では Success Status を HTTP Method から Resolve 時に補完する。
+
+Custom では Success Response を明示的に定義できる。
+
+```yaml
+response:
+  success:
+    status: 202
+    description: エクスポート正常終了
+    resource: ExportResult
+```
+
+success.status は必須とする。description は任意とする。
+
+Success Response Body は resource または array を指定できる。
+いずれも指定しない場合は Response Body なしとする。
+
+Main Resource の新規登録 POST では `Location` Header を自動生成する方針とする。
 
 SubResource / Action / Custom の POST では自動 Location を付与しない。
 
@@ -564,10 +583,19 @@ PATCH 用 Variant に明示的に含めた `readOnly` Property
 
 ### 7.7 Standard Error
 
-全 Operation に Standard Error の default Response
-を自動付与する方針とする。
+全 Operation に Standard Error の `default` Response を自動付与する。
 
-Raw Model では付与せず、後続の Resolve / Generation で補完する。
+Raw Model では付与せず、Resolve 時に補完する。
+
+Custom で明示的な Error Response を定義した場合も、Standard Error の `default` Response は併存する。
+
+したがって Resolved Model では、
+
+- `success`
+- 0件以上の明示的な `errors`
+- Standard Error の `default`
+
+を持ち得る。
 
 ### 7.8 Built-in API
 
@@ -740,7 +768,47 @@ Custom API を定義する。
 
 Custom 自身は表示名・説明を持たない。API の表示名・説明は Operation の `summary` / `description` に定義する。
 
-Custom では明示的な `response.status` を指定できる。
+Custom の Response は、`success` と `errors` により定義する。
+
+- `success` は1件定義する
+- `errors` は任意で、0件以上定義できる
+- 各 Response の `status` は必須
+- `description` は任意
+- Response Body は `resource` または `array` を指定できる
+- `resource` / `array` のいずれも指定しない場合は Body なしとする
+- `resource` と `array` は同時指定できない
+
+| 属性 | 必須 | 型 | 意味 |
+| --- | --- | --- | --- |
+| `response.success` | 必須 | Map | Success Response |
+| `response.success.status` | 必須 | Integer | HTTP Status |
+| `response.success.description` | 任意 | String | Response説明 |
+| `response.success.resource` | 任意 | Resource Reference | 単一Resource Body |
+| `response.success.array` | 任意 | Array | Resource Array Body |
+| `response.errors` | 任意 | Array | 明示Error Response群 |
+| `response.errors[].status` | 必須 | Integer | HTTP Status |
+| `response.errors[].description` | 任意 | String | Response説明 |
+| `response.errors[].resource` | 任意 | Resource Reference | 単一Resource Body |
+| `response.errors[].array` | 任意 | Array | Resource Array Body |
+
+例:
+
+```yaml
+response:
+  success:
+    status: 202
+    description: エクスポート正常終了
+    resource: ExportResult
+
+  errors:
+    - status: 400
+      description: 入力チェックエラー
+      array:
+        resource: ValidationError
+
+    - status: 409
+      description: 処理コンフリクト
+```
 
 Custom-local Resource も Source / Raw Model 上では Custom-local 定義として管理する。
 ただし Local Resource 名は Service 内で一意とする。
@@ -833,7 +901,12 @@ Main / Sub の違いは `parentRef` の有無で表現する。
 - `pagination: true`
 - Service / Operation の Parameter Definition 参照
 - Action / Custom の Local Resource Scope
-- Custom の明示 Status
+- Custom の Response 定義
+  - `success`
+  - `errors`
+  - `status`
+  - `description`
+  - Response Body
 - `externalDocs`
 
 ### 9.6 参照表現
