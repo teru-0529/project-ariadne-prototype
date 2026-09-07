@@ -159,8 +159,7 @@ resource: OrderDetail
 parent: Order
 ```
 
-Raw Model では Main Resource / SubResource を同じ Resource
-として扱い、`parent` の有無で区別する。
+Raw Model では Main Resource / SubResource を同じ Resourceとして扱い、`parentRef` の有無で区別する。
 
 ### 3.5 Variant
 
@@ -482,8 +481,8 @@ Raw Model:
 ``` yaml
 path: /orders/{received_order_no}/details/{detail_no}
 pathParameters:
-  - receivedOrderNo
-  - detailNo
+  - parameterRef: $receivedOrderNo
+  - parameterRef: $detailNo
 ```
 
 `pathParameters` は Operation ではなく **API logical entry** に属する。
@@ -689,7 +688,6 @@ Main Resource を定義する。
 | `description` | 任意 | String | 説明 |
 | `properties` | 必須 | Map | Property 定義 |
 | `variants` | 任意 | Map | Variant 定義 |
-| `parentVariants` | 任意 | Map | 親 Resource に追加する Variant 定義 |
 | `api` | 任意 | Map | API 定義 |
 
 Main Resource は `parent` を持たない。
@@ -768,7 +766,7 @@ service:
   id: order-management
   name: 受注サービス
   requestHeaders:
-    - requestId
+    - parameterRef: $requestId
 
 parameters:
   ...
@@ -793,7 +791,7 @@ Raw Model には `updatedAt` を持たせない。生成物の Timestamp
 | `kind: service` | `service` |
 | `kind: parameters` | `parameters` |
 | `kind: resource` | `resources` |
-| `kind: subresource` | `resources` + `parent` |
+| `kind: subresource` | `resources` + `parentRef` |
 | `kind: action` | `actions` |
 | `kind: custom` | `customs` |
 
@@ -810,11 +808,11 @@ resources:
     ...
 
   OrderDetail:
-    parent: Order
+    parentRef: $Order
     ...
 ```
 
-Main / Sub の違いは `parent` の有無で表現する。
+Main / Sub の違いは `parentRef` の有無で表現する。
 
 ### 9.5 Raw Model で保持するもの
 
@@ -830,7 +828,26 @@ Main / Sub の違いは `parent` の有無で表現する。
 - Custom の明示 Status
 - `externalDocs`
 
-### 9.6 Raw Model 生成時に補完するもの
+### 9.6 参照表現
+
+Raw Model では、ARIADNE が管理する別定義への参照を `xxxRef` 属性と `$` Prefix によって明示する。
+
+| 参照対象 | Raw Model 表記 | 例 |
+| --- | --- | --- |
+| Phase 2 Element | `elementRef` | `elementRef: $receivedOrderNo` |
+| Resource / Local Resource | `resourceRef` | `resourceRef: $Order` |
+| Variant | `variantRef` | `variantRef: $Summary` |
+| Parent Resource | `parentRef` | `parentRef: $Order` |
+| Parameter Definition | `parameterRef` | `parameterRef: $receivedOrderNo` |
+
+`$` は Raw / Resolved Model において、ARIADNE が管理する別定義への参照値であることを示す。
+
+`$` は Source YAML では使用せず、中間モデル上の参照表現としてのみ使用する。
+
+Property 名など、同一定義内部の構成要素を選択するための名称には `$` を付与しない。
+そのため、Variant の `include` / `exclude` / `overrides` の対象 Property 名は参照表現とはしない。
+
+### 9.7 Raw Model 生成時に補完するもの
 
 File Validation の範囲で一意に導出できる情報のみ補完する。
 
@@ -840,7 +857,7 @@ File Validation の範囲で一意に導出できる情報のみ補完する。
 member:
   path: /orders/{received_order_no}
   pathParameters:
-    - receivedOrderNo
+    - parameterRef: $receivedOrderNo
 
   get:
     ...
@@ -848,7 +865,9 @@ member:
     ...
 ```
 
-### 9.7 Raw Model で行わないこと
+Path Token は semantic key に正規化したうえで、対応する Parameter Definition への `parameterRef` として表現する。
+
+### 9.8 Raw Model で行わないこと
 
 Raw Model 生成時には以下を行わない。
 
