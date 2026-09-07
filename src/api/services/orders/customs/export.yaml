@@ -5,13 +5,6 @@ kind: custom
 
 custom: ExportOrders
 
-name: 受注エクスポート
-
-description: |
-  条件に一致する受注情報をファイルとして出力する特殊API。
-  出力ファイルは一時ストレージへ保存し、
-  APIはダウンロード用URLを返却する。
-
 resources:
   ExportCondition:
     properties:

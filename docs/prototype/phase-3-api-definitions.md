@@ -195,8 +195,7 @@ parentVariants:
         name: 受注明細
 ```
 
-Source / Raw Model では SubResource 側に保持し、親 Resource への統合は
-Resolve 時に行う。
+Source / Raw Model では SubResource 側に保持し、親 Resource への統合は Resolve 時に行う。
 
 ### 3.7 Action
 
@@ -210,8 +209,13 @@ Action は業務上の操作を、verb Path ではなく
 
 Action は必要に応じて Action-local Resource を持つ。
 
-Action 名と Action-local Resource
-名が同一でも許容する。両者はスコープが異なるため曖昧とはみなさない。
+Action-local Resource は Source / Raw Model 上では Action のローカル定義として管理する。
+
+ただし Resource / SubResource / Local Resource の名前は、Resolved Schema 名の一意性を保証するため Service 内で一意とする。
+
+Raw Model 上の Local Resource 参照は API Validation で解決し、Resolved Model では Service 内で一意な Schema として扱う。
+
+Action 名と Action-local Resource 名が同一でも許容する。両者はスコープが異なるため曖昧とはみなさない。
 
 ### 3.8 Custom
 
@@ -716,12 +720,13 @@ Action を定義する。
 | 属性 | 必須 | 型 | 意味 |
 | --- | --- | --- | --- |
 | `action` | 必須 | String | Action 名 |
-| `name` | 必須 | String | 表示名 |
-| `description` | 任意 | String | 説明 |
 | `resources` | 必須 | Map | Action-local Resource 定義 |
 | `api` | 必須 | Map | API 定義 |
 
-Local Resource は Action 内スコープで参照する。
+Action 自身は表示名・説明を持たない。API の表示名・説明は Operation の `summary` / `description` に定義する。
+
+Local Resource は Source / Raw Model 上では Action-local 定義として参照する。
+ただし Local Resource 名は Service 内で一意とする。
 
 ### 8.7 Custom YAML
 
@@ -730,12 +735,15 @@ Custom API を定義する。
 | 属性 | 必須 | 型 | 意味 |
 | --- | --- | --- | --- |
 | `custom` | 必須 | String | Custom 名 |
-| `name` | 必須 | String | 表示名 |
-| `description` | 任意 | String | 説明 |
 | `resources` | 任意 | Map | Custom-local Resource 定義 |
 | `api` | 必須 | Map | API 定義 |
 
+Custom 自身は表示名・説明を持たない。API の表示名・説明は Operation の `summary` / `description` に定義する。
+
 Custom では明示的な `response.status` を指定できる。
+
+Custom-local Resource も Source / Raw Model 上では Custom-local 定義として管理する。
+ただし Local Resource 名は Service 内で一意とする。
 
 ------------------------------------------------------------------------
 

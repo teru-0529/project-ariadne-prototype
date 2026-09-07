@@ -5,11 +5,6 @@ kind: action
 
 action: OrderShipment
 
-name: 受注出荷反映
-
-description: |
-  出荷・在庫領域で確定した出荷情報を受注領域へ反映する。
-
 resources:
   OrderShipment:
     properties:

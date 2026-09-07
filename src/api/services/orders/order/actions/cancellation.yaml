@@ -5,11 +5,6 @@ kind: action
 
 action: Cancellation
 
-name: 受注キャンセル
-
-description: |
-  1つの受注に対する明細単位のキャンセルを登録する。
-
 resources:
   Cancellation:
     properties:
