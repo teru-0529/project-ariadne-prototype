@@ -212,6 +212,7 @@ resources:
         name: 受注残
         description: |
           受注数から出荷済数およびキャンセル数を差し引いた数量。
+        example: 5
 
       sellingPrice:
         elementRef: $price
@@ -268,6 +269,13 @@ resources:
               details:
                 required: true
                 minItems: 1
+                example:
+                  - productNo: P123456
+                    quantity: 10
+                    sellingPrice: 1000
+                  - productNo: P654321
+                    quantity: 5
+                    sellingPrice: 1200
 
           response:
             resourceRef: $Order
