@@ -290,15 +290,17 @@ Phase 3 では、Phase 2 Element を値定義の最下層として利用する�
 
 ``` text
 Phase 2 Element
-      ↓
-Resource Property
-      ↓
-Variant
-      ↓
-API Usage
+    │
+    ├─ Resource Property
+    │      ↓
+    │    Variant
+    │      ↓
+    │    API Usage
+    │
+    └─ Parameter Definition
 ```
 
-下位レイヤーでは、利用コンテキストに応じた情報を追加・Override できる。
+Resource Property / Variant / API Usage、および Parameter Definition では、利用コンテキストに応じた情報を追加・Overrideできる。
 
 ### 5.1 Override 可能な情報
 
@@ -312,6 +314,9 @@ API Usage
 - `writeOnly`
 - Array の `minItems`
 - Array の `maxItems`
+
+`example` は利用コンテキストに応じて Override できる。ただし、Phase 2 Element が定義する Type / Format / Constraint
+に適合しなければならない。
 
 ### 5.2 Override できない情報
 
@@ -349,9 +354,14 @@ Resource Property ではコンテキストに応じて以下を指定できる�
 | `description` | String | コンテキスト上の説明 |
 | `example` | Scalar / Object / Array | コンテキスト上の例 |
 
-example は Resource Property 利用時のコンテキスト情報として指定できる。
-element を参照する場合は Scalar、resource を参照する場合は Object、array を参照する場合は Array とする。
-Element に由来する値は、参照する Element の Type / Format / Constraint を満たす必要がある。
+`example` は Resource Property 利用時のコンテキスト情報として指定できる。
+
+- `element` を参照する Property：Scalar
+- `resource` を参照する Property：Object
+- `array` を参照する Property：Array
+
+Object / Array 内に含まれる Element 由来の値を含め、`example` は参照先 Element の Type / Format / Constraint
+を満たす必要がある。
 
 `readOnly: true` と `writeOnly: true` の同時指定は禁止する。
 
@@ -380,8 +390,24 @@ Variant は以下を利用できる。
 
 `include` と `exclude` は併用しない。
 
-`add` で同一 Variant 内に追加した Property を、同じ Variant の
-`overrides` から再度 Override しない。
+Variant の `overrides` では、対象 Property のコンテキスト情報を Override できる。
+
+`example` も Override 対象とし、対象 Property の構造に応じて Scalar / Object / Array を指定できる。
+
+例:
+
+```yaml
+variants:
+  Summary:
+    overrides:
+      remainingQuantity:
+        name: 未出荷・未キャンセル数
+        description: |
+          受注数のうち、まだ出荷またはキャンセルされていない数量。
+        example: 5
+```
+
+`add` で同一 Variant 内に追加した Property を、同じ Variant の`overrides` から再度 Override しない。
 
 ### 6.4 Parameter Definition
 
@@ -394,6 +420,19 @@ Parameter Definition は Scalar Constraint を持たない。
 - `example`
 - `headerName`
 
+Parameter Definition の `example` は、参照する Element の`example` を Parameter 利用時のコンテキストで Override できる。
+
+`example` は Scalar とし、参照する Element の Type / Format / Constraint を満たす必要がある。
+
+例:
+
+```yaml
+orderPic:
+  element: userId
+  description: 受注担当者。
+  example: U1234
+```
+
 ### 6.5 API Usage Override
 
 API Usage では Resource / Variant の利用コンテキストに対して Override
@@ -401,7 +440,7 @@ API Usage では Resource / Variant の利用コンテキストに対して Over
 
 例:
 
-``` yaml
+```yaml
 request:
   resource: Order
   variant: WithDetails
@@ -409,7 +448,18 @@ request:
     details:
       required: true
       minItems: 1
+      example:
+        - productNo: P123456
+          quantity: 10
+          sellingPrice: 1000
+        - productNo: P654321
+          quantity: 5
+          sellingPrice: 1200
 ```
+
+API Usage の `overrides` でも `example` を Override できる。
+
+上記のように Array Property では複数要素を含む Array 全体を `example` として指定できる。
 
 Scalar Constraint の Override は禁止する。
 
@@ -603,7 +653,7 @@ Service 内で利用する Parameter Definition を定義する。
 | `example` | 任意 | Scalar | Parameter の例 |
 | `headerName` | 任意 | String | Header利用時の物理Header名 |
 
-example は Parameter 利用時のコンテキスト情報として Override できる。ただし、参照する Element の Type / Format / Constraint を満たす必要がある。
+`example` の Override 規則は「6.4 Parameter Definition」に従う。
 
 例:
 
@@ -613,14 +663,18 @@ parameters:
     element: receivedOrderNo
     description: 受注番号。
 
+  orderPic:
+    element: userId
+    description: 受注担当者。
+    example: U1234
+
   requestId:
     element: requestId
     headerName: X-Request-ID
     description: リクエストを識別するID。
 ```
 
-未使用 Parameter Definition が存在しても正常とする。Raw Model
-では全定義を保持し、必要な定義の抽出は Resolve で行う。
+未使用 Parameter Definition が存在しても正常とする。Raw Model では全定義を保持し、必要な定義の抽出は Resolve で行う。
 
 ### 8.4 Main Resource YAML
 
@@ -899,8 +953,6 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 
 ### 11.1 File Validation
 
-### 11.1 File Validation
-
 | ID | Validation Rule | 判定 |
 | --- | --- | --- |
 | V-21 | 共通 Header の必須項目が存在する | Error |
@@ -936,11 +988,9 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 - Resource 参照先が存在する
 - Variant 参照先が存在する
 - Parameter Definition 参照先が存在する
-- Variant の `include` / `exclude` / `overrides` の対象 Property
-    が妥当である
+- Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である
 - Variant の `add` が既存 Property と衝突しない
-- 同一 Variant の `add` Property を同じ Variant の `overrides`
-    で指定しない
+- 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない
 - SubResource の `parent` が存在し、Main Resource である
 - SubResource を親とする多段 SubResource を禁止する
 - `parentVariants` の対象と統合内容が妥当である
@@ -960,11 +1010,9 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 以下は Phase 2 / Phase 3 の接続ルールとして扱う。
 
 - すべての `element` 参照先が Phase 2 に存在する
-- Path Token から正規化した semantic key が Parameter Definition
-    に存在する
-- Path Parameter が参照する Element の effective `identifier` が
-    `true` である
-- `example` が Element の Type / Format / Constraint に適合する
+- Path Token から正規化した semantic key が Parameter Definition に存在する
+- Path Parameter が参照する Element の effective `identifier` が `true` である
+- `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する
 
 ------------------------------------------------------------------------
 
