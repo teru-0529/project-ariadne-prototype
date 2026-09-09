@@ -309,7 +309,7 @@ resources:
           request:
             array:
               resourceRef: $OrderDetail
-              minItems: 1
+            minItems: 1
 
           response:
             resourceRef: $Order
@@ -343,7 +343,7 @@ actions:
           details:
             array:
               resourceRef: $OrderShipmentDetail
-              minItems: 1
+            minItems: 1
             required: true
             name: 出荷対象明細
             description: |
@@ -392,7 +392,7 @@ actions:
           details:
             array:
               resourceRef: $CancellationDetail
-              minItems: 1
+            minItems: 1
             required: true
             name: キャンセル対象明細
 

@@ -140,7 +140,7 @@ api:
       request:
         array:
           resource: OrderDetail
-          minItems: 1
+        minItems: 1
 
       response:
         resource: Order

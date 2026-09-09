@@ -11,7 +11,7 @@ resources:
       details:
         array:
           resource: CancellationDetail
-          minItems: 1
+        minItems: 1
         required: true
         name: キャンセル対象明細
 

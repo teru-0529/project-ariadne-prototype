@@ -20,7 +20,7 @@ resources:
       details:
         array:
           resource: OrderShipmentDetail
-          minItems: 1
+        minItems: 1
         required: true
         name: 出荷対象明細
         description: |

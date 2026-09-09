@@ -356,9 +356,13 @@ Resource Property ではコンテキストに応じて以下を指定できる�
 | `required` | Boolean | Resource 上で必須か |
 | `readOnly` | Boolean | Response 側を基本とする Property か |
 | `writeOnly` | Boolean | Request 側を基本とする Property か |
+| `minItems` | Integer | Array Property の最小要素数 |
+| `maxItems` | Integer | Array Property の最大要素数 |
 | `name` | String | コンテキスト上の表示名 |
 | `description` | String | コンテキスト上の説明 |
 | `example` | Scalar / Object / Array | コンテキスト上の例 |
+
+`minItems` / `maxItems` は `array` を持つ Property にのみ指定できる。 `array` 配下ではなく、`array` と同階層に指定する。
 
 `example` は Resource Property 利用時のコンテキスト情報として指定できる。
 
@@ -375,15 +379,23 @@ Object / Array 内に含まれる Element 由来の値を含め、`example` は�
 
 Array は `element` または `resource` のいずれか一つを参照する。
 
-Array 自身には以下を指定できる。
+`array` 配下には、配列要素の参照先のみを指定する。
 
-- `minItems`
-- `maxItems`
+例:
 
-`required` は Array の内部ではなく Property / API Usage 側に指定する。
+```yaml
+details:
+  array:
+    resource: OrderDetail
+  minItems: 1
+  required: true
+```
 
-`minItems` / `maxItems` は 0 以上の整数とし、両方指定する場合は
-`minItems <= maxItems` とする。
+`minItems` / `maxItems` は `Array Property` / `Array API Usage` の属性として、 `array` と同階層に指定する。
+
+`required` も同様に `array` の内部には指定しない。
+
+`minItems` / `maxItems` は 0 以上の整数とし、両方指定する場合は `minItems` <= `maxItems` とする。
 
 ### 6.3 Variant
 
@@ -466,6 +478,8 @@ request:
 API Usage の `overrides` でも `example` を Override できる。
 
 上記のように Array Property では複数要素を含む Array 全体を `example` として指定できる。
+
+Array Property に対する `minItems` / `maxItems` の Override は、Property の同名属性を Override する。
 
 Scalar Constraint の Override は禁止する。
 
