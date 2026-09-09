@@ -542,19 +542,61 @@ Request Header は Service または Operation から Parameter Definition
 
 Service の `requestHeaders` は Service 共通 Header を表す。
 
-Service と Operation の双方から同一 Header
-を重複指定することは禁止する。
+Service と Operation の双方から同一 Header を重複指定することは禁止する。
+
+Service の `requestHeaders` は Resolve 時にユーザー定義 Operation へ展開する。
+
+`/health` / `/version` 等の ARIADNE built-in Operation は Service `requestHeaders` の展開対象外とする。
 
 ### 7.4 Pagination
 
-Collection GET では `pagination: true` により Pagination
-を有効化できる。
+Collection GET では `pagination: true` により Pagination を有効化できる。
 
-Raw Model では `pagination: true` を保持し、built-in の `limit` /
-`offset` 等への展開は Resolve で行う。
+Raw Model では `pagination: true` を保持し、Resolve 時に以下へ展開する。
 
-Pagination Response では、後続データの有無を示す Response Header
-を生成する方針とする。具体的な Header 名は後続設計で確定する。
+- Query Parameter `limit`
+- Query Parameter `offset`
+- Response Header `Has-More`
+
+`limit` / `offset` は ARIADNE が管理する built-in Parameter とし、Resolved Model では以下のように表現する。
+
+```yaml
+parameters:
+  limit:
+    builtIn: pagination
+    usages:
+      - in: query
+        name: limit
+        required: false
+
+  offset:
+    builtIn: pagination
+    usages:
+      - in: query
+        name: offset
+        required: false
+```
+
+Pagination を利用する Operation では、これらを通常の Parameter と同様に parameterRef から参照する。
+
+```yaml
+queryParameters:
+- parameterRef: $limit
+- parameterRef: $offset
+```
+
+Pagination Response では、後続データの有無を Has-More Response Header として返す。
+
+```yaml
+headers:
+  Has-More:
+    builtIn: pagination
+```
+
+Has-More は後続データの有無のみを表す。総件数は Pagination の built-in 情報には含めない。
+総件数が業務 API として必要な場合は、通常の Response Schema として明示的に定義する。
+
+limit / offset は ARIADNE の予約 Parameter 名とし、 Source の Parameter Definition として定義してはならない。
 
 ### 7.5 HTTP Method / Success Response
 
@@ -609,31 +651,103 @@ PATCH 用 Variant に明示的に含めた `readOnly` Property
 
 全 Operation に Standard Error の `default` Response を自動付与する。
 
-Raw Model では付与せず、Resolve 時に補完する。
+Raw Model では付与せず、Resolve 時に以下の built-in Response として補完する。
 
-Custom で明示的な Error Response を定義した場合も、Standard Error の `default` Response は併存する。
+```yaml
+default:
+  builtIn: error
+```
 
-したがって Resolved Model では、
+Custom で明示的な Error Response を定義した場合も、 Standard Error の `default` Response は併存する。
 
-- `success`
-- 0件以上の明示的な `errors`
-- Standard Error の `default`
+Resolved Model では Source / Raw Model の `success` / `errors` 表現は解消し、
+HTTP Status を Key とする Response Map へ正規化する。
 
-を持ち得る。
+```yaml
+response:
+  "202":
+    description: エクスポート正常終了
+    schemaRef: $ExportResult
+
+  "400":
+    description: 入力チェックエラー
+    array:
+      schemaRef: $ValidationError
+
+  "409":
+    description: 処理コンフリクト
+
+  default:
+    builtIn: error
+```
+
+Standard Error の具体的な OAS Response / Error Schema は OpenAPI Generation の built-in 定義として生成する。
 
 ### 7.8 Built-in API
 
-以下を built-in API として自動生成する方針とする。
+以下を ARIADNE built-in API として Resolve 時に自動生成する。
 
 - `/health`
 - `/version`
 
-ユーザー定義 API でこれらの Path を定義することは禁止する。
+Source / Raw Model には存在せず、Resolved Model で通常 Operation と同程度まで展開する。
+
+built-in Operation の `tag` は `System` とする。
+
+#### `/health`
+
+```yaml
+/health:
+  get:
+    builtIn: health
+    operationId: health-get
+    tag: System
+    summary: ヘルスチェック
+
+    response:
+      "200":
+        description: 正常終了
+      default:
+        builtIn: error
+```
+
+`/health` は Response Body を持たない。 HTTP 200 が返ること自体を正常状態の表現とする。
+
+#### `/version`
+
+```yaml
+/version:
+  get:
+    builtIn: version
+    operationId: version-get
+    tag: System
+    summary: バージョン取得
+
+    response:
+      "200":
+        description: 正常終了
+        builtIn: version
+      default:
+        builtIn: error
+```
+
+`builtIn: version` の Response は Application Version のみを返す。
+
+```json
+{
+  "version": "1.0.0"
+}
+```
+
+Application Version は Git Tag 等から供給することを想定する。
+
+ユーザー定義 API で `/health` / `/version` を定義することは禁止する。
+
+built-in Operation には Service `requestHeaders` を展開しない。
 
 ### 7.9 externalDocs
 
-OpenAPI Schema だけでは表現しにくい業務ルールや処理上の補足には
-`externalDocs` を利用する。
+OpenAPI Schema だけでは表現しにくい業務ルールや処理上の補足には `externalDocs` を利用する。
 
 例:
 
@@ -845,13 +959,11 @@ Custom-local Resource も Source / Raw Model 上では Custom-local 定義とし
 
 ### 9.1 目的
 
-Raw Model は、Phase 3 ARIADNE Source を **Service
-単位の意味モデル**へ正規化した中間モデルである。
+Raw Model は、Phase 3 ARIADNE Source を **Service 単位の意味モデル**へ正規化した中間モデルである。
 
 Source of Truth ではなく、ARIADNE Source から再生成可能な成果物とする。
 
-Raw Model は YAML として出力し、デバッグや Golden Test
-に利用できるようにする。
+Raw Model は YAML として出力し、デバッグや Golden Test に利用できるようにする。
 
 生成先の現時点案:
 
@@ -867,6 +979,8 @@ formatVersion: "1.0"
 service:
   id: order-management
   name: 受注サービス
+  description: |
+    受注および顧客情報を管理するサービス。
   requestHeaders:
     - parameterRef: $requestId
 
@@ -883,8 +997,7 @@ customs:
   ...
 ```
 
-Raw Model には `updatedAt` を持たせない。生成物の Timestamp
-による不要な差分を避けるためである。
+Raw Model には `updatedAt` を持たせない。生成物の Timestamp による不要な差分を避けるためである。
 
 ### 9.3 Source kind の正規化
 
@@ -897,8 +1010,7 @@ Raw Model には `updatedAt` を持たせない。生成物の Timestamp
 | `kind: action` | `actions` |
 | `kind: custom` | `customs` |
 
-Source の `kind` および `resource` / `action` / `custom`
-といった識別フィールドは、Raw Model では構造そのものへ吸収する。
+Source の `kind` および `resource` / `action` / `custom` といった識別フィールドは、Raw Model では構造そのものへ吸収する。
 
 ### 9.4 Main / SubResource
 
@@ -1106,6 +1218,8 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 | V-43 | `pagination` は GET にのみ指定する | Error |
 | V-44 | `externalDocs` を指定する場合 `url` が存在する | Error |
 | V-45 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない | Error |
+| V-46 | `limit` / `offset` を Source の Parameter Definition 名として定義しない | Error |
+| V-47 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
 
 ### 11.2 API Validation
 
@@ -1131,6 +1245,9 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 - parameters.yaml は Service 内に0または1つとする
 - ユーザー定義 Operation が1件以上存在する
 - Resolve 後に生成される Schema 名が衝突しない
+- Custom の同一 Operation 内で `response.errors[].status` が重複しない
+- Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である
+- 生成される `operationId` が Service 内で一意である
 
 ### 11.3 Service Validation
 
@@ -1145,60 +1262,982 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 
 ## 12. Resolved Model
 
-**Status:** DESIGN IN PROGRESS
+Resolved Model は、API Validation を通過した Raw Model から生成する、
+API として意味解決済みの Service Model である。
 
-Resolved Model は API Validation を通過した Raw Model から生成する、API
-として解決済みの Service Model とする。
+Raw Model が ARIADNE Source の Authoring 構造や差分表現を保持するのに対し、
+Resolved Model では Variant、Parent Variant、API Usage Override、
+Parameter Usage、built-in 等を解決し、OpenAPI 3.1 へ変換可能な完成した API 意味モデルを表現する。
 
-現時点で以下を Resolve 対象とする方針である。
+Resolved Model は Source of Truth ではなく、Raw Model から再生成可能な中間成果物とする。
+
+生成先の現時点案:
+
+```text
+dist/api/model/order-management.resolved.yaml
+```
+
+Raw Model と同様、Resolved Model にも `updatedAt` は持たせない。
+
+### 12.1 基本構造
+
+Resolved Model は Service 単位で生成する。
+
+基本構造を以下とする。
+
+```yaml
+formatVersion: "1.0"
+
+service:
+  id: order-management
+  name: 受注サービス
+  description: |
+    受注および顧客情報を管理するサービス。
+
+parameters:
+  ...
+
+schemas:
+  ...
+
+apis:
+  ...
+
+elementRefs:
+  ...
+```
+
+Resolved Model では、Source / Raw Model の以下の Authoring 上の分類は最終的な API 意味モデルへ統合する。
+
+- Main Resource / SubResource
+- Variant
+- Parent Variant
+- Action-local Resource
+- Custom-local Resource
+- API logical entry
+
+これらの由来は必要に応じて `origin` に保持する。
+
+### 12.2 Service
+
+Resolved Model は Service の Identity / Metadata を保持する。
+
+```yaml
+service:
+  id: order-management
+  name: 受注サービス
+  description: |
+    受注および顧客情報を管理するサービス。
+```
+
+`id` / `name` / `description` は Raw Model から引き継ぐ。
+
+Raw Model の `service.requestHeaders` は Resolve 時に
+ユーザー定義 Operation へ展開するため、
+Resolved Model の `service` には保持しない。
+
+Resolved Model の `service` は、
+OpenAPI Generation に必要な Service 自身の意味情報を保持する。
+
+### 12.3 Reference
+
+Resolved Model では、参照対象に応じて以下の Reference を使用する。
+
+| 参照対象 | Resolved Model 表記 | 例 |
+| --- | --- | --- |
+| Phase 2 Element | `elementRef` | `elementRef: $receivedOrderNo` |
+| 解決済み Schema | `schemaRef` | `schemaRef: $Order` |
+| Parameter | `parameterRef` | `parameterRef: $receivedOrderNo` |
+
+Raw Model の `resourceRef` / `variantRef` は Resolve 時に解決し、 Resolved Model では `schemaRef` に統合する。
+
+例:
+
+```yaml
+resourceRef: $Order
+variantRef: $Summary
+```
+
+は、Resolved Model では以下となる。
+
+```yaml
+schemaRef: $Order.Summary
+```
+
+Variant を使用しない Resource Reference は以下となる。
+
+```yaml
+schemaRef: $Order
+```
+
+Phase 2 Element は Resolved Model に定義本体を取り込まず、 `elementRef` のまま保持する。
+
+### 12.4 Schema
+
+Resolved Model の `schemas` には、 Resolve 後の完成した Phase 3 Schema を格納する。
+
+Schema 名は以下を基本とする。
+
+| Source | Resolved Schema 名 |
+| --- | --- |
+| Main Resource | `Resource` |
+| SubResource | `Resource` |
+| Variant | `Resource.Variant` |
+| Parent Variant | `Resource.Variant` |
+| Action-local Resource | Local Resource 名 |
+| Custom-local Resource | Local Resource 名 |
+| API Usage により生成された Schema | 生成された一意な Schema 名 |
+
+例:
+
+```yaml
+schemas:
+  Order:
+    ...
+
+  Order.Summary:
+    ...
+
+  Order.WithDetails:
+    ...
+
+  OrderDetail:
+    ...
+
+  OrderDetail.Summary:
+    ...
+
+  OrderShipment:
+    ...
+
+  ExportCondition:
+    ...
+
+  PostOrdersRequest:
+    ...
+```
+
+Main Resource / SubResource の名前は Service 内で一意とする。
+
+Variant 名は Resource 内で一意とし、 Resolved Schema 名では `Resource.Variant` として表現する。
+
+Action / Custom の Local Resource は、 Resolved Model では Action / Custom 名を Namespace とせず、
+Service 内の通常 Schema として扱う。そのため Local Resource 名も Service 内で一意でなければならない。
+
+### 12.5 Variant / Parent Variant の Resolve
+
+Variant の以下の差分表現は Resolve 時に適用する。
+
+- `include`
+- `exclude`
+- `add`
+- `overrides`
+
+Resolved Model では Variant の差分を保持せず、最終的な Property を持つ完成 Schema とする。
+
+Parent Variant も同様に、
+SubResource の `parentVariants` を親 Main Resource へ統合し、完成した Variant Schema とする。
+
+例として、`OrderDetail` が親 `Order` に定義した `WithDetails` は、 Resolved Model では以下の Schema となる。
+
+```yaml
+schemas:
+  Order.WithDetails:
+    ...
+    properties:
+      ...
+      details:
+        array:
+          schemaRef: $OrderDetail
+```
+
+Resolved Model には `parentVariants` 自体は残さない。
+
+### 12.6 API Usage Override
+
+API Usage の `overrides` は Resolve 時に対象 Schema へ適用する。
+
+API Usage によって元の Resource / Variant と異なる Schema が必要となる場合、API Usage 専用の Schema を生成する。
+
+例:
+
+```yaml
+PostOrdersRequest:
+  origin:
+    kind: apiUsage
+    operationId: orders-post
+    usage: request
+    baseSchemaRef: $Order.WithDetails
+  ...
+```
+
+API Usage Schema は、API 上で実際に使用される完成した Property 構造を持つ。
+
+Resolved Model では API Usage の `overrides` 自体は保持しない。
+
+### 12.7 Schema origin
+
+Resolved Schema には、生成元を追跡するため `origin` を保持できる。
+
+`origin` は API Schema の意味そのものではなく、ARIADNE Source からどのように生成されたかを示す provenance 情報とする。
+
+Main Resource:
+
+```yaml
+origin:
+  kind: resource
+  resourceKind: mainResource
+  resource: Order
+```
+
+Variant:
+
+```yaml
+origin:
+  kind: variant
+  resourceKind: mainResource
+  resource: Order
+  variant: Summary
+```
+
+SubResource:
+
+```yaml
+origin:
+  kind: resource
+  resourceKind: subResource
+  resource: OrderDetail
+  parent: Order
+```
+
+Parent Variant:
+
+```yaml
+origin:
+  kind: parentVariant
+  resourceKind: mainResource
+  resource: Order
+  variant: WithDetails
+  definedBy: OrderDetail
+```
+
+Action-local Resource:
+
+```yaml
+origin:
+  kind: action
+  action: OrderShipment
+  resource: OrderShipment
+  parent: Order
+```
+
+Custom-local Resource:
+
+```yaml
+origin:
+  kind: custom
+  custom: ExportOrders
+  resource: ExportCondition
+```
+
+API Usage Schema:
+
+```yaml
+origin:
+  kind: apiUsage
+  operationId: orders-post
+  usage: request
+  baseSchemaRef: $Order.WithDetails
+```
+
+`resourceKind` は Main Resource / SubResource のトポロジ上の役割を表すために使用し、
+Action / Custom / API Usage には使用しない。
+
+### 12.8 Parameter
+
+Raw Model では Service 内の Parameter Definition をすべて保持するが、
+Resolved Model では実際に使用される Parameter のみを保持する。
+
+Parameter Definition 自体を各 Operation へインライン展開せず、
+Resolved Model の `parameters` に保持し、API 側から `parameterRef` で参照する。
+
+Resolved Parameter は、その Parameter が HTTP 上でどのように利用されるかを
+`usages` として保持する。
+
+例:
+
+```yaml
+parameters:
+  customerId:
+    elementRef: $customerId
+    description: 顧客ID。
+    usages:
+      - in: query
+        name: customer_id
+        required: false
+```
+
+同じ Parameter Definition が異なる HTTP Usage を持つ場合は、複数の `usages` を持つことができる。
+
+`usages` は Operation ごとの利用履歴ではなく、OpenAPI Parameter として必要となる物理的な利用形態の集合を表す。
+
+Path Parameter は `required: true` とする。
+
+Query Parameter は明示的な Override がない場合 `required: false` とする。
+
+Service 共通 Request Header は `required: true` とする。
+
+Source の `headerName` は Resolve 時に `usages.name` へ反映する。
+
+### 12.9 Pagination Parameter
+
+`pagination: true` は Resolve 時に ARIADNE built-in Parameter へ展開する。
+
+```yaml
+parameters:
+  limit:
+    builtIn: pagination
+    usages:
+      - in: query
+        name: limit
+        required: false
+
+  offset:
+    builtIn: pagination
+    usages:
+      - in: query
+        name: offset
+        required: false
+```
+
+Pagination を利用する Operation は以下を参照する。
+
+```yaml
+queryParameters:
+  - parameterRef: $limit
+  - parameterRef: $offset
+```
+
+`limit` / `offset` は Phase 2 Element を参照しないため、 `elementRefs` には含めない。
+
+### 12.10 API / Path / Operation
+
+Resolved Model の `apis` は HTTP Path を直接 Key とする。
+
+Source / Raw Model の API logical entry は Resolved Model では保持しない。
+
+```yaml
+apis:
+  /orders:
+    get:
+      ...
+
+    post:
+      ...
+
+  /orders/{received_order_no}:
+    pathParameters:
+      - parameterRef: $receivedOrderNo
+
+    get:
+      ...
+
+    put:
+      ...
+```
+
+Path Parameter は Path 共通情報として Path 階層に保持する。
+
+HTTP Method は Path 配下に配置する。
+
+Resource / Action / Custom といった Source 上の API grouping は Resolved Model の `apis` 構造には残さない。
+
+### 12.11 OperationId
+
+`operationId` は Resolve 時に HTTP Path と Method から生成する。
+
+基本形式は以下とする。
+
+```text
+normalized-path-method
+```
+
+Path を先、Method を末尾とする。
+
+例:
+
+| Path / Method | operationId |
+| --- | --- |
+| `GET /orders` | `orders-get` |
+| `POST /orders` | `orders-post` |
+| `GET /orders/{received_order_no}` | `orders-received-order-no-get` |
+| `PATCH /orders/{received_order_no}/date` | `orders-received-order-no-date-patch` |
+| `DELETE /orders/{received_order_no}/details/{detail_no}` | `orders-received-order-no-details-detail-no-delete` |
+| `GET /health` | `health-get` |
+| `GET /version` | `version-get` |
+
+Path Token の `{}` は除去し、snake_case は kebab-case へ正規化する。
+
+生成された `operationId` は Service 内で一意でなければならない。
+
+### 12.12 Operation tag
+
+Resolved Operation は `tag` を1件持つ。
+
+Source の定義元に応じて以下のように決定する。
+
+- Main Resource：Main Resource 名
+- SubResource：親 Main Resource 名
+- Action：所属する Main Resource 名
+- Custom：Source Operation で明示した `tag`
+- built-in Operation：`System`
+
+Resolved Model では単数の `tag` を保持し、OpenAPI Generation 時に OAS の `tags` 配列へ変換する。
+
+### 12.13 API origin
+
+Resolved Operation には、API の Source 上の定義元を示す `origin` を保持する。
+
+API `origin` は「その Operation がどこに定義されていたか」を表し、
+Request / Response がどの Schema を利用するかとは独立する。
+
+Main Resource:
+
+```yaml
+origin:
+  kind: resource
+  resourceKind: mainResource
+  resource: Order
+```
+
+SubResource:
+
+```yaml
+origin:
+  kind: resource
+  resourceKind: subResource
+  resource: OrderDetail
+  parent: Order
+```
+
+Action:
+
+```yaml
+origin:
+  kind: action
+  action: OrderShipment
+  parent: Order
+```
+
+Custom:
+
+```yaml
+origin:
+  kind: custom
+  custom: ExportOrders
+```
+
+Variant / Parent Variant は Schema の生成元であり、API の定義元ではないため API `origin.kind` には使用しない。
+
+API の由来、利用 Schema、Schema の由来はそれぞれ独立して扱う。
+
+```text
+API はどこに定義されていたか
+    → API origin
+
+API がどの Schema を利用するか
+    → schemaRef
+
+その Schema がどの Source から生成されたか
+    → Schema origin
+```
+
+### 12.14 externalDocs
+
+Source / Raw Model の `externalDocs` は、Resolve 後も対象 Operation に保持する。
+
+`externalDocs` は API の補足文書への参照であり、
+Variant や Parameter のような意味解決対象ではないため、
+Resolve では内容を展開しない。
+
+相対 `url` の基準は Source と同様に Service Root とする。
+
+具体的な OAS / ReDoc 成果物上の URL および補足文書の物理配置は、
+OpenAPI Generation / 成果物配置方針で確定する。
+
+### 12.15 Request / Response Schema
+
+Resolved Operation の Request / Response Body は、解決済み Schema を `schemaRef` で参照する。
+
+単一 Resource:
+
+```yaml
+request:
+  schemaRef: $Order
+```
+
+Array:
+
+```yaml
+response:
+  "200":
+    description: 正常終了
+    array:
+      schemaRef: $Order.Summary
+```
+
+Request Body の必須性など、ARIADNE の API 意味モデルとして確定できる情報は Resolve 時に補完する。
+
+### 12.16 Response
+
+Resolved Model の Response は HTTP Status を Key とする Map とする。
+
+標準 API では HTTP Method から Success Status を Resolve 時に決定する。
+
+例:
+
+```yaml
+response:
+  "200":
+    description: 正常終了
+    schemaRef: $Order
+
+  default:
+    builtIn: error
+```
+
+Custom の Source / Raw Model で使用する `success` / `errors` は Resolve 時に同じ Status Map へ変換する。
+
+```yaml
+response:
+  "202":
+    description: エクスポート正常終了
+    schemaRef: $ExportResult
+
+  "400":
+    description: 入力チェックエラー
+    array:
+      schemaRef: $ValidationError
+
+  "409":
+    description: 処理コンフリクト
+
+  default:
+    builtIn: error
+```
+
+Response Header は各 Status Response の `headers` に保持する。
+
+Header の物理 HTTP 名を Map Key とする。
+
+Pagination:
+
+```yaml
+headers:
+  Has-More:
+    builtIn: pagination
+```
+
+Main Resource 新規登録 POST:
+
+```yaml
+headers:
+  Location:
+    builtIn: location
+```
+
+`Location` は Main Resource の新規登録 POST にのみ自動付与する。SubResource / Action / Custom の POST には自動付与しない。
+
+### 12.17 Standard Error
+
+全 Operation に Standard Error の `default` Response を Resolve 時に付与する。
+
+```yaml
+default:
+  builtIn: error
+```
+
+`builtIn: error` は、
+ARIADNE が管理する Standard Error Response であることを示す。
+
+Resolved Model では Standard Error の具体的な Schema を展開しない。
+具体的な OAS Response / Error Schema は OpenAPI Generation で生成する。
+
+Custom が明示的な Error Status を持つ場合も、 `default` Standard Error は併存する。
+
+### 12.18 builtIn
+
+`builtIn` は、Source で業務 API として明示的に定義されたものではなく、
+ARIADNE が規約に基づいて Resolve 時に補完した定義であることを示す。
+
+現時点で以下を使用する。
+
+| builtIn | 対象 | 意味 |
+| --- | --- | --- |
+| `pagination` | Parameter / Response Header | Pagination により生成 |
+| `location` | Response Header | Main Resource POST により生成 |
+| `error` | default Response | Standard Error |
+| `health` | Operation | `/health` built-in API |
+| `version` | Operation / Response | `/version` built-in API |
+
+### 12.19 Built-in API
+
+`/health` / `/version` は Source / Raw Model には存在せず、Resolve 時に built-in Operation として追加する。
+
+```yaml
+/health:
+  get:
+    builtIn: health
+    operationId: health-get
+    tag: System
+    summary: ヘルスチェック
+    response:
+      "200":
+        description: 正常終了
+      default:
+        builtIn: error
+
+/version:
+  get:
+    builtIn: version
+    operationId: version-get
+    tag: System
+    summary: バージョン取得
+    response:
+      "200":
+        description: 正常終了
+        builtIn: version
+      default:
+        builtIn: error
+```
+
+`/health` は Response Body を持たない。
+
+`/version` の `builtIn: version` Response は Application Version のみを返す。
+
+built-in Operation には Service `requestHeaders` を展開しない。
+
+### 12.20 elementRefs
+
+Resolved Model は、その Service が利用する Phase 2 Element の依存集合を `elementRefs` として保持する。
+
+```yaml
+elementRefs:
+  - $receivedOrderNo
+  - $orderDate
+  - $userId
+  - $customerId
+  - $orderStatus
+  ...
+```
+
+`elementRefs` は Phase 2 Element Definition 自体を複製するものではない。
+
+主目的は OpenAPI Generation 時に、必要な Element Schema を一度だけ生成できるようにすることである。
+
+ARIADNE built-in Parameter 等、Phase 2 Element に由来しない定義は `elementRefs` に含めない。
+
+### 12.21 Resolve の境界
+
+Resolve では、ARIADNE の API 意味モデルとして一意に決定できる情報を完成させる。
+
+主な Resolve 対象は以下とする。
 
 - Variant の完全 Schema 化
-- parentVariants の親 Resource への統合
-- API Usage Override の反映
-- Local Resource の解決
-- Parameter Usage の解決
+- Parent Variant の親 Resource への統合
+- API Usage Override の適用
+- Local Resource の Schema 化
+- `resourceRef` / `variantRef` から `schemaRef` への解決
 - 使用 Parameter Definition の抽出
-- Service 共通 Header の展開
-- Pagination の展開
+- Parameter Usage の解決
+- Service `requestHeaders` のユーザー定義 Operation への展開
+- Pagination の built-in Parameter / Response Header への展開
+- HTTP Success Status の決定
+- Standard Error Response の付与
+- Main Resource POST の Location Header の付与
 - OperationId の生成
-- HTTP Status / Header の補完
-- Resource / Variant から生成する Schema 名の確定
+- Operation tag の確定
+- API / Schema origin の付与
+- `/health` / `/version` built-in Operation の生成
+- `elementRefs` の抽出
 
-一方、Resolved Model の API 構造については設計継続中である。
+一方、以下は Resolve では行わない。
 
-特に、
+- Phase 2 Element Definition の展開
+- OpenAPI `$ref` への変換
+- OpenAPI `components` 構造への変換
+- OpenAPI 固有 Object への変換
+- Standard Error の具体的な OAS Schema / Response 生成
+- `/version` の具体的な OAS Response Schema 生成
+- `servers` の環境値注入
 
-- API logical entry / Path の階層をどこまで保持するか
-- OperationId 単位へ完全にフラット化するか
+これらは OpenAPI 3.1 Generation の責務とする。
 
-は未確定とする。
+Resolved Model は、
 
-Path Parameter が Path 共通情報であることを踏まえ、Path 単位の構造を
-Resolved Model でも保持する案を検討する。
+> **ARIADNE が補完・解決すべき意味をすべて確定し、OpenAPI 固有表現への変換だけを残した Service Model**
+
+と位置付ける。
 
 ------------------------------------------------------------------------
 
 ## 13. OpenAPI 3.1 Generation
 
-Prototype Phase 3 の生成対象は **OpenAPI 3.1** とする。OpenAPI 3.0
-は対象外とする。
+Prototype Phase 3 の生成対象は **OpenAPI 3.1** とする。
+OpenAPI 3.0 は対象外とする。
 
-現時点の生成方針は以下とする。
+OpenAPI Generation は、Service Validation を通過した Resolved Model を入力とし、
+ARIADNE の意味モデルを OpenAPI 3.1 の構造へ変換する。
 
-- ARIADNE Resource / Variant / Local Resource から
-    `components/schemas` を生成する
-- Parameter Definition / Usage から OAS Parameter を生成する
-- Standard Error Response を全 Operation に生成する
-- `/health` / `/version` を built-in Operation として生成する
-- Main Resource 新規登録 POST では Location Header を生成する
-- OperationId を生成する
-- Method に応じた標準 Success Status を補完する
-- `servers` は ARIADNE Source では管理せず、環境 / Build
-    側から注入する
-- `/version` の Version は Application Version とし、Git Tag
-    等から供給することを想定する
+Resolved Model の時点で API としての意味は確定済みとし、
+OpenAPI Generation では新たな業務的意味の解決を行わない。
 
-詳細な Generation Rule は Resolved Model 確定後に更新する。
+### 13.1 Generation の責務
+
+OpenAPI Generation の主な責務は以下とする。
+
+- Resolved `service` を OpenAPI `info` へ変換する
+- Resolved `schemas` を `components/schemas` へ変換する
+- `elementRefs` が参照する Phase 2 Element を `components/schemas` へ変換する
+- Resolved `parameters` / Parameter Usage を OpenAPI Parameter Object へ変換する
+- Resolved `apis` を OpenAPI `paths` / Operation Object へ変換する
+- `schemaRef` / `elementRef` / `parameterRef` を OpenAPI `$ref` へ変換する
+- Resolved Response を OpenAPI Response Object へ変換する
+- ARIADNE built-in を OpenAPI の具体的な定義へ変換する
+- `externalDocs` を OpenAPI External Documentation Object へ変換する
+- `servers` を環境 / Build 情報から注入する
+
+Generation は Variant の展開、Parameter Usage の決定、
+Success Status の決定、OperationId の生成等を行わない。
+これらは Resolve 時点で確定済みとする。
+
+### 13.2 OpenAPI 基本構造
+
+生成する OpenAPI の基本構造は以下とする。
+
+```yaml
+openapi: 3.1.0
+
+info:
+  title: 受注サービス
+  description: |
+    受注および顧客情報を管理するサービス。
+  version: ...
+
+servers:
+  ...
+
+paths:
+  ...
+
+components:
+  schemas:
+    ...
+  parameters:
+    ...
+  responses:
+    ...
+```
+
+`info.title` / `info.description` は Resolved `service` から生成する。
+
+`info.version` は ARIADNE Source / Resolved Model では管理せず、 Application Version を使用する。
+
+Application Version は、Semantic Version として解釈可能な Git Tag から Build 時に取得する。
+Semantic Version として解釈できない開発用 Tag 等は Application Version として使用しない。
+
+`servers` も ARIADNE Source / Resolved Model では管理せず、環境 / Build 側から注入する。
+
+### 13.3 Schema Generation
+
+Resolved Model の `schemas` は OpenAPI `components/schemas` へ変換する。
+
+Resolved Schema はすでに Variant / Parent Variant / API Usage Override 等が
+適用された完成 Schema であるため、 OpenAPI Generation では Schema の再構成を行わない。
+
+例えば、
+
+```yaml
+schemaRef: $Order.Summary
+```
+
+は、対応する OpenAPI Schema Component への `$ref` に変換する。
+
+Phase 2 Element を参照する
+
+```yaml
+elementRef: $customerId
+```
+
+については、Phase 2 Element Definition から対応する OpenAPI Schema を生成し、
+`components/schemas` に配置したうえで `$ref` へ変換する。
+
+同一 Element は Service 内で一度だけ Schema Component を生成する。
+
+生成対象となる Element は Resolved Model の `elementRefs` から決定する。
+
+### 13.4 Parameter Generation
+
+Resolved Model の `parameters` は、 `elementRef` と `usages` を組み合わせて OpenAPI Parameter Object へ変換する。
+
+ARIADNE Parameter Definition は semantic な Parameter を表すが、
+OpenAPI Parameter Object は `in` / `name` / `required` 等を含む物理的な HTTP Parameter を表す。
+
+そのため、1つの Resolved Parameter が複数の `usages` を持つ場合、
+Usage ごとに OpenAPI Parameter Object を生成する。
+
+Operation 側の
+
+```yaml
+parameterRef: $customerId
+```
+
+は、その Operation に対応する Usage の OpenAPI Parameter Component への `$ref` に変換する。
+
+Pagination により生成された `limit` / `offset` も、通常の OpenAPI Query Parameter として生成する。
+
+### 13.5 Path / Operation Generation
+
+Resolved Model の `apis` は OpenAPI `paths` へ直接変換する。
+
+Resolved:
+
+```yaml
+apis:
+  /orders/{received_order_no}:
+    pathParameters:
+      - parameterRef: $receivedOrderNo
+
+    get:
+      operationId: orders-received-order-no-get
+      tag: Order
+      summary: 受注取得
+      ...
+```
+
+OpenAPI Generation では、
+
+- Path Key を OpenAPI Path Item へ変換する
+- `pathParameters` を Path Item の `parameters` へ変換する
+- HTTP Method を Operation Object へ変換する
+- `operationId` をそのまま使用する
+- ARIADNE `tag` を OpenAPI `tags` 配列へ変換する
+- `summary` / `description` を対応する Operation 属性へ変換する
+
+`operationId` や `tag` の決定は Generation では行わない。
+
+### 13.6 Request / Response Generation
+
+Resolved Model の Request / Response は、 OpenAPI Request Body / Response Object へ変換する。
+
+`schemaRef` は OpenAPI Schema `$ref` へ変換する。
+
+Array の場合は OpenAPI の
+
+```yaml
+type: array
+items:
+  $ref: ...
+```
+
+へ変換し、`minItems` / `maxItems` が存在する場合は Array Schema の同名属性へ変換する。
+
+Resolved Response の HTTP Status Key はそのまま OpenAPI `responses` の Status Key として使用する。
+
+Response Header が存在する場合は、OpenAPI Response Object の `headers` へ変換する。
+
+### 13.7 Built-in Generation
+
+Resolved Model の `builtIn` は、ARIADNE が所有する OpenAPI 定義へ変換するための識別子として使用する。
+
+#### Standard Error
+
+```yaml
+default:
+  builtIn: error
+```
+
+は、ARIADNE 標準の Error Response / Error Schema を使用した OpenAPI `default` Response へ変換する。
+
+Standard Error の具体的な Component 名、Schema、 Media Type、Example は OpenAPI Generation の built-in 定義として管理する。
+
+#### Pagination
+
+```yaml
+builtIn: pagination
+```
+
+を持つ `limit` / `offset` は Query Parameter へ、 `Has-More` は Response Header へ変換する。
+
+#### Location
+
+```yaml
+Location:
+  builtIn: location
+```
+
+は OpenAPI Response Header `Location` へ変換する。
+
+#### Health
+
+`builtIn: health` Operation は、
+Resolved Model に確定済みの `/health` Operation を通常の OpenAPI Operation として生成する。
+
+#### Version
+
+`builtIn: version` Response は、 Application Version のみを返す OpenAPI Response Schema へ変換する。
+
+Application Version は、Semantic Version として解釈可能な Git Tag から Build 時に取得する。
+
+### 13.8 externalDocs
+
+Resolved Model に保持された `externalDocs` は、 OpenAPI External Documentation Object へ変換する。
+
+Source で相対パスが指定されている場合は Service Root を基準として解決する。
+
+```yaml
+externalDocs:
+  url: ./docs/order-create.md
+  description: 受注登録の詳細仕様
+```
+
+補足文書そのものを OAS / ReDoc 成果物へどのように配置するかは、 OAS 成果物の配置方針と合わせて確定する。
+
+### 13.9 Generation の境界
+
+OpenAPI Generation は、
+
+> **Resolved Model で確定した ARIADNE の API 意味モデルを、
+> OpenAPI 3.1 の物理表現へ写像する処理**
+
+と位置付ける。
+
+Generation では以下を行わない。
+
+- Variant / Parent Variant の意味解決
+- API Usage Override の適用
+- Parameter Usage の決定
+- Service `requestHeaders` の展開
+- Pagination を使用するかどうかの判断
+- Success Status の決定
+- Location Header を付与するかどうかの判断
+- Standard Error を付与するかどうかの判断
+- OperationId の生成
+- Operation tag の決定
+- `/health` / `/version` を追加するかどうかの判断
+- API / Schema origin の決定
+
+これらはすべて Resolve の責務とする。
+
+OpenAPI Generation に残すのは、
+
+- OpenAPI Object への構造変換
+- OpenAPI `$ref` の生成
+- Component 化
+- built-in の具体的な OAS 表現への変換
+- Build / Environment 情報の注入
+
+である。
 
 ------------------------------------------------------------------------
 
@@ -1272,14 +2311,24 @@ Prototype Phase 3 は現在進行中である。
 - [x] Validation Architecture
 - [x] File Validation 基本 Rule
 - [x] API Validation / Service Validation の責務整理
-- [ ] Resolved Model 詳細構造
-- [ ] API Usage Override の Resolved Schema 化
-- [ ] Parameter Usage の Resolved Model
-- [ ] Pagination の具体的な展開仕様
-- [ ] OperationId 生成規則
-- [ ] Resolved Model 上の Path / Operation 構造
+- [x] Resolved Model 詳細構造
+- [x] API Usage Override の Resolved Schema 化
+- [x] Parameter Usage の Resolved Model
+- [x] Pagination の具体的な展開仕様
+- [x] OperationId 生成規則
+- [x] Resolved Model 上の Path / Operation 構造
 - [ ] OAS 3.1 Generation 詳細仕様
+- [ ] 受注サービス OAS 3.1 サンプル作成
+- [ ] OAS 成果物の配置方針
+- [ ] ReDoc による API Document 生成方針
+- [ ] Mock Server の利用方針
+- [ ] externalDocs の OAS / ReDoc 成果物への取り込み方針
+- [ ] Prototype Task API の ARIADNE Source 定義
+- [ ] Prototype Task API の Raw Model 作成
+- [ ] Prototype Task API の Resolved Model 作成
+- [ ] Prototype Task API の OAS 3.1 作成
 - [ ] Validation Rule ID の最終整理
+- [ ] Phase 3 ドキュメント最終更新
 - [ ] Prototype Phase 3 最終レビュー
 
 ------------------------------------------------------------------------
