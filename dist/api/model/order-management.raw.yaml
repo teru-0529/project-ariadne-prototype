@@ -466,8 +466,7 @@ customs:
         path: /orders/export
 
         post:
-          tags:
-            - Order
+          tag: Order
 
           summary: 受注エクスポート
 

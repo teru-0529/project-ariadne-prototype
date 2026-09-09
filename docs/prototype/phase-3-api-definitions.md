@@ -259,8 +259,18 @@ api:
         resource: Order
 ```
 
-logical entry は人間が API を整理するための論理名であり、HTTP
-上の一意性は最終的に `(path, method)` で判定する。
+logical entry は人間が API を整理するための論理名であり、HTTP 上の一意性は最終的に `(path, method)` で判定する。
+
+Operation は OpenAPI 上の分類を示す `tag` を1件持つ。
+
+`tag` の決定方法は API の定義元により異なる。
+
+- Main Resource の API：その Main Resource 名を使用する
+- SubResource の API：親 Main Resource 名を使用する
+- Action の API：所属する Main Resource 名を使用する
+- Custom の API：Operation に `tag` を明示する
+
+ARIADNE では 1 Operation に対して複数 Tag を許可しない。OpenAPI 生成時は `tag` を `tags` 配列へ変換する。
 
 ------------------------------------------------------------------------
 
@@ -782,6 +792,8 @@ Custom API を定義する。
 
 Custom 自身は表示名・説明を持たない。API の表示名・説明は Operation の `summary` / `description` に定義する。
 
+Custom は特定 Main Resource に従属しないため、各 Operation に `tag` を必須指定する。
+
 Custom の Response は、`success` と `errors` により定義する。
 
 - `success` は1件定義する
@@ -1093,6 +1105,7 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 | V-42 | DELETE に Request / Response Body を定義しない | Error |
 | V-43 | `pagination` は GET にのみ指定する | Error |
 | V-44 | `externalDocs` を指定する場合 `url` が存在する | Error |
+| V-45 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない | Error |
 
 ### 11.2 API Validation
 
