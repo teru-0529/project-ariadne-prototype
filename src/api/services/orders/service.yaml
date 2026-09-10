@@ -10,4 +10,4 @@ description: |
   受注および顧客情報を管理するサービス。
 
 requestHeaders:
-  - requestId
+  - traceId

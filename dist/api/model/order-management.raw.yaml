@@ -6,7 +6,7 @@ service:
   description: |
     受注および顧客情報を管理するサービス。
   requestHeaders:
-    - parameterRef: $requestId
+    - parameterRef: $traceId
 
 parameters:
   receivedOrderNo:
@@ -22,10 +22,10 @@ parameters:
     elementRef: $customerId
     description: 顧客ID。
 
-  requestId:
-    elementRef: $requestId
-    headerName: X-Request-ID
-    description: リクエストを識別するID。
+  traceId:
+    elementRef: $traceId
+    headerName: X-Trace-ID
+    description: トレースID。
 
   detailNo:
     elementRef: $orderDetailNo

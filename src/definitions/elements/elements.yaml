@@ -135,14 +135,16 @@ elements:
       maximum: 100.0
     example: 22.5
 
-  requestId:
-    name: リクエストID
-    type: FIXED_STRING
-    description: リクエストを識別するID
+  traceId:
+    name: トレースID
+    type: STRING
+    description: |
+      分散トレーシングに使用されるID。
+      形式は　ULID + "::" + 任意の非空文字列
     constraints:
-      length: 36
-    regex: "[a-zA-Z0-9\\-]{36}"
-    example: "123e4567-e89b-12d3-a456-426614174000"
+      maxLength: 128
+    pattern: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
+    example: 01ARZ3NDEKTSV4RRFFQ69G5FAV::U0672
 
   url:
     name: URL

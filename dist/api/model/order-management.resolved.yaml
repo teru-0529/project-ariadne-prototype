@@ -32,12 +32,12 @@ parameters:
         name: customer_id
         required: false
 
-  requestId:
-    elementRef: $requestId
-    description: リクエストを識別するID。
+  traceId:
+    elementRef: $traceId
+    description: トレースID。
     usages:
       - in: header
-        name: X-Request-ID
+        name: X-Trace-ID
         required: true
 
   detailNo:
@@ -563,7 +563,7 @@ apis:
         条件に一致する受注情報を取得する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       queryParameters:
         - parameterRef: $orderPic
@@ -595,7 +595,7 @@ apis:
         受注情報と1件以上の受注明細を登録する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         schemaRef: $PostOrdersRequest
@@ -631,7 +631,7 @@ apis:
         指定された受注番号の受注情報を取得する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       response:
         "200":
@@ -653,7 +653,7 @@ apis:
         指定された受注情報を全体更新する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         schemaRef: $Order
@@ -682,7 +682,7 @@ apis:
         指定された受注の受注日を変更する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         schemaRef: $Order.DateUpdate
@@ -712,7 +712,7 @@ apis:
         指定された受注に紐づく明細情報を取得する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       response:
         "200":
@@ -736,7 +736,7 @@ apis:
         指定された受注に1件以上の受注明細を追加する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         array:
@@ -769,7 +769,7 @@ apis:
         指定された受注明細を削除する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       response:
         "204":
@@ -792,7 +792,7 @@ apis:
         対象となる受注明細の出荷済数を増加し、受注残を減少させる。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         schemaRef: $OrderShipment
@@ -823,7 +823,7 @@ apis:
         対象となる受注明細のキャンセル数を増加し、受注残を減少させる。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         schemaRef: $Cancellation
@@ -850,7 +850,7 @@ apis:
         一時ストレージに保存したダウンロード用URLを返却する。
 
       requestHeaders:
-        - parameterRef: $requestId
+        - parameterRef: $traceId
 
       request:
         schemaRef: $ExportCondition
@@ -899,7 +899,7 @@ elementRefs:
   - $receivedOrderNo
   - $userId
   - $customerId
-  - $requestId
+  - $traceId
   - $orderDetailNo
   - $orderDate
   - $orderStatus

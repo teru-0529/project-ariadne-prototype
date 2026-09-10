@@ -17,10 +17,10 @@ parameters:
     element: customerId
     description: 顧客ID。
 
-  requestId:
-    element: requestId
-    headerName: X-Request-ID
-    description: リクエストを識別するID。
+  traceId:
+    element: traceId
+    headerName: X-Trace-ID
+    description: トレースID。
 
   detailNo:
     element: orderDetailNo

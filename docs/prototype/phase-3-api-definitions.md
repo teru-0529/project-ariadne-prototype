@@ -111,7 +111,7 @@ name: 受注サービス
 description: |
   受注および顧客情報を管理するサービス。
 requestHeaders:
-  - requestId
+  - traceId
 ```
 
 ### 3.2 Parameter Definition
@@ -837,10 +837,10 @@ parameters:
     description: 受注担当者。
     example: U1234
 
-  requestId:
-    element: requestId
-    headerName: X-Request-ID
-    description: リクエストを識別するID。
+  traceId:
+    element: traceId
+    headerName: X-Trace-ID
+    description: トレースID。
 ```
 
 未使用 Parameter Definition が存在しても正常とする。Raw Model では全定義を保持し、必要な定義の抽出は Resolve で行う。
@@ -982,7 +982,7 @@ service:
   description: |
     受注および顧客情報を管理するサービス。
   requestHeaders:
-    - parameterRef: $requestId
+    - parameterRef: $traceId
 
 parameters:
   ...
