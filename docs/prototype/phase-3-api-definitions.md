@@ -2241,7 +2241,143 @@ OpenAPI Generation に残すのは、
 
 ------------------------------------------------------------------------
 
-## 14. Phase 2 / Phase 4 との境界
+## 14. API Document
+
+生成した OpenAPI 3.1 から、人間が参照する API Document を生成する。
+
+Prototype では Redocly を利用し、
+OpenAPI 3.1 の妥当性確認と API Document の目視確認を行う。
+
+### 14.1 位置付け
+
+API Document は Source of Truth ではない。
+
+成果物の関係は以下とする。
+
+```text
+ARIADNE Source
+      ↓
+Raw Model
+      ↓
+Resolved Model
+      ↓
+OpenAPI 3.1
+      ↓
+API Document
+```
+
+ARIADNE Source を正本とし、
+Raw Model / Resolved Model / OpenAPI 3.1 / API Document は
+すべて再生成可能な成果物とする。
+
+OpenAPI 3.1 は OpenAPI Validator により機械的に検証する。
+
+API Document は、生成された API が人間から見て
+意図した構造・表現になっていることを確認するためにも利用する。
+
+### 14.2 Prototype における生成
+
+Prototype では Redocly CLI を利用する。
+
+主な用途は以下とする。
+
+- OpenAPI 3.1 の Validation
+- API Document の静的 HTML 生成
+- 生成された API Document の目視確認
+
+Prototype では ReDoc 固有の表示カスタマイズを最小限とし、
+まず OpenAPI 3.1 の標準的な表現を確認する。
+
+OpenAPI 3.1 の作成中は、
+
+```text
+OAS 作成
+  ↓
+Validation
+  ↓
+API Document 生成
+  ↓
+Browser 確認
+```
+
+を繰り返し、OpenAPI Generation の設計を検証する。
+
+### 14.3 成果物配置
+
+Service 単位の OpenAPI 成果物は以下へ配置する。
+
+```text
+dist/
+└─ api/
+   └─ oas/
+      └─ order-management/
+         ├─ openapi.yaml
+         ├─ index.html
+         └─ docs/
+            └─ order-create.md
+```
+
+- `openapi.yaml`
+  - 生成された OpenAPI 3.1
+- `index.html`
+  - OpenAPI 3.1 から生成した API Document
+- `docs/`
+  - `externalDocs` から参照する補足文書
+
+Service 単位のディレクトリを、
+ローカル参照および Web 公開の双方で利用可能な
+自己完結した API Document 成果物とする。
+
+### 14.4 externalDocs
+
+`externalDocs` の補足文書の Source of Truth は、
+Service Root 配下の `docs/` とする。
+
+例:
+
+```text
+src/api/services/orders/
+└─ docs/
+   └─ order-create.md
+```
+
+API Document 生成時に、参照対象の補足文書を
+Service の OAS 成果物ディレクトリへコピーする。
+
+```text
+src/api/services/orders/docs/order-create.md
+                    ↓
+dist/api/oas/order-management/docs/order-create.md
+```
+
+これにより、OpenAPI 3.1 の `externalDocs.url` は
+成果物内でも相対参照として解決可能な状態を維持する。
+
+Prototype では Markdown をそのままコピーする。
+
+Markdown を Browser から直接表示した場合の可読性は、
+実際の API Document から参照して確認する。
+
+必要な場合は、後続工程で Markdown から HTML 等への変換を検討する。
+
+### 14.5 Runtime との境界
+
+Prototype では Redocly CLI を
+OpenAPI Validation / API Document 生成のための開発ツールとして利用する。
+
+最終的な ARIADNE では、
+利用者が Wails Application 上で API を設計し、
+生成された OpenAPI から API Document を参照できることを要件とする。
+
+最終利用者に Node.js / npm / Redocly CLI 等の
+個別インストールは要求しない。
+
+Wails Application への API Document 表示機能の組み込み方式は、
+後続 Phase で決定する。
+
+------------------------------------------------------------------------
+
+## 15. Phase 2 / Phase 4 との境界
 
 ARIADNE の責務分離は以下とする。
 
@@ -2256,7 +2392,7 @@ Phase 4
 Database Definition
 ```
 
-### 14.1 Phase 2 → Phase 3
+### 15.1 Phase 2 → Phase 3
 
 Phase 2 は「値は何者か」を定義する。
 
@@ -2274,7 +2410,7 @@ Phase 2 は「値は何者か」を定義する。
 Phase 3 は Element を参照し、「その値を API
 のどこで、どの意味で利用するか」を定義する。
 
-### 14.2 Phase 3 → Phase 4
+### 15.2 Phase 3 → Phase 4
 
 Phase 3 は API 契約を管理し、Database の PK / Index / Null Constraint
 等を定義しない。
@@ -2286,7 +2422,7 @@ API Identifier と Database Primary Key は同義ではない。
 
 ------------------------------------------------------------------------
 
-## 15. Phase 3 Completion
+## 16. Phase 3 Completion
 
 Prototype Phase 3 は現在進行中である。
 

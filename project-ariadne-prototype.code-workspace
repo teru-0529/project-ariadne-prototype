@@ -1,13 +1,15 @@
 {
-  "folders": [
+  "folders": [{ "name": "Project ARIADNE Prototype", "path": "." }],
+  "settings":
     {
-      "name": "Project ARIADNE Prototype",
-      "path": ".",
+      "files.associations": { "LICENSE": "plaintext" },
+      "editor.formatOnSave": true,
+      "editor.formatOnPaste": true,
+      "editor.formatOnType": true,
+      "yaml.disableSchemaDetection": [],
+      "yaml.schemas":
+        {
+          "openapi:v3_1_2020": "file:///c%3A/workspace/project-ariadne-prototype/dist/api/oas/order-management/openapi.yaml",
+        },
     },
-  ],
-  "settings": {
-    "files.associations": {
-      "LICENSE": "plaintext",
-    },
-  },
 }

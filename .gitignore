@@ -5,6 +5,12 @@ Thumbs.db
 # Editors
 .vscode/
 
+# dist
+dist/api/oas/*/redoc.html
+
 # Runtime
 runtime/*
 !runtime/.gitkeep
+
+# Node.js
+node_modules/

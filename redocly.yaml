@@ -1,0 +1,12 @@
+extends:
+  - recommended
+
+rules:
+  security-defined: off # 認証はKongの責務
+  info-license: off # ARIADNEでは管理しない
+  operation-4xx-response: off # ARIADNEは default builtIn:error を持つ
+  no-empty-servers: off # サーバーURLが空でもOK（通常時）
+  no-server-example.com: off # サーバーURLにexample.comが含まれていてもOK（ローカル利用時）
+
+openapi:
+  hideDownloadButton: true # DLボタンを非表示にする

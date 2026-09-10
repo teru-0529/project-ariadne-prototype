@@ -1,0 +1,21 @@
+openapi: 3.1.0
+
+info:
+  title: 受注サービス
+  description: |
+    受注および顧客情報を管理するサービス。
+  version: development
+
+servers:
+  - url: http://localhost:8000
+
+paths:
+  /health:
+    get:
+      operationId: health-get
+      tags:
+        - System
+      summary: ヘルスチェック
+      responses:
+        "200":
+          description: 正常終了
