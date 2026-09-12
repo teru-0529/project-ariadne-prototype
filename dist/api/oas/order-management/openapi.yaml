@@ -7,7 +7,71 @@ info:
   version: development
 
 servers:
-  - url: http://localhost:8000
+  - url: https://not-configured.invalid
+    description: 実行環境で設定
+
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - traceId
+      properties:
+        code:
+          type: string
+          description: アプリケーション固有のエラーコード。
+          example: ORDER_NOT_FOUND
+
+        message:
+          type: string
+          description: エラー内容を示すメッセージ。
+          example: 受注が存在しません。
+
+        traceId:
+          $ref: "#/components/schemas/traceId"
+
+    taskId:
+      type: string
+      description: タスクを一意に識別するID
+      minLength: 26
+      maxLength: 26
+      pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+      example: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+
+    status:
+      type: string
+      description: タスクの状態
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - DONE
+      example: TODO
+
+    recordDateTime:
+      type: string
+      format: date-time
+      description: レコードの生成・更新日時
+      example: "2023-10-01T12:00:00+09:00"
+
+    traceId:
+      type: string
+      title: トレースID
+      description: |
+        分散トレーシングに使用されるID。
+        形式は ULID + "::" + 任意の非空文字列
+      maxLength: 128
+      pattern: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
+      example: "01ARZ3NDEKTSV4RRFFQ69G5FAV::U0672"
+
+  responses:
+    StandardError:
+      description: エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
 
 paths:
   /health:
@@ -19,3 +83,28 @@ paths:
       responses:
         "200":
           description: 正常終了
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /version:
+    get:
+      operationId: version-get
+      tags:
+        - System
+      summary: バージョン取得
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - version
+                properties:
+                  version:
+                    type: string
+              example:
+                version: 0.0.0
+        default:
+          $ref: "#/components/responses/StandardError"

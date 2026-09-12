@@ -2,6 +2,25 @@
 
 set -e
 
+# Project root
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${PROJECT_ROOT}"
+
+# Load local environment settings if present
+if [ -f ".env" ]; then
+  set -a
+  source ".env"
+  set +a
+fi
+
+# Redocly telemetry is always disabled.
+export REDOCLY_TELEMETRY=off
+
+# Show Redocly update notices only in ARIADNE development mode.
+if [ "${ARIADNE_DEVELOPMENT:-false}" != "true" ]; then
+  export REDOCLY_SUPPRESS_UPDATE_NOTICE=true
+fi
+
 OAS_ROOT="./dist/api/oas"
 
 generate_redoc() {
