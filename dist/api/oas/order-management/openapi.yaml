@@ -12,6 +12,258 @@ servers:
 
 components:
   schemas:
+    # resources
+    Order:
+      type: object
+      description: |
+        受注情報を表すメインリソース。
+      required:
+        - orderNo
+        - orderDate
+        - orderPic
+        - customerId
+        - orderStatus
+        - urgent
+      properties:
+        orderNo:
+          allOf:
+            - $ref: "#/components/schemas/receivedOrderNo"
+          readOnly: true
+          description: 登録時に自動採番される受注番号。
+
+        orderDate:
+          allOf:
+            - $ref: "#/components/schemas/orderDate"
+          readOnly: true
+          description: 登録時に自動設定される受注日。
+
+        orderPic:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: この受注を担当するユーザーのID。
+
+        customerId:
+          $ref: "#/components/schemas/customerId"
+
+        orderStatus:
+          allOf:
+            - $ref: "#/components/schemas/orderStatus"
+          readOnly: true
+
+        urgent:
+          $ref: "#/components/schemas/urgent"
+
+        notes:
+          allOf:
+            - $ref: "#/components/schemas/comment"
+          description: 受注に関する補足情報。
+          example: 要注意顧客。
+
+        desiredDeliveryTime:
+          $ref: "#/components/schemas/desiredDeliveryTime"
+
+    Order.Summary:
+      type: object
+      required:
+        - orderNo
+        - orderDate
+        - orderPic
+        - customerId
+        - orderStatus
+      properties:
+        orderNo:
+          allOf:
+            - $ref: "#/components/schemas/receivedOrderNo"
+          readOnly: true
+          description: 登録時に自動採番される受注番号。
+
+        orderDate:
+          allOf:
+            - $ref: "#/components/schemas/orderDate"
+          readOnly: true
+          description: 登録時に自動設定される受注日。
+
+        orderPic:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: この受注を担当するユーザーのID。
+
+        customerId:
+          $ref: "#/components/schemas/customerId"
+
+        orderStatus:
+          allOf:
+            - $ref: "#/components/schemas/orderStatus"
+          readOnly: true
+
+        price:
+          allOf:
+            - $ref: "#/components/schemas/price"
+          description: 受注の合計金額。
+
+        detailCount:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+          description: 受注明細の件数。
+
+    Order.DateUpdate:
+      type: object
+      required:
+        - orderDate
+      properties:
+        orderDate:
+          allOf:
+            - $ref: "#/components/schemas/orderDate"
+          readOnly: true
+          description: 登録時に自動設定される受注日。
+
+    OrderDetail:
+      type: object
+      description: |
+        受注に紐づく明細情報を表すサブリソース。
+      required:
+        - detailNo
+        - productNo
+        - quantity
+        - sellingPrice
+      properties:
+        detailNo:
+          allOf:
+            - $ref: "#/components/schemas/orderDetailNo"
+          readOnly: true
+          description: 登録時に自動採番される明細番号。
+
+        productNo:
+          $ref: "#/components/schemas/productNo"
+
+        quantity:
+          $ref: "#/components/schemas/quantity"
+
+        shippingQuantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+
+        cancelQuantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+
+        remainingQuantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+          description: |
+            受注数から出荷済数およびキャンセル数を差し引いた数量。
+
+        sellingPrice:
+          $ref: "#/components/schemas/price"
+
+        costPrice:
+          allOf:
+            - $ref: "#/components/schemas/price"
+          readOnly: true
+
+        profitRate:
+          allOf:
+            - $ref: "#/components/schemas/profitRate"
+          readOnly: true
+
+    OrderDetail.Summary:
+      type: object
+      required:
+        - detailNo
+        - productNo
+        - quantity
+      properties:
+        detailNo:
+          allOf:
+            - $ref: "#/components/schemas/orderDetailNo"
+          readOnly: true
+          description: 登録時に自動採番される明細番号。
+
+        productNo:
+          $ref: "#/components/schemas/productNo"
+
+        quantity:
+          $ref: "#/components/schemas/quantity"
+
+        shippingQuantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+
+        cancelQuantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+
+        remainingQuantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          readOnly: true
+          description: |
+            受注数のうち、まだ出荷またはキャンセルされていない数量。
+          example: 5
+
+    Order.WithDetails:
+      type: object
+      required:
+        - orderNo
+        - orderDate
+        - orderPic
+        - customerId
+        - orderStatus
+        - urgent
+        - details
+      properties:
+        orderNo:
+          allOf:
+            - $ref: "#/components/schemas/receivedOrderNo"
+          readOnly: true
+          description: 登録時に自動採番される受注番号。
+
+        orderDate:
+          allOf:
+            - $ref: "#/components/schemas/orderDate"
+          readOnly: true
+          description: 登録時に自動設定される受注日。
+
+        orderPic:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: この受注を担当するユーザーのID。
+
+        customerId:
+          $ref: "#/components/schemas/customerId"
+
+        orderStatus:
+          allOf:
+            - $ref: "#/components/schemas/orderStatus"
+          readOnly: true
+
+        urgent:
+          $ref: "#/components/schemas/urgent"
+
+        notes:
+          allOf:
+            - $ref: "#/components/schemas/comment"
+          description: 受注に関する補足情報。
+          example: 要注意顧客。
+
+        desiredDeliveryTime:
+          $ref: "#/components/schemas/desiredDeliveryTime"
+
+        details:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderDetail"
+          description: |
+            受注に含まれる明細情報。
+
+    # built-in
     Error:
       type: object
       required:
@@ -32,6 +284,7 @@ components:
         traceId:
           $ref: "#/components/schemas/traceId"
 
+    # elements
     receivedOrderNo:
       type: string
       description: 受注を特定する番号
@@ -192,6 +445,33 @@ components:
             $ref: "#/components/schemas/Error"
 
 paths:
+  /orders:
+    post:
+      operationId: orders-post
+      tags:
+        - Order
+      summary: 受注登録
+      description: |
+        受注情報と1件以上の受注明細を登録する。
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Order.WithDetails"
+            example:
+              orderPic: U0672
+              customerId: C1234567
+              urgent: true
+              details:
+                - productNo: P123456
+                  quantity: 10
+                  sellingPrice: 1000
+                - productNo: P654321
+                  quantity: 5
+                  sellingPrice: 1200
+
   /health:
     get:
       operationId: health-get

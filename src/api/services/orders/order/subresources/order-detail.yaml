@@ -81,6 +81,8 @@ parentVariants:
       details:
         array:
           resource: OrderDetail
+        required: true
+        minItems: 1
         name: 受注明細
         description: |
           受注に含まれる明細情報。
@@ -100,8 +102,6 @@ api:
         variant: WithDetails
         overrides:
           details:
-            required: true
-            minItems: 1
             example:
               - productNo: P123456
                 quantity: 10

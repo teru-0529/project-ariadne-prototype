@@ -401,6 +401,12 @@ details:
   required: true
 ```
 
+`required` / `minItems` / `maxItems` が Resource / Variant 自体の構造上の制約である場合は、
+API Usage ではなく Resource / Variant 側に定義する。
+
+例えば `WithDetails` が「1件以上の明細を持つ受注」を意味する場合、
+`details.required: true` および `details.minItems: 1` は `WithDetails` 自体に定義する。
+
 `minItems` / `maxItems` は `Array Property` / `Array API Usage` の属性として、 `array` と同階層に指定する。
 
 `required` も同様に `array` の内部には指定しない。
@@ -463,8 +469,7 @@ orderPic:
 
 ### 6.5 API Usage Override
 
-API Usage では Resource / Variant の利用コンテキストに対して Override
-を指定できる。
+API Usage では Resource / Variant の利用コンテキストに対して Override を指定できる。
 
 例:
 
@@ -474,8 +479,6 @@ request:
   variant: WithDetails
   overrides:
     details:
-      required: true
-      minItems: 1
       example:
         - productNo: P123456
           quantity: 10
@@ -485,11 +488,20 @@ request:
           sellingPrice: 1200
 ```
 
-API Usage の `overrides` でも `example` を Override できる。
+API Usage の `overrides` では、構造に関する情報と `example` を Override できる。
 
-上記のように Array Property では複数要素を含む Array 全体を `example` として指定できる。
+構造に関する Override により元の Resource / Variant と異なる Schema が必要となる場合は、
+Resolve 時に API Usage 専用 Schema を生成する。
 
-Array Property に対する `minItems` / `maxItems` の Override は、Property の同名属性を Override する。
+一方、`example` のみを Override する場合は Schema の構造を変更しない。
+この場合、API Usage 専用 Schema は生成せず、元の Resource / Variant Schema をそのまま利用する。
+
+API Usage の `example` は Request / Response の利用コンテキストにおける差分として扱う。
+Resolved Model では `exampleOverride` として保持し、完成した Example は OpenAPI Generation 時に生成する。
+
+Array Property では複数要素を含む Array 全体を `example` として指定できる。
+
+Array Property に対する `minItems` / `maxItems` の Override は、Property の同名属性を Overrideする。
 
 Scalar Constraint の Override は禁止する。
 
@@ -1455,9 +1467,12 @@ Resolved Model には `parentVariants` 自体は残さない。
 
 ### 12.6 API Usage Override
 
-API Usage の `overrides` は Resolve 時に対象 Schema へ適用する。
+API Usage の `overrides` は、構造に関する Override と `example` の Override を分けて Resolve する。
 
-API Usage によって元の Resource / Variant と異なる Schema が必要となる場合、API Usage 専用の Schema を生成する。
+#### 構造に関する Override
+
+API Usage によって元の Resource / Variant と異なる Schema 構造が必要となる場合、
+Override を適用した API Usage 専用 Schema を生成する。
 
 例:
 
@@ -1473,7 +1488,32 @@ PostOrdersRequest:
 
 API Usage Schema は、API 上で実際に使用される完成した Property 構造を持つ。
 
-Resolved Model では API Usage の `overrides` 自体は保持しない。
+構造に関する Override が存在しない場合は API Usage 専用 Schema を生成せず、元の Resource / Variant Schema を直接参照する。
+
+#### Example Override
+
+API Usage で指定された `example` は Schema 構造へ適用しない。
+
+Resolved Model では API Usage の差分 Example として `exampleOverride` に保持する。
+
+例:
+
+```yaml
+request:
+  schemaRef: $Order.WithDetails
+  exampleOverride:
+    details:
+      - productNo: P123456
+        quantity: 10
+        sellingPrice: 1000
+      - productNo: P654321
+        quantity: 5
+        sellingPrice: 1200
+```
+
+`exampleOverride` は完成した Example ではなく、API Usage で指定された差分を表す。
+
+Request / Response の完成した Example は OpenAPI Generation 時に生成する。
 
 ### 12.7 Schema origin
 
@@ -1969,7 +2009,7 @@ Resolve では、ARIADNE の API 意味モデルとして一意に決定でき�
 - OpenAPI 固有 Object への変換
 - Standard Error の具体的な OAS Schema / Response 生成
 - `/version` の具体的な OAS Response Schema 生成
-- `servers` の環境値注入
+- OpenAPI `servers` の生成
 
 これらは OpenAPI 3.1 Generation の責務とする。
 
@@ -2005,7 +2045,7 @@ OpenAPI Generation の主な責務は以下とする。
 - Resolved Response を OpenAPI Response Object へ変換する
 - ARIADNE built-in を OpenAPI の具体的な定義へ変換する
 - `externalDocs` を OpenAPI External Documentation Object へ変換する
-- `servers` を環境 / Build 情報から注入する
+- 実行環境未設定を示す固定の `servers` を生成する
 
 Generation は Variant の展開、Parameter Usage の決定、
 Success Status の決定、OperationId の生成等を行わない。
@@ -2046,14 +2086,26 @@ components:
 Application Version は、Semantic Version として解釈可能な Git Tag から Build 時に取得する。
 Semantic Version として解釈できない開発用 Tag 等は Application Version として使用しない。
 
-`servers` も ARIADNE Source / Resolved Model では管理せず、環境 / Build 側から注入する。
+`servers` は ARIADNE Source / Resolved Model では管理しない。
+
+OpenAPI Generation 時に、実行環境が未設定であることを示す固定の Server を生成する。
+
+```yaml
+servers:
+  - url: https://not-configured.invalid
+    description: 実行環境で設定
+```
+
+この OAS 自体は実行環境の接続先を定義しない。実際の接続先は実行環境側で設定し、OpenAPI Generation の責務とはしない。
 
 ### 13.3 Schema Generation
 
 Resolved Model の `schemas` は OpenAPI `components/schemas` へ変換する。
 
-Resolved Schema はすでに Variant / Parent Variant / API Usage Override 等が
-適用された完成 Schema であるため、 OpenAPI Generation では Schema の再構成を行わない。
+Resolved Schema はすでに Variant / Parent Variant、および API Usage の構造に関する Override が
+適用された完成 Schema であるため、OpenAPI Generation では Schema の再構成を行わない。
+API Usage の `exampleOverride` は Schema 構造には適用せず、
+Request / Response Generation 時に完成 Example の生成へ使用する。
 
 例えば、
 
@@ -2145,6 +2197,53 @@ items:
 Resolved Response の HTTP Status Key はそのまま OpenAPI `responses` の Status Key として使用する。
 
 Response Header が存在する場合は、OpenAPI Response Object の `headers` へ変換する。
+
+#### Example Generation
+
+Resolved Request / Response に `exampleOverride` が存在する場合、
+OpenAPI Generation で Request / Response の利用コンテキストに応じた完成 Example を生成する。
+
+Example の値は、以下の優先順位で解決する。
+
+```text
+API Usage exampleOverride
+    ↓
+Resource / Variant Property example
+    ↓
+Phase 2 Element example
+```
+
+上位で指定された Example は、対応する下位の Example を Override する。
+
+Request Example の生成では `readOnly: true` の Property を送信対象とせず、
+Response Example の生成では `writeOnly: true` の Property を応答対象としない。
+
+API Usage の Example は OpenAPI Schema Component の `example` には出力せず、
+Request / Response の利用コンテキストに対応する Example として出力する。
+
+Request の場合は、例えば以下へ出力する。
+
+```yaml
+requestBody:
+  content:
+    application/json:
+      schema:
+        $ref: "#/components/schemas/Order.WithDetails"
+      example:
+        orderPic: U0672
+        customerId: C1234567
+        urgent: true
+        details:
+          - productNo: P123456
+            quantity: 10
+            sellingPrice: 1000
+```
+
+`readOnly: true` かつ `required: true` の Property を含む Schema を Request で利用する場合でも、
+Request Example では当該 Property を省略できる。
+
+Resource / Variant Schema は Request / Response の双方で共通利用し、
+Request / Response の利用コンテキストのみを理由として専用 Schema を生成しない。
 
 ### 13.7 Built-in Generation
 

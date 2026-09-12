@@ -348,6 +348,8 @@ schemas:
       details:
         array:
           schemaRef: $OrderDetail
+        required: true
+        minItems: 1
         name: 受注明細
         description: |
           受注に含まれる明細情報。
@@ -478,76 +480,6 @@ schemas:
         readOnly: true
         name: エラー内容
 
-  PostOrdersRequest:
-    origin:
-      kind: apiUsage
-      operationId: orders-post
-      usage: request
-      baseSchemaRef: $Order.WithDetails
-
-    properties:
-      orderNo:
-        elementRef: $receivedOrderNo
-        required: true
-        readOnly: true
-        name: 受注番号
-        description: 登録時に自動採番される受注番号。
-
-      orderDate:
-        elementRef: $orderDate
-        required: true
-        readOnly: true
-        name: 受注日
-        description: 登録時に自動設定される受注日。
-
-      orderPic:
-        elementRef: $userId
-        required: true
-        name: 受注担当者
-        description: この受注を担当するユーザーのID。
-
-      customerId:
-        elementRef: $customerId
-        required: true
-        name: 顧客ID
-
-      orderStatus:
-        elementRef: $orderStatus
-        required: true
-        readOnly: true
-        name: 受注ステータス
-
-      urgent:
-        elementRef: $urgent
-        required: true
-        name: 至急
-
-      notes:
-        elementRef: $comment
-        name: 摘要
-        description: 受注に関する補足情報。
-        example: 要注意顧客。
-
-      desiredDeliveryTime:
-        elementRef: $desiredDeliveryTime
-        name: 希望納品時刻
-
-      details:
-        array:
-          schemaRef: $OrderDetail
-        minItems: 1
-        name: 受注明細
-        description: |
-          受注に含まれる明細情報。
-        required: true
-        example:
-          - productNo: P123456
-            quantity: 10
-            sellingPrice: 1000
-          - productNo: P654321
-            quantity: 5
-            sellingPrice: 1200
-
 apis:
   /orders:
     get:
@@ -598,7 +530,15 @@ apis:
         - parameterRef: $traceId
 
       request:
-        schemaRef: $PostOrdersRequest
+        schemaRef: $Order.WithDetails
+        exampleOverride:
+          details:
+            - productNo: P123456
+              quantity: 10
+              sellingPrice: 1000
+            - productNo: P654321
+              quantity: 5
+              sellingPrice: 1200
 
       response:
         "201":
