@@ -503,7 +503,7 @@ apis:
         - parameterRef: $limit
         - parameterRef: $offset
 
-      response:
+      responses:
         "200":
           description: 正常終了
           headers:
@@ -540,7 +540,7 @@ apis:
               quantity: 5
               sellingPrice: 1200
 
-      response:
+      responses:
         "201":
           description: 正常終了
           headers:
@@ -573,7 +573,7 @@ apis:
       requestHeaders:
         - parameterRef: $traceId
 
-      response:
+      responses:
         "200":
           description: 正常終了
           schemaRef: $Order
@@ -598,7 +598,7 @@ apis:
       request:
         schemaRef: $Order
 
-      response:
+      responses:
         "200":
           description: 正常終了
           schemaRef: $Order
@@ -627,7 +627,7 @@ apis:
       request:
         schemaRef: $Order.DateUpdate
 
-      response:
+      responses:
         "200":
           description: 正常終了
           schemaRef: $Order
@@ -654,7 +654,7 @@ apis:
       requestHeaders:
         - parameterRef: $traceId
 
-      response:
+      responses:
         "200":
           description: 正常終了
           array:
@@ -683,7 +683,7 @@ apis:
           schemaRef: $OrderDetail
         minItems: 1
 
-      response:
+      responses:
         "201":
           description: 正常終了
           schemaRef: $Order
@@ -711,7 +711,7 @@ apis:
       requestHeaders:
         - parameterRef: $traceId
 
-      response:
+      responses:
         "204":
           description: 正常終了
         default:
@@ -737,7 +737,7 @@ apis:
       request:
         schemaRef: $OrderShipment
 
-      response:
+      responses:
         "201":
           description: 正常終了
           array:
@@ -768,7 +768,7 @@ apis:
       request:
         schemaRef: $Cancellation
 
-      response:
+      responses:
         "201":
           description: 正常終了
           array:
@@ -795,7 +795,7 @@ apis:
       request:
         schemaRef: $ExportCondition
 
-      response:
+      responses:
         "202":
           description: エクスポート正常終了
           schemaRef: $ExportResult
@@ -815,7 +815,7 @@ apis:
       tag: System
       summary: ヘルスチェック
 
-      response:
+      responses:
         "200":
           description: 正常終了
         default:
@@ -828,7 +828,7 @@ apis:
       tag: System
       summary: バージョン取得
 
-      response:
+      responses:
         "200":
           description: 正常終了
           builtIn: version

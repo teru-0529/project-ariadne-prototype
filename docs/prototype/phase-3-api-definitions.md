@@ -676,7 +676,7 @@ Resolved Model では Source / Raw Model の `success` / `errors` 表現は解�
 HTTP Status を Key とする Response Map へ正規化する。
 
 ```yaml
-response:
+responses:
   "202":
     description: エクスポート正常終了
     schemaRef: $ExportResult
@@ -716,7 +716,7 @@ built-in Operation の `tag` は `System` とする。
     tag: System
     summary: ヘルスチェック
 
-    response:
+    responses:
       "200":
         description: 正常終了
       default:
@@ -735,7 +735,7 @@ built-in Operation の `tag` は `System` とする。
     tag: System
     summary: バージョン取得
 
-    response:
+    responses:
       "200":
         description: 正常終了
         builtIn: version
@@ -1819,7 +1819,7 @@ request:
 Array:
 
 ```yaml
-response:
+responses:
   "200":
     description: 正常終了
     array:
@@ -1828,16 +1828,16 @@ response:
 
 Request Body の必須性など、ARIADNE の API 意味モデルとして確定できる情報は Resolve 時に補完する。
 
-### 12.16 Response
+### 12.16 Responses
 
-Resolved Model の Response は HTTP Status を Key とする Map とする。
+Resolved Model の `responses` は HTTP Status を Key とする Map とする。
 
 標準 API では HTTP Method から Success Status を Resolve 時に決定する。
 
 例:
 
 ```yaml
-response:
+responses:
   "200":
     description: 正常終了
     schemaRef: $Order
@@ -1849,7 +1849,7 @@ response:
 Custom の Source / Raw Model で使用する `success` / `errors` は Resolve 時に同じ Status Map へ変換する。
 
 ```yaml
-response:
+responses:
   "202":
     description: エクスポート正常終了
     schemaRef: $ExportResult
@@ -1931,7 +1931,7 @@ ARIADNE が規約に基づいて Resolve 時に補完した定義であること
     operationId: health-get
     tag: System
     summary: ヘルスチェック
-    response:
+    responses:
       "200":
         description: 正常終了
       default:
@@ -1943,7 +1943,7 @@ ARIADNE が規約に基づいて Resolve 時に補完した定義であること
     operationId: version-get
     tag: System
     summary: バージョン取得
-    response:
+    responses:
       "200":
         description: 正常終了
         builtIn: version
@@ -2042,7 +2042,7 @@ OpenAPI Generation の主な責務は以下とする。
 - Resolved `parameters` / Parameter Usage を OpenAPI Parameter Object へ変換する
 - Resolved `apis` を OpenAPI `paths` / Operation Object へ変換する
 - `schemaRef` / `elementRef` / `parameterRef` を OpenAPI `$ref` へ変換する
-- Resolved Response を OpenAPI Response Object へ変換する
+- Resolved `responses` を OpenAPI Response Object へ変換する
 - ARIADNE built-in を OpenAPI の具体的な定義へ変換する
 - `externalDocs` を OpenAPI External Documentation Object へ変換する
 - 実行環境未設定を示す固定の `servers` を生成する
@@ -2180,7 +2180,7 @@ OpenAPI Generation では、
 
 ### 13.6 Request / Response Generation
 
-Resolved Model の Request / Response は、 OpenAPI Request Body / Response Object へ変換する。
+Resolved Model の `request` / `responses` は、 OpenAPI Request Body / Response Object へ変換する。
 
 `schemaRef` は OpenAPI Schema `$ref` へ変換する。
 
@@ -2194,7 +2194,7 @@ items:
 
 へ変換し、`minItems` / `maxItems` が存在する場合は Array Schema の同名属性へ変換する。
 
-Resolved Response の HTTP Status Key はそのまま OpenAPI `responses` の Status Key として使用する。
+Resolved `responses` の HTTP Status Key はそのまま OpenAPI `responses` の Status Key として使用する。
 
 Response Header が存在する場合は、OpenAPI Response Object の `headers` へ変換する。
 
