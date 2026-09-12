@@ -30,7 +30,7 @@ elements:
       minLength: 10
     example: "タスクの詳細な説明です。"
 
-  status:
+  taskStatus:
     name: 状態
     type: ENUM
     description: タスクの状態

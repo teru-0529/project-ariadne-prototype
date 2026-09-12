@@ -32,38 +32,156 @@ components:
         traceId:
           $ref: "#/components/schemas/traceId"
 
-    taskId:
+    receivedOrderNo:
       type: string
-      description: タスクを一意に識別するID
-      minLength: 26
-      maxLength: 26
-      pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
-      example: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+      description: 受注を特定する番号
+      maxLength: 16
+      minLength: 16
+      pattern: "^ORD-[0-9]{8}-[0-9]{3}$"
+      example: "ORD-20230827-001"
 
-    status:
+    userId:
       type: string
-      description: タスクの状態
-      enum:
-        - TODO
-        - IN_PROGRESS
-        - DONE
-      example: TODO
+      description: システムのユーザーを特定するID
+      maxLength: 5
+      minLength: 5
+      pattern: "^U[0-9]{4}$"
+      example: "U0672"
 
-    recordDateTime:
+    customerId:
       type: string
-      format: date-time
-      description: レコードの生成・更新日時
-      example: "2023-10-01T12:00:00+09:00"
+      description: 顧客を特定するID
+      maxLength: 8
+      minLength: 8
+      pattern: "^C[0-9]{7}$"
+      example: "C1234567"
 
     traceId:
       type: string
-      title: トレースID
       description: |
         分散トレーシングに使用されるID。
         形式は ULID + "::" + 任意の非空文字列
       maxLength: 128
       pattern: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
       example: "01ARZ3NDEKTSV4RRFFQ69G5FAV::U0672"
+
+    orderDetailNo:
+      type: integer
+      minimum: 1
+      description: 受注内で明細を識別する番号
+      example: 1
+
+    orderDate:
+      type: string
+      format: date
+      description: 受注日
+      example: "2023-08-27"
+
+    orderStatus:
+      type: string
+      maxLength: 20
+      description: 受注の状態を表すコード
+      example: "CONFIRMED"
+
+    urgent:
+      type: boolean
+      description: 至急対応が必要かを示すフラグ
+      example: true
+
+    comment:
+      type: string
+      description: 受注に関する補足情報
+      example: "至急対応が必要。"
+
+    desiredDeliveryTime:
+      type: string
+      pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+      description: 顧客が希望する納品時刻
+      example: "15:30:00"
+
+    productNo:
+      type: string
+      description: 商品を特定する番号
+      maxLength: 7
+      minLength: 7
+      pattern: "^P[0-9]{6}$"
+      example: "P123456"
+
+    quantity:
+      type: integer
+      description: 受注数、出荷済数、キャンセル数などの数量
+      minimum: 0
+      example: 10
+
+    price:
+      type: integer
+      description: 販売単価、想定原価などの金額
+      minimum: 0
+      example: 1000
+
+    profitRate:
+      type: number
+      description: 販売単価と想定原価から計算される利益率
+      minimum: 0.0
+      maximum: 100.0
+      example: 22.5
+
+    orderShipmentId:
+      type: integer
+      format: int64
+      description: 出荷情報の受注反映時に受注領域で採番する連番
+      example: 32
+
+    url:
+      type: string
+      description: |
+        ファイルをダウンロードするためのURL。
+        一時ストレージに保存されたファイルへのアクセスに使用される。
+      maxLength: 2048
+      pattern: "^https?://[a-zA-Z0-9\\-\\.]+(/[a-zA-Z0-9\\-\\._~:/?#\\[\\]@!$&'()*+,;=]*)?"
+      example: "https://example.com/downloads/orders_export_20230827.csv"
+
+    description:
+      type: string
+      description: タスクの説明
+      minLength: 10
+      example: "タスクの詳細な説明です。"
+
+    # taskId:
+    #   type: string
+    #   description: タスクを一意に識別するID
+    #   minLength: 26
+    #   maxLength: 26
+    #   pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+    #   example: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+
+    # title:
+    #   type: string
+    #   description: タスクのタイトル
+    #   maxLength: 50
+    #   example: "タスクのタイトル"
+
+    # taskStatus:
+    #   type: string
+    #   description: タスクの状態
+    #   enum:
+    #     - TODO
+    #     - IN_PROGRESS
+    #     - DONE
+    #   example: TODO
+
+    # priority:
+    #   type: integer
+    #   description: タスクの優先度,数値が小さいほど優先
+    #   minimum: 1
+    #   maximum: 5
+    #   example: 1
+
+    # recordDateTime:
+    #   type: string
+    #   format: date-time
+    #   description: レコードの生成・更新日時
+    #   example: "2023-10-01T12:00:00+09:00"
 
   responses:
     StandardError:
