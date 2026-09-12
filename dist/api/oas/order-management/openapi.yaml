@@ -336,6 +336,62 @@ components:
           description: |
             受注に含まれる明細情報。
 
+    Order.WithDetailSummaries:
+      type: object
+      required:
+        - orderNo
+        - orderDate
+        - orderPic
+        - customerId
+        - orderStatus
+        - urgent
+        - details
+      properties:
+        orderNo:
+          allOf:
+            - $ref: "#/components/schemas/receivedOrderNo"
+          readOnly: true
+          description: 登録時に自動採番される受注番号。
+
+        orderDate:
+          allOf:
+            - $ref: "#/components/schemas/orderDate"
+          readOnly: true
+          description: 登録時に自動設定される受注日。
+
+        orderPic:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: この受注を担当するユーザーのID。
+
+        customerId:
+          $ref: "#/components/schemas/customerId"
+
+        orderStatus:
+          allOf:
+            - $ref: "#/components/schemas/orderStatus"
+          readOnly: true
+
+        urgent:
+          $ref: "#/components/schemas/urgent"
+
+        notes:
+          allOf:
+            - $ref: "#/components/schemas/comment"
+          description: 受注に関する補足情報。
+          example: 要注意顧客。
+
+        desiredDeliveryTime:
+          $ref: "#/components/schemas/desiredDeliveryTime"
+
+        details:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderDetail.Summary"
+          description: |
+            受注に含まれる明細情報（主要情報のみ）。
+
     OrderShipment:
       type: object
       required:
@@ -715,7 +771,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Order.WithDetails"
+                $ref: "#/components/schemas/Order.WithDetailSummaries"
         default:
           $ref: "#/components/responses/StandardError"
 
@@ -802,7 +858,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/OrderDetail.Summary"
+                  $ref: "#/components/schemas/OrderDetail"
         default:
           $ref: "#/components/responses/StandardError"
 

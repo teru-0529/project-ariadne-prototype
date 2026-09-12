@@ -363,6 +363,70 @@ schemas:
         description: |
           受注に含まれる明細情報。
 
+  Order.WithDetailSummaries:
+    origin:
+      kind: parentVariant
+      resourceKind: mainResource
+      resource: Order
+      variant: WithDetailSummaries
+      definedBy: OrderDetail
+
+    properties:
+      orderNo:
+        elementRef: $receivedOrderNo
+        required: true
+        readOnly: true
+        name: 受注番号
+        description: 登録時に自動採番される受注番号。
+
+      orderDate:
+        elementRef: $orderDate
+        required: true
+        readOnly: true
+        name: 受注日
+        description: 登録時に自動設定される受注日。
+
+      orderPic:
+        elementRef: $userId
+        required: true
+        name: 受注担当者
+        description: この受注を担当するユーザーのID。
+
+      customerId:
+        elementRef: $customerId
+        required: true
+        name: 顧客ID
+
+      orderStatus:
+        elementRef: $orderStatus
+        required: true
+        readOnly: true
+        name: 受注ステータス
+
+      urgent:
+        elementRef: $urgent
+        required: true
+        name: 至急
+
+      notes:
+        elementRef: $comment
+        name: 摘要
+        description: 受注に関する補足情報。
+        example: 要注意顧客。
+
+      desiredDeliveryTime:
+        elementRef: $desiredDeliveryTime
+        name: 希望納品時刻
+
+      details:
+        array:
+          schemaRef: $OrderDetail.Summary
+        required: true
+        minItems: 1
+        name: 受注明細サマリ
+        description: |
+          受注に含まれる明細情報（主要情報のみ）。
+
   OrderShipment:
     origin:
       kind: action
@@ -599,7 +663,7 @@ apis:
       responses:
         "200":
           description: 正常終了
-          schemaRef: $Order.WithDetails
+          schemaRef: $Order.WithDetailSummaries
         default:
           builtIn: error
 
@@ -681,7 +745,7 @@ apis:
         "200":
           description: 正常終了
           array:
-            schemaRef: $OrderDetail.Summary
+            schemaRef: $OrderDetail
         default:
           builtIn: error
 

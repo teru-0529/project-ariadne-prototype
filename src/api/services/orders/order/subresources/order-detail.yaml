@@ -93,6 +93,18 @@ parentVariants:
         description: |
           受注に含まれる明細情報。
 
+  WithDetailSummaries:
+    add:
+      details:
+        array:
+          resource: OrderDetail
+          variant: Summary
+        required: true
+        minItems: 1
+        name: 受注明細サマリ
+        description: |
+          受注に含まれる明細情報（主要情報のみ）。
+
 api:
   createOrder:
     path: /orders
@@ -134,7 +146,7 @@ api:
 
       response:
         resource: Order
-        variant: WithDetails
+        variant: WithDetailSummaries
 
   details:
     path: /orders/{received_order_no}/details
@@ -148,7 +160,6 @@ api:
       response:
         array:
           resource: OrderDetail
-          variant: Summary
 
     post:
       summary: 受注明細追加
