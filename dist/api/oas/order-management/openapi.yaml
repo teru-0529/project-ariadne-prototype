@@ -263,6 +263,105 @@ components:
           description: |
             受注に含まれる明細情報。
 
+    OrderShipment:
+      type: object
+      required:
+        - shipmentId
+        - customerId
+        - details
+      properties:
+        shipmentId:
+          allOf:
+            - $ref: "#/components/schemas/orderShipmentId"
+          readOnly: true
+
+        customerId:
+          $ref: "#/components/schemas/customerId"
+
+        details:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderShipmentDetail"
+          description: |
+            出荷対象となる受注明細。
+            同一顧客であれば複数受注にまたがって指定できる。
+
+    OrderShipmentDetail:
+      type: object
+      required:
+        - orderNo
+        - detailNo
+        - quantity
+      properties:
+        orderNo:
+          $ref: "#/components/schemas/receivedOrderNo"
+
+        detailNo:
+          $ref: "#/components/schemas/orderDetailNo"
+
+        quantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          description: 今回出荷する数量。
+
+    Cancellation:
+      type: object
+      required:
+        - details
+      properties:
+        details:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CancellationDetail"
+
+    CancellationDetail:
+      type: object
+      required:
+        - detailNo
+        - quantity
+      properties:
+        detailNo:
+          $ref: "#/components/schemas/orderDetailNo"
+
+        quantity:
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          description: 今回キャンセルする数量。
+
+    ExportCondition:
+      type: object
+      properties:
+        customerId:
+          $ref: "#/components/schemas/customerId"
+
+        orderDateFrom:
+          $ref: "#/components/schemas/orderDate"
+
+        orderDateTo:
+          $ref: "#/components/schemas/orderDate"
+
+    ExportResult:
+      type: object
+      required:
+        - downloadUrl
+      properties:
+        downloadUrl:
+          allOf:
+            - $ref: "#/components/schemas/url"
+          readOnly: true
+
+    ValidationError:
+      type: object
+      required:
+        - errorDescription
+      properties:
+        errorDescription:
+          allOf:
+            - $ref: "#/components/schemas/description"
+          readOnly: true
+
     # built-in
     Error:
       type: object
