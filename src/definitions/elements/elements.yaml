@@ -6,47 +6,51 @@ kind: elements
 elements:
   taskId:
     name: タスクID
-    type: ULID
+    type: GENERATED_ID
     description: タスクを特定するID
+    constraints:
+      maxLength: 26
+      minLength: 26
+      regex: "^[0-9A-HJKMNP-TV-Z]{26}$"
     example: "01F8MECHZX3TBDSZ7XRADM79XE"
 
   title:
     name: タイトル
     type: STRING
     description: タスクのタイトル
-    example: "タスクのタイトル"
     constraints:
       maxLength: 50
+    example: "タスクのタイトル"
 
   description:
     name: 説明
     type: TEXT
     description: タスクの説明
-    example: "タスクの詳細な説明です。"
     constraints:
       minLength: 10
+    example: "タスクの詳細な説明です。"
 
   status:
     name: 状態
     type: ENUM
     description: タスクの状態
-    example: "TODO"
     values:
-      - TODO:
-          name: 未着手
-      - IN_PROGRESS:
-          name: 進行中
-      - DONE:
-          name: 完了
+      TODO:
+        name: 未着手
+      IN_PROGRESS:
+        name: 進行中
+      DONE:
+        name: 完了
+    example: "TODO"
 
   priority:
     name: 優先度
     type: INTEGER
     description: タスクの優先度,数値が小さいほど優先
-    example: 1
     constraints:
       minimum: 1
       maximum: 5
+    example: 1
 
   recordDateTime:
     name: レコード管理日時
@@ -56,12 +60,12 @@ elements:
 
   receivedOrderNo:
     name: 受注番号
-    type: FIXED_STRING
-    identifier: true
+    type: GENERATED_ID
     description: 受注を特定する番号
     constraints:
-      length: 17
-    regex: "ORD-[0-9]{8}-[0-9]{3}"
+      maxLength: 16
+      minLength: 16
+      regex: "^ORD-[0-9]{8}-[0-9]{3}$"
     example: "ORD-20230827-001"
 
   orderDate:
@@ -75,17 +79,19 @@ elements:
     type: PROVIDED_ID
     description: システムのユーザーを特定するID
     constraints:
-      length: 5
-    regex: "U[0-9]{4}"
+      maxLength: 5
+      minLength: 5
+      regex: "^U[0-9]{4}$"
     example: "U0672"
 
   customerId:
     name: 顧客ID
-    type: PROVIDED_ID
+    type: GENERATED_ID
     description: 顧客を特定するID
     constraints:
-      length: 8
-    regex: "C[0-9]{7}"
+      maxLength: 8
+      minLength: 8
+      regex: "^C[0-9]{7}$"
     example: "C1234567"
 
   comment:
@@ -105,9 +111,12 @@ elements:
 
   productNo:
     name: 商品番号
-    type: PROVIDED_ID
+    type: GENERATED_ID
     description: 商品を特定する番号
-    regex: "P[0-9]{6}"
+    constraints:
+      maxLength: 7
+      minLength: 7
+      regex: "^P[0-9]{6}$"
     example: "P123456"
 
   quantity:
@@ -131,19 +140,21 @@ elements:
     type: DECIMAL
     description: 販売単価と想定原価から計算される利益率
     constraints:
+      precision: 5
+      scale: 2
       minimum: 0.0
       maximum: 100.0
     example: 22.5
 
   traceId:
     name: トレースID
-    type: STRING
+    type: GENERATED_ID
     description: |
       分散トレーシングに使用されるID。
       形式は　ULID + "::" + 任意の非空文字列
     constraints:
       maxLength: 128
-    pattern: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
+      regex: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
     example: 01ARZ3NDEKTSV4RRFFQ69G5FAV::U0672
 
   url:
@@ -152,7 +163,9 @@ elements:
     description: |
       ファイルをダウンロードするためのURL。
       一時ストレージに保存されたファイルへのアクセスに使用される。
-    regex: "https?://[a-zA-Z0-9\\-\\.]+(/[a-zA-Z0-9\\-\\._~:/?#\\[\\]@!$&'()*+,;=]*)?"
+    constraints:
+      maxLength: 2048
+      regex: "^https?://[a-zA-Z0-9\\-\\.]+(/[a-zA-Z0-9\\-\\._~:/?#\\[\\]@!$&'()*+,;=]*)?"
     example: "https://example.com/downloads/orders_export_20230827.csv"
 
   orderShipmentId:
@@ -165,6 +178,8 @@ elements:
     name: 受注ステータス
     type: CODE
     description: 受注の状態を表すコード
+    constraints:
+      maxLength: 20
     example: "CONFIRMED"
 
   urgent:

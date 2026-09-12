@@ -24,8 +24,8 @@ types:
           - "*No"
 
   SEQUENCE_ID:
-    name: 連番ID
-    description: システムにより自動採番される数値識別子
+    name: 生成ID（連番）
+    description: システムが自動採番する数値識別子
     identifier: true
     constraints:
       required: []
@@ -40,15 +40,18 @@ types:
           - "*Id"
           - "*No"
 
-  ULID:
-    name: ULID
-    description: 順序性ありのシステムにより生成識別子
+  GENERATED_ID:
+    name: 生成ID（文字列）
+    description: システムが生成する文字列識別子（生成方式はULID等）
     identifier: true
     constraints:
-      required: []
-      optional: []
+      required:
+        - maxLength
+      optional:
+        - minLength
+        - regex
     postgresql:
-      type: char
+      type: varchar
     openapi:
       type: string
     recommendations:
@@ -197,6 +200,7 @@ types:
       type: date
     openapi:
       type: string
+      format: date
     recommendations:
       - naming:
           - "*Date"
@@ -208,6 +212,8 @@ types:
     constraints:
       required: []
       optional: []
+    validation:
+      regex: "^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
     postgresql:
       type: time
     openapi:
