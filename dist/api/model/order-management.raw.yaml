@@ -133,15 +133,6 @@ resources:
         pathParameters:
           - parameterRef: $receivedOrderNo
 
-        get:
-          summary: 受注取得
-
-          description: |
-            指定された受注番号の受注情報を取得する。
-
-          response:
-            resourceRef: $Order
-
         put:
           summary: 受注更新
 
@@ -195,16 +186,19 @@ resources:
         elementRef: $quantity
         required: true
         name: 受注数
+        description: 受注数量
 
       shippingQuantity:
         elementRef: $quantity
         readOnly: true
         name: 出荷済数
+        description: 出荷済数量
 
       cancelQuantity:
         elementRef: $quantity
         readOnly: true
         name: キャンセル数
+        description: キャンセル数量
 
       remainingQuantity:
         elementRef: $quantity
@@ -218,16 +212,19 @@ resources:
         elementRef: $price
         required: true
         name: 販売単価
+        description: 販売単価
 
       costPrice:
         elementRef: $price
         readOnly: true
         name: 想定原価
+        description: 想定原価
 
       profitRate:
         elementRef: $profitRate
         readOnly: true
         name: 想定利益率
+        description: 想定利益率
 
     variants:
       Summary:
@@ -283,6 +280,21 @@ resources:
           externalDocs:
             url: ./docs/order-create.md
             description: 受注登録の詳細仕様
+
+      getOrder:
+        path: /orders/{received_order_no}
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+
+        get:
+          summary: 受注取得
+
+          description: |
+            指定された受注番号の受注情報を取得する。
+
+          response:
+            resourceRef: $Order
+            variant: WithDetails
 
       details:
         path: /orders/{received_order_no}/details

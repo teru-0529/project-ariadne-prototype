@@ -11,6 +11,68 @@ servers:
     description: 実行環境で設定
 
 components:
+  # parameters
+  parameters:
+    receivedOrderNo-path:
+      name: received_order_no
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/receivedOrderNo"
+
+    orderPic-query:
+      name: order_pic
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/userId"
+      description: 受注担当者。
+      example: U1234
+
+    customerId-query:
+      name: customer_id
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/customerId"
+      description: 顧客ID。
+
+    traceId-header:
+      name: X-Trace-ID
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/traceId"
+      description: トレースID。
+
+    detailNo-path:
+      name: detail_no
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/orderDetailNo"
+      description: 受注明細番号。
+
+    limit-query:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+      description: 1ページ当りの最大取得件数。
+      example: 1
+
+    offset-query:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+      description: 取得するページ番号。
+      example: 1
+
   schemas:
     # resources
     Order:
@@ -107,7 +169,7 @@ components:
           readOnly: true
           description: 受注明細の件数。
 
-    Order.DateUpdate:
+    PatchOrdersReceivedOrderNoDateRequest:
       type: object
       required:
         - orderDate
@@ -115,7 +177,6 @@ components:
         orderDate:
           allOf:
             - $ref: "#/components/schemas/orderDate"
-          readOnly: true
           description: 登録時に自動設定される受注日。
 
     OrderDetail:
@@ -138,17 +199,21 @@ components:
           $ref: "#/components/schemas/productNo"
 
         quantity:
-          $ref: "#/components/schemas/quantity"
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          description: 受注数量
 
         shippingQuantity:
           allOf:
             - $ref: "#/components/schemas/quantity"
           readOnly: true
+          description: 出荷済数量
 
         cancelQuantity:
           allOf:
             - $ref: "#/components/schemas/quantity"
           readOnly: true
+          description: キャンセル数量
 
         remainingQuantity:
           allOf:
@@ -158,17 +223,21 @@ components:
             受注数から出荷済数およびキャンセル数を差し引いた数量。
 
         sellingPrice:
-          $ref: "#/components/schemas/price"
+          allOf:
+            - $ref: "#/components/schemas/price"
+          description: 販売単価
 
         costPrice:
           allOf:
             - $ref: "#/components/schemas/price"
           readOnly: true
+          description: 想定原価
 
         profitRate:
           allOf:
             - $ref: "#/components/schemas/profitRate"
           readOnly: true
+          description: 想定利益率
 
     OrderDetail.Summary:
       type: object
@@ -187,17 +256,21 @@ components:
           $ref: "#/components/schemas/productNo"
 
         quantity:
-          $ref: "#/components/schemas/quantity"
+          allOf:
+            - $ref: "#/components/schemas/quantity"
+          description: 受注数量
 
         shippingQuantity:
           allOf:
             - $ref: "#/components/schemas/quantity"
           readOnly: true
+          description: 出荷済数量
 
         cancelQuantity:
           allOf:
             - $ref: "#/components/schemas/quantity"
           readOnly: true
+          description: キャンセル数量
 
         remainingQuantity:
           allOf:
@@ -545,13 +618,46 @@ components:
 
 paths:
   /orders:
-    post:
+    get: #FIXME: 不完全（Has-More）
+      operationId: orders-get
+      tags:
+        - Order
+      summary: 受注一覧取得
+      description: |
+        条件に一致する受注情報を取得する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+        - $ref: "#/components/parameters/orderPic-query"
+        - $ref: "#/components/parameters/customerId-query"
+        - $ref: "#/components/parameters/limit-query"
+        - $ref: "#/components/parameters/offset-query"
+
+      responses:
+        "200":
+          description: 正常終了
+          # headers:
+          #   Has-More:
+          #     builtIn: pagination
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order.Summary"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+    post: #FIXME: 不完全（Location、externalDocs）
       operationId: orders-post
       tags:
         - Order
       summary: 受注登録
       description: |
         受注情報と1件以上の受注明細を登録する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
 
       requestBody:
         required: true
@@ -570,6 +676,295 @@ paths:
                 - productNo: P654321
                   quantity: 5
                   sellingPrice: 1200
+
+      responses:
+        "201":
+          description: 正常終了
+          # headers:
+          #   Location:
+          #     builtIn: location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+      # externalDocs:
+      #   url: ./docs/order-create.md
+      #   description: 受注登録の詳細仕様
+
+  /orders/{received_order_no}:
+    parameters:
+      - $ref: "#/components/parameters/receivedOrderNo-path"
+
+    get:
+      operationId: orders-received-order-no-get
+      tags:
+        - Order
+      summary: 受注取得
+      description: |
+        指定された受注番号の受注情報を取得する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order.WithDetails"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+    put:
+      operationId: orders-received-order-no-put
+      tags:
+        - Order
+      summary: 受注更新
+      description: |
+        指定された受注情報を全体更新する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Order"
+
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /orders/{received_order_no}/date:
+    parameters:
+      - $ref: "#/components/parameters/receivedOrderNo-path"
+
+    patch:
+      operationId: orders-received-order-no-date-patch
+      tags:
+        - Order
+      summary: 受注日変更
+      description: |
+        指定された受注の受注日を変更する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchOrdersReceivedOrderNoDateRequest"
+
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /orders/{received_order_no}/details:
+    parameters:
+      - $ref: "#/components/parameters/receivedOrderNo-path"
+
+    get:
+      operationId: orders-received-order-no-details-get
+      tags:
+        - Order
+      summary: 受注明細一覧取得
+      description: |
+        指定された受注に紐づく明細情報を取得する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderDetail.Summary"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+    post:
+      operationId: orders-received-order-no-details-post
+      tags:
+        - Order
+      summary: 受注明細追加
+      description: |
+        指定された受注に1件以上の受注明細を追加する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderDetail"
+              minItems: 1
+
+      responses:
+        "201":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /orders/{received_order_no}/details/{detail_no}:
+    parameters:
+      - $ref: "#/components/parameters/receivedOrderNo-path"
+      - $ref: "#/components/parameters/detailNo-path"
+
+    delete:
+      operationId: orders-received-order-no-details-detail-no-delete
+      tags:
+        - Order
+      summary: 受注明細削除
+      description: |
+        指定された受注明細を削除する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      responses:
+        "204":
+          description: 正常終了
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /order-shipments:
+    post:
+      operationId: order-shipments-post
+      tags:
+        - Order
+      summary: 受注出荷反映
+      description: |
+        出荷・在庫領域で確定した出荷情報を受注領域へ反映する。
+        対象となる受注明細の出荷済数を増加し、受注残を減少させる。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderShipment"
+
+      responses:
+        "201":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderDetail.Summary"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /orders/{received_order_no}/cancellations:
+    parameters:
+      - $ref: "#/components/parameters/receivedOrderNo-path"
+
+    post:
+      operationId: orders-received-order-no-cancellations-post
+      tags:
+        - Order
+      summary: 受注キャンセル登録
+      description: |
+        指定された受注に対して明細単位のキャンセルを登録する。
+        対象となる受注明細のキャンセル数を増加し、受注残を減少させる。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cancellation"
+
+      responses:
+        "201":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderDetail.Summary"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /orders/export:
+    post:
+      operationId: orders-export-post
+      tags:
+        - Order
+      summary: 受注エクスポート
+      description: |
+        指定された条件に一致する受注情報をファイル化し、
+        一時ストレージに保存したダウンロード用URLを返却する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportCondition"
+
+      responses:
+        "202":
+          description: エクスポート正常終了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportResult"
+        "400":
+          description: 入力チェックエラー
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationError"
+        "409":
+          description: 処理コンフリクト
+        default:
+          $ref: "#/components/responses/StandardError"
 
   /health:
     get:

@@ -213,16 +213,19 @@ schemas:
         elementRef: $quantity
         required: true
         name: 受注数
+        description: 受注数量
 
       shippingQuantity:
         elementRef: $quantity
         readOnly: true
         name: 出荷済数
+        description: 出荷済数量
 
       cancelQuantity:
         elementRef: $quantity
         readOnly: true
         name: キャンセル数
+        description: キャンセル数量
 
       remainingQuantity:
         elementRef: $quantity
@@ -235,16 +238,19 @@ schemas:
         elementRef: $price
         required: true
         name: 販売単価
+        description: 販売単価
 
       costPrice:
         elementRef: $price
         readOnly: true
         name: 想定原価
+        description: 想定原価
 
       profitRate:
         elementRef: $profitRate
         readOnly: true
         name: 想定利益率
+        description: 想定利益率
 
   OrderDetail.Summary:
     origin:
@@ -271,16 +277,19 @@ schemas:
         elementRef: $quantity
         required: true
         name: 受注数
+        description: 受注数量
 
       shippingQuantity:
         elementRef: $quantity
         readOnly: true
         name: 出荷済数
+        description: 出荷済数量
 
       cancelQuantity:
         elementRef: $quantity
         readOnly: true
         name: キャンセル数
+        description: キャンセル数量
 
       remainingQuantity:
         elementRef: $quantity
@@ -480,6 +489,20 @@ schemas:
         readOnly: true
         name: エラー内容
 
+  PatchOrdersReceivedOrderNoDateRequest:
+    origin:
+      kind: apiUsage
+      operationId: orders-received-order-no-date-patch
+      usage: request
+      baseSchemaRef: $Order.DateUpdate
+
+    properties:
+      orderDate:
+        elementRef: $orderDate
+        required: true
+        name: 受注日
+        description: 登録時に自動設定される受注日。
+
 apis:
   /orders:
     get:
@@ -576,7 +599,7 @@ apis:
       responses:
         "200":
           description: 正常終了
-          schemaRef: $Order
+          schemaRef: $Order.WithDetails
         default:
           builtIn: error
 
@@ -625,7 +648,7 @@ apis:
         - parameterRef: $traceId
 
       request:
-        schemaRef: $Order.DateUpdate
+        schemaRef: $PatchOrdersReceivedOrderNoDateRequest
 
       responses:
         "200":

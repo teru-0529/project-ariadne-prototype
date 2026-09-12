@@ -105,15 +105,6 @@ api:
   member:
     path: /orders/{received_order_no}
 
-    get:
-      summary: 受注取得
-
-      description: |
-        指定された受注番号の受注情報を取得する。
-
-      response:
-        resource: Order
-
     put:
       summary: 受注更新
 
