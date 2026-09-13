@@ -2537,6 +2537,67 @@ OpenAPI Validation / API Document 生成のための開発ツールとして利�
 Wails Application への API Document 表示機能の組み込み方式は、
 後続 Phase で決定する。
 
+### 14.6 Development Tools
+
+生成した OpenAPI 3.1 は、API Document の生成だけでなく、Backend / Frontend の開発支援環境からも利用する。
+
+Prototype では以下を想定する。
+
+| Tool | 主な利用者 | 用途 |
+| --- | --- | --- |
+| ReDoc | API 利用者 / 開発者 | API 仕様の参照 |
+| Swagger UI | Backend 実装者 | OAS を利用した API 実装・動作確認 |
+| Mock Server | Frontend 実装者 | Backend 実装前の API 呼び出し・画面開発 |
+
+Swagger UI / Mock Server は ARIADNE Source / Raw Model / Resolved Model に専用定義を持たない。
+
+いずれも生成済み OpenAPI 3.1 を入力として利用する。
+
+```text
+ARIADNE Source
+      ↓
+Raw Model
+      ↓
+Resolved Model
+      ↓
+OpenAPI 3.1
+      ├─ ReDoc
+      ├─ Swagger UI
+      └─ Mock Server
+```
+
+Swagger UI / Mock Server は Docker Container として起動し、 Docker Compose からまとめて起動可能な開発支援環境とする。
+
+Prototype における Mock Server には Prism を利用する。
+
+```text
+OpenAPI 3.1
+      ↓
+Prism Mock Server
+      ↓
+Frontend Application
+```
+
+Mock Server 固有のレスポンス定義等を ARIADNE Source に追加せず、
+OpenAPI 3.1 に定義された Schema / Example 等を Mock Server が利用する。
+
+将来的な ARIADNE Development Environment では、 Swagger UI / Mock Server に加えて、
+Phase 4 で生成する DDL を利用した PostgreSQL も Docker Compose から起動可能とする。
+
+```text
+ARIADNE Development Environment
+
+OpenAPI 3.1
+  ├─ Swagger UI
+  └─ Mock Server
+
+DDL
+  └─ PostgreSQL
+```
+
+PostgreSQL の初期化方法および DDL 適用方式は Phase 4 で設計する。
+Database Migration は Prototype Phase 4 の必須要件とはしない。
+
 ------------------------------------------------------------------------
 
 ## 15. Phase 2 / Phase 4 との境界
@@ -2619,7 +2680,8 @@ Prototype Phase 3 は現在進行中である。
 - [x] 受注サービス OAS 3.1 サンプル作成
 - [x] OAS 成果物の配置方針
 - [x] ReDoc による API Document 生成方針
-- [ ] Mock Server の利用方針
+- [x] Swagger UI の利用方針
+- [x] Mock Server の利用方針
 - [x] externalDocs の OAS / ReDoc 成果物への取り込み方針
 - [ ] Prototype Task API の ARIADNE Source 定義
 - [ ] Prototype Task API の Raw Model 作成
