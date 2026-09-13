@@ -1,0 +1,26 @@
+formatVersion: "1.0"
+updatedAt: "2026-09-13T19:00:00+09:00"
+domain: api
+kind: parameters
+
+parameters:
+  taskId:
+    element: taskId
+    description: タスクID
+
+  taskStatus:
+    element: taskStatus
+    description: タスクの状態
+
+  priority:
+    element: priority
+    description: 優先度
+
+  taskPic:
+    element: userId
+    description: タスク担当ユーザー
+
+  traceId:
+    element: traceId
+    headerName: X-Trace-ID
+    description: トレースID。

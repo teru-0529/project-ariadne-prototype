@@ -2683,10 +2683,10 @@ Prototype Phase 3 は現在進行中である。
 - [x] Swagger UI の利用方針
 - [x] Mock Server の利用方針
 - [x] externalDocs の OAS / ReDoc 成果物への取り込み方針
-- [ ] Prototype Task API の ARIADNE Source 定義
-- [ ] Prototype Task API の Raw Model 作成
-- [ ] Prototype Task API の Resolved Model 作成
-- [ ] Prototype Task API の OAS 3.1 作成
+- [x] Prototype Task API の ARIADNE Source 定義
+- [x] Prototype Task API の Raw Model 作成
+- [x] Prototype Task API の Resolved Model 作成
+- [x] Prototype Task API の OAS 3.1 作成
 - [ ] Validation Rule ID の最終整理
 - [ ] Phase 3 ドキュメント最終更新
 - [ ] Prototype Phase 3 最終レビュー

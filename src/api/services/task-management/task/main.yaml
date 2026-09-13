@@ -1,0 +1,101 @@
+formatVersion: "1.0"
+updatedAt: "2026-09-13T19:00:00+09:00"
+domain: api
+kind: resource
+
+resource: Task
+
+name: タスク
+
+description: |
+  タスク情報を表すメインリソース。
+
+properties:
+  taskId:
+    element: taskId
+    required: true
+    readOnly: true
+
+  title:
+    element: title
+    required: true
+
+  description:
+    element: description
+
+  createUser:
+    element: userId
+    required: true
+    name: 登録ユーザー
+    description: タスク登録ユーザー
+
+  taskPic:
+    element: userId
+    name: 担当者
+    description: タスク担当ユーザー
+
+  taskStatus:
+    element: taskStatus
+    required: true
+
+  priority:
+    element: priority
+    required: true
+
+  urgent:
+    element: urgent
+    required: true
+
+api:
+  collection:
+    path: /tasks
+
+    get:
+      summary: タスク一覧取得
+
+      description: |
+        条件に一致するタスク情報を取得する。
+
+      pagination: true
+
+      queryParameters:
+        - taskStatus
+        - priority
+        - taskPic
+
+      response:
+        array:
+          resource: Task
+
+    post:
+      summary: タスク登録
+
+      description: |
+        タスク情報を登録する。
+
+      location:
+        example: /tasks/01F8MECHZX3TBDSZ7XRADM79XE
+
+      request:
+        resource: Task
+
+  member:
+    path: /tasks/{task_id}
+
+    get:
+      summary: タスク取得
+
+      description: |
+        指定されたタスクIDのタスク情報を取得する。
+
+      response:
+        resource: Task
+
+    put:
+      summary: タスク更新
+
+      description: |
+        指定されたタスク情報を全体更新する。
+
+      request:
+        resource: Task

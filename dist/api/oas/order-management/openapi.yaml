@@ -4,7 +4,7 @@ info:
   title: 受注サービス
   description: |
     受注および顧客情報を管理するサービス。
-  version: development
+  version: 0.0.0
 
 servers:
   - url: https://not-configured.invalid
@@ -628,42 +628,6 @@ components:
       minLength: 10
       example: "タスクの詳細な説明です。"
 
-    # taskId:
-    #   type: string
-    #   description: タスクを一意に識別するID
-    #   minLength: 26
-    #   maxLength: 26
-    #   pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
-    #   example: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
-
-    # title:
-    #   type: string
-    #   description: タスクのタイトル
-    #   maxLength: 50
-    #   example: "タスクのタイトル"
-
-    # taskStatus:
-    #   type: string
-    #   description: タスクの状態
-    #   enum:
-    #     - TODO
-    #     - IN_PROGRESS
-    #     - DONE
-    #   example: TODO
-
-    # priority:
-    #   type: integer
-    #   description: タスクの優先度,数値が小さいほど優先
-    #   minimum: 1
-    #   maximum: 5
-    #   example: 1
-
-    # recordDateTime:
-    #   type: string
-    #   format: date-time
-    #   description: レコードの生成・更新日時
-    #   example: "2023-10-01T12:00:00+09:00"
-
   responses:
     StandardError:
       description: エラー
@@ -744,7 +708,7 @@ paths:
               description: 登録されたリソースのURI。
               schema:
                 type: string
-                format: uri
+                format: uri-reference
               example: /orders/ORD-20230827-001
           content:
             application/json:
