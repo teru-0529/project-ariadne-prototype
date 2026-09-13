@@ -707,7 +707,7 @@ paths:
         default:
           $ref: "#/components/responses/StandardError"
 
-    post: #FIXME: 不完全（externalDocs）
+    post:
       operationId: orders-post
       tags:
         - Order
@@ -753,9 +753,9 @@ paths:
         default:
           $ref: "#/components/responses/StandardError"
 
-      # externalDocs:
-      #   url: ./docs/order-create.md
-      #   description: 受注登録の詳細仕様
+      externalDocs:
+        url: ./docs/order-create.html
+        description: 受注登録の詳細仕様
 
   /orders/{received_order_no}:
     parameters:

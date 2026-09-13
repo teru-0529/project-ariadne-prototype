@@ -27,6 +27,7 @@ generate_redoc() {
   SERVICE="$1"
   OAS="${OAS_ROOT}/${SERVICE}/openapi.yaml"
   HTML="${OAS_ROOT}/${SERVICE}/redoc.html"
+  EXTERNAL_DOCS="${OAS_ROOT}/${SERVICE}/docs"
 
   echo "=================================================="
   echo "Service: ${SERVICE}"
@@ -38,7 +39,7 @@ generate_redoc() {
     return 1
   fi
 
-  echo "[1/2] Lint OpenAPI..."
+  echo "[1/3] Lint OpenAPI..."
 if ! npx redocly lint "${OAS}"; then
   echo
   echo "ERROR: OpenAPI lint failed."
@@ -48,11 +49,20 @@ if ! npx redocly lint "${OAS}"; then
     echo "Removed old ReDoc: ${HTML}"
   fi
 
+  if [ -d "${EXTERNAL_DOCS}" ]; then
+    rm -rf "${EXTERNAL_DOCS}"
+    echo "Removed old externalDocs: ${EXTERNAL_DOCS}"
+  fi
+
   return 1
 fi
 
   echo
-  echo "[2/2] Generate ReDoc..."
+  echo "[2/3] Generate externalDocs..."
+  node ./tools/generate-external-doc.mjs "${SERVICE}"
+
+  echo
+  echo "[3/3] Generate ReDoc..."
   npx redocly build-docs "${OAS}" --output="${HTML}"
 
   echo

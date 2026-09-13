@@ -47,13 +47,13 @@ Phase 3 の Source of Truth は `src/api/services/` 配下の ARIADNE YAML
 Service ごとにディレクトリを分け、Service 固有の Parameter
 Definition、Resource、Action、Custom、補足ドキュメントをその配下で管理する。
 
-現時点の `orders` Service の構成例を以下に示す。
+現時点の `order-management` Service の構成例を以下に示す。
 
-``` text
+```text
 src/
 └─ api/
    └─ services/
-      ├─ orders/
+      ├─ order-management/
       │  ├─ service.yaml
       │  ├─ parameters.yaml
       │  ├─ docs/
@@ -67,12 +67,13 @@ src/
       │  │     └─ cancellation.yaml
       │  └─ customs/
       │     └─ export.yaml
-      └─ tasks/
+      └─ task-management/
          └─ ...
 ```
 
 ### 2.1 配置原則
 
+- Service ディレクトリ名は `service.yaml` の Service ID と一致させる
 - `service.yaml` は Service 自身を定義する
 - `parameters.yaml` は **Service 単位**の Parameter Definition
     を定義する
@@ -83,8 +84,8 @@ src/
 - `externalDocs.url` の相対パスは **Service Root**
     を基準として解決する
 
-`externalDocs` の最終的な物理配置および OAS
-成果物への取り込み方法は後続工程で確定する。
+`externalDocs` の Markdown は Service Root 配下の `docs/` を正本とする。
+OpenAPI / API Document 生成時に HTML へ変換し、 Service 単位の OAS 成果物ディレクトリへ生成する。
 
 ------------------------------------------------------------------------
 
@@ -1819,8 +1820,8 @@ Resolve では内容を展開しない。
 
 相対 `url` の基準は Source と同様に Service Root とする。
 
-具体的な OAS / ReDoc 成果物上の URL および補足文書の物理配置は、
-OpenAPI Generation / 成果物配置方針で確定する。
+Resolved Model では Source の Markdown URL をそのまま保持する。
+Markdown から HTML への変換および OAS 上の URL 変換は OpenAPI Generation / API Document Generation の責務とする。
 
 ### 12.15 Request / Response Schema
 
@@ -2051,6 +2052,10 @@ ARIADNE の意味モデルを OpenAPI 3.1 の構造へ変換する。
 
 Resolved Model の時点で API としての意味は確定済みとし、
 OpenAPI Generation では新たな業務的意味の解決を行わない。
+
+Prototype では `order-management` Service の OAS 3.1 サンプルを
+`dist/api/oas/order-management/openapi.yaml` に手作業で作成し、
+Redocly CLI による Validation と ReDoc 表示確認を通じて本仕様の妥当性を検証した。
 
 ### 13.1 Generation の責務
 
@@ -2324,7 +2329,7 @@ Application Version は、Semantic Version として解釈可能な Git Tag か�
 
 Resolved Model に保持された `externalDocs` は、 OpenAPI External Documentation Object へ変換する。
 
-Source で相対パスが指定されている場合は Service Root を基準として解決する。
+Source / Resolved Model では、補足文書の Source of Truth である Markdown を参照する。
 
 ```yaml
 externalDocs:
@@ -2332,7 +2337,29 @@ externalDocs:
   description: 受注登録の詳細仕様
 ```
 
-補足文書そのものを OAS / ReDoc 成果物へどのように配置するかは、 OAS 成果物の配置方針と合わせて確定する。
+OpenAPI Generation では、Markdown を HTML へ変換した成果物を生成し、
+OpenAPI の `externalDocs.url` は生成された HTML を参照する。
+
+```yaml
+externalDocs:
+  url: ./docs/order-create.html
+  description: 受注登録の詳細仕様
+```
+
+Markdown の相対パスは Service Root を基準として解決する。
+
+補足文書は以下の対応で生成する。
+
+```text
+src/api/services/{service-id}/docs/*.md
+                    ↓
+dist/api/oas/{service-id}/docs/*.html
+```
+
+Prototype では Markdown → HTML 変換に `marked` を使用する。
+
+生成 HTML は共通テンプレートを使用し、Markdown 内の最初の H1 を HTML の `title` とする。
+H1 が存在しない場合は補足文書の生成を Error とする。
 
 ### 13.9 Generation の境界
 
@@ -2424,14 +2451,21 @@ OpenAPI 3.1 の作成中は、
 ```text
 OAS 作成
   ↓
-Validation
+OpenAPI Validation
   ↓
-API Document 生成
+externalDocs HTML 生成
+  ↓
+ReDoc 生成
   ↓
 Browser 確認
 ```
 
 を繰り返し、OpenAPI Generation の設計を検証する。
+
+Prototype では Service 単位で上記処理を実行する。
+
+OpenAPI Validation が Error となった場合は、古い API Document を誤って参照しないよう、
+当該 Service の既存 `redoc.html` および生成済み `docs/` を削除する。
 
 ### 14.3 成果物配置
 
@@ -2443,53 +2477,50 @@ dist/
    └─ oas/
       └─ order-management/
          ├─ openapi.yaml
-         ├─ index.html
+         ├─ redoc.html
          └─ docs/
-            └─ order-create.md
+            └─ order-create.html
 ```
 
 - `openapi.yaml`
   - 生成された OpenAPI 3.1
-- `index.html`
-  - OpenAPI 3.1 から生成した API Document
+- `redoc.html`
+  - OpenAPI 3.1 から生成した ReDoc API Document
 - `docs/`
-  - `externalDocs` から参照する補足文書
+  - `externalDocs` から参照する生成済み HTML
 
 Service 単位のディレクトリを、
-ローカル参照および Web 公開の双方で利用可能な
-自己完結した API Document 成果物とする。
+ローカル参照および Web 公開の双方で利用可能な自己完結した API Document 成果物とする。
 
 ### 14.4 externalDocs
 
-`externalDocs` の補足文書の Source of Truth は、
-Service Root 配下の `docs/` とする。
+`externalDocs` の補足文書の Source of Truth は、Service Root 配下の `docs/` に配置した Markdown とする。
 
 例:
 
 ```text
-src/api/services/orders/
+src/api/services/order-management/
 └─ docs/
    └─ order-create.md
 ```
 
-API Document 生成時に、参照対象の補足文書を
-Service の OAS 成果物ディレクトリへコピーする。
+API Document 生成時に Markdown を HTML へ変換し、Service の OAS 成果物ディレクトリへ生成する。
 
 ```text
-src/api/services/orders/docs/order-create.md
-                    ↓
-dist/api/oas/order-management/docs/order-create.md
+src/api/services/order-management/docs/order-create.md
+                         ↓
+dist/api/oas/order-management/docs/order-create.html
 ```
 
-これにより、OpenAPI 3.1 の `externalDocs.url` は
-成果物内でも相対参照として解決可能な状態を維持する。
+OpenAPI 3.1 の `externalDocs.url` は、生成された HTML を相対 URL で参照する。
 
-Prototype では Markdown をそのままコピーする。
+```yaml
+externalDocs:
+  url: ./docs/order-create.html
+  description: 受注登録の詳細仕様
+```
 
-Markdown を Browser から直接表示した場合の可読性は、
-実際の API Document から参照して確認する。
-
-必要な場合は、後続工程で Markdown から HTML 等への変換を検討する。
+これにより、Service 単位の OAS 成果物だけで ReDoc と externalDocs を自己完結して参照できる。
 
 ### 14.5 Runtime との境界
 
@@ -2584,12 +2615,12 @@ Prototype Phase 3 は現在進行中である。
 - [x] Pagination の具体的な展開仕様
 - [x] OperationId 生成規則
 - [x] Resolved Model 上の Path / Operation 構造
-- [ ] OAS 3.1 Generation 詳細仕様
-- [ ] 受注サービス OAS 3.1 サンプル作成
-- [ ] OAS 成果物の配置方針
-- [ ] ReDoc による API Document 生成方針
+- [x] OAS 3.1 Generation 詳細仕様
+- [x] 受注サービス OAS 3.1 サンプル作成
+- [x] OAS 成果物の配置方針
+- [x] ReDoc による API Document 生成方針
 - [ ] Mock Server の利用方針
-- [ ] externalDocs の OAS / ReDoc 成果物への取り込み方針
+- [x] externalDocs の OAS / ReDoc 成果物への取り込み方針
 - [ ] Prototype Task API の ARIADNE Source 定義
 - [ ] Prototype Task API の Raw Model 作成
 - [ ] Prototype Task API の Resolved Model 作成

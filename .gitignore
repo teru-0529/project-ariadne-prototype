@@ -6,7 +6,7 @@ Thumbs.db
 .vscode/
 
 # dist
-dist/api/oas/*/redoc.html
+dist/api/oas/**/*.html
 
 # Runtime
 runtime/*
