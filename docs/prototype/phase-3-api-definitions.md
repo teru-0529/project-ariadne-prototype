@@ -610,7 +610,26 @@ Has-More は後続データの有無のみを表す。総件数は Pagination �
 
 limit / offset は ARIADNE の予約 Parameter 名とし、 Source の Parameter Definition として定義してはならない。
 
-### 7.5 HTTP Method / Success Response
+### 7.5 Location
+
+POST Operation が生成したリソースの URI を `Location` Response Header として返却する場合、 Operation 直下に `location` を指定する。
+
+```yaml
+post:
+  location:
+    example: /orders/ORD-20230827-001
+```
+
+`location` は POST Operation にのみ指定できる。
+
+`location` を指定する場合、`example` は必須とする。
+
+`location` を省略した場合、`Location` Response Header は生成しない。
+
+`response` は返却データの定義を表し、 `location` は POST Operation によるリソース生成時の振る舞いを表すため、
+`response` 配下ではなく Operation 直下に定義する。
+
+### 7.6 HTTP Method / Success Response
 
 Prototype で利用する HTTP Method は以下とする。
 
@@ -647,11 +666,7 @@ success.status は必須とする。description は任意とする。
 Success Response Body は resource または array を指定できる。
 いずれも指定しない場合は Response Body なしとする。
 
-Main Resource の新規登録 POST では `Location` Header を自動生成する方針とする。
-
-SubResource / Action / Custom の POST では自動 Location を付与しない。
-
-### 7.6 PATCH
+### 7.7 PATCH
 
 PATCH Request では、対象 Schema の Property は Request 上すべて optional
 として扱う。
@@ -659,7 +674,7 @@ PATCH Request では、対象 Schema の Property は Request 上すべて optio
 PATCH 用 Variant に明示的に含めた `readOnly` Property
 は更新対象として利用できる。
 
-### 7.7 Standard Error
+### 7.8 Standard Error
 
 全 Operation に Standard Error の `default` Response を自動付与する。
 
@@ -695,7 +710,7 @@ responses:
 
 Standard Error の具体的な OAS Response / Error Schema は OpenAPI Generation の built-in 定義として生成する。
 
-### 7.8 Built-in API
+### 7.9 Built-in API
 
 以下を ARIADNE built-in API として Resolve 時に自動生成する。
 
@@ -757,7 +772,7 @@ Application Version は Git Tag 等から供給することを想定する。
 
 built-in Operation には Service `requestHeaders` を展開しない。
 
-### 7.9 externalDocs
+### 7.10 externalDocs
 
 OpenAPI Schema だけでは表現しにくい業務ルールや処理上の補足には `externalDocs` を利用する。
 
@@ -1232,6 +1247,8 @@ Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
 | V-45 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない | Error |
 | V-46 | `limit` / `offset` を Source の Parameter Definition 名として定義しない | Error |
 | V-47 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
+| V-48 | `location` は POST にのみ指定する | Error |
+| V-49 | `location` を指定する場合 `example` が存在する | Error |
 
 ### 11.2 API Validation
 
@@ -1878,15 +1895,18 @@ headers:
     builtIn: pagination
 ```
 
-Main Resource 新規登録 POST:
+POST Operation に `location` が指定されている場合:
 
 ```yaml
 headers:
   Location:
     builtIn: location
+    example: /orders/ORD-20230827-001
 ```
 
-`Location` は Main Resource の新規登録 POST にのみ自動付与する。SubResource / Action / Custom の POST には自動付与しない。
+Source / Raw Model の `location` は Resolve 時に、成功 Response の `Location` Header へ展開する。
+
+`location` が指定されていない POST Operation には、 `Location` Header を生成しない。
 
 ### 12.17 Standard Error
 
@@ -1915,7 +1935,7 @@ ARIADNE が規約に基づいて Resolve 時に補完した定義であること
 | builtIn | 対象 | 意味 |
 | --- | --- | --- |
 | `pagination` | Parameter / Response Header | Pagination により生成 |
-| `location` | Response Header | Main Resource POST により生成 |
+| `location` | Response Header | Source / Raw Model の `location` 指定により生成 |
 | `error` | default Response | Standard Error |
 | `health` | Operation | `/health` built-in API |
 | `version` | Operation / Response | `/version` built-in API |
@@ -1994,7 +2014,7 @@ Resolve では、ARIADNE の API 意味モデルとして一意に決定でき�
 - Pagination の built-in Parameter / Response Header への展開
 - HTTP Success Status の決定
 - Standard Error Response の付与
-- Main Resource POST の Location Header の付与
+- `location` 指定による Location Header の付与
 - OperationId の生成
 - Operation tag の確定
 - API / Schema origin の付与
@@ -2273,9 +2293,21 @@ builtIn: pagination
 ```yaml
 Location:
   builtIn: location
+  example: /orders/ORD-20230827-001
 ```
 
-は OpenAPI Response Header `Location` へ変換する。
+は以下の OpenAPI Response Header `Location` へ変換する。
+
+```yaml
+Location:
+  description: 登録されたリソースのURI。
+  schema:
+    type: string
+    format: uri-reference
+  example: /orders/ORD-20230827-001
+```
+
+`Location` は `components/headers` には生成せず、対象 Response の `headers` へ inline で生成する。
 
 #### Health
 

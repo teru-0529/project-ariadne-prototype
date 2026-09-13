@@ -674,7 +674,7 @@ components:
 
 paths:
   /orders:
-    get: #FIXME: 不完全（Has-More）
+    get:
       operationId: orders-get
       tags:
         - Order
@@ -692,9 +692,12 @@ paths:
       responses:
         "200":
           description: 正常終了
-          # headers:
-          #   Has-More:
-          #     builtIn: pagination
+          headers:
+            Has-More:
+              description: 後続データが存在するかを示す。
+              schema:
+                type: boolean
+              example: true
           content:
             application/json:
               schema:
@@ -704,7 +707,7 @@ paths:
         default:
           $ref: "#/components/responses/StandardError"
 
-    post: #FIXME: 不完全（Location、externalDocs）
+    post: #FIXME: 不完全（externalDocs）
       operationId: orders-post
       tags:
         - Order
@@ -736,9 +739,13 @@ paths:
       responses:
         "201":
           description: 正常終了
-          # headers:
-          #   Location:
-          #     builtIn: location
+          headers:
+            Location:
+              description: 登録されたリソースのURI。
+              schema:
+                type: string
+                format: uri
+              example: /orders/ORD-20230827-001
           content:
             application/json:
               schema:

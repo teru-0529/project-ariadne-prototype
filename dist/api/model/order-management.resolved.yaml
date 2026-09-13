@@ -633,6 +633,7 @@ apis:
           headers:
             Location:
               builtIn: location
+              example: /orders/ORD-20230827-001
           schemaRef: $Order
         default:
           builtIn: error

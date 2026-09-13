@@ -273,6 +273,9 @@ resources:
           description: |
             受注情報と1件以上の受注明細を登録する。
 
+          location:
+            example: /orders/ORD-20230827-001
+
           request:
             resourceRef: $Order
             variantRef: $WithDetails
