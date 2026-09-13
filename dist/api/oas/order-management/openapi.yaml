@@ -20,7 +20,7 @@ components:
       schema:
         $ref: "#/components/schemas/receivedOrderNo"
 
-    orderPic-query:
+    orderPic-query-optional:
       name: order_pic
       in: query
       required: false
@@ -29,10 +29,10 @@ components:
       description: 受注担当者。
       example: U1234
 
-    customerId-query:
+    customerId-query-reqired:
       name: customer_id
       in: query
-      required: false
+      required: true
       schema:
         $ref: "#/components/schemas/customerId"
       description: 顧客ID。
@@ -53,7 +53,7 @@ components:
         $ref: "#/components/schemas/orderDetailNo"
       description: 受注明細番号。
 
-    limit-query:
+    limit-query-optional:
       name: limit
       in: query
       required: false
@@ -63,7 +63,7 @@ components:
       description: 1ページ当りの最大取得件数。
       example: 1
 
-    offset-query:
+    offset-query-optional:
       name: offset
       in: query
       required: false
@@ -648,10 +648,10 @@ paths:
 
       parameters:
         - $ref: "#/components/parameters/traceId-header"
-        - $ref: "#/components/parameters/orderPic-query"
-        - $ref: "#/components/parameters/customerId-query"
-        - $ref: "#/components/parameters/limit-query"
-        - $ref: "#/components/parameters/offset-query"
+        - $ref: "#/components/parameters/orderPic-query-optional"
+        - $ref: "#/components/parameters/customerId-query-reqired"
+        - $ref: "#/components/parameters/limit-query-optional"
+        - $ref: "#/components/parameters/offset-query-optional"
 
       responses:
         "200":

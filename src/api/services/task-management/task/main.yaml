@@ -59,9 +59,9 @@ api:
       pagination: true
 
       queryParameters:
-        - taskStatus
-        - priority
-        - taskPic
+        - parameter: taskStatus
+        - parameter: priority
+        - parameter: taskPic
 
       response:
         array:

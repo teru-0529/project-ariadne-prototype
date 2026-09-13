@@ -47,7 +47,7 @@ Phase 3 の Source of Truth は `src/api/services/` 配下の ARIADNE YAML
 Service ごとにディレクトリを分け、Service 固有の Parameter
 Definition、Resource、Action、Custom、補足ドキュメントをその配下で管理する。
 
-現時点の `order-management` Service の構成例を以下に示す。
+`order-management` Service の構成例を以下に示す。
 
 ```text
 src/
@@ -80,7 +80,7 @@ src/
 - Main Resource は Resource 用ディレクトリの `main.yaml` に定義する
 - SubResource / Action は Main Resource 配下で管理する
 - Custom は特定 Main Resource の子ではなく **Service 配下**で管理する
-- `docs/` は Service 固有の `externalDocs` 用補足文書の配置候補とする
+- `docs/` は Service 固有の `externalDocs` 用補足文書の配置先とする
 - `externalDocs.url` の相対パスは **Service Root**
     を基準として解決する
 
@@ -277,7 +277,7 @@ ARIADNE では 1 Operation に対して複数 Tag を許可しない。OpenAPI �
 
 ## 4. 命名規約
 
-現時点の命名規約を以下とする。
+命名規約を以下とする。
 
 | 対象 | 規約 | 例 |
 | --- | --- | --- |
@@ -317,7 +317,8 @@ Phase 2 Element
     └─ Parameter Definition
 ```
 
-Resource Property / Variant / API Usage、および Parameter Definition では、利用コンテキストに応じた情報を追加・Overrideできる。
+Resource Property / Variant / API Usage、および Parameter Definition では、
+それぞれの責務に応じてコンテキスト情報を追加・Overrideできる。指定可能な属性は各定義の仕様に従う。
 
 ### 5.1 Override 可能な情報
 
@@ -541,12 +542,34 @@ Element の `identifier: true` は、その Element が API
 
 Query Parameter は Operation の `queryParameters` で指定する。
 
-``` yaml
+Source では Parameter Definition を `parameter` で参照し、
+その Operation における必須性を `required` で指定できる。
+
+```yaml
 get:
   queryParameters:
-    - orderPic
-    - customerId
+    - parameter: orderPic
+    - parameter: customerId
+      required: true
 ```
+
+`required` を省略した場合は `false` とする。
+
+したがって、上記の `orderPic` は optional、 `customerId` は required の Query Parameter として扱う。
+
+Source の `parameter` は Raw Model 生成時に `parameterRef` へ正規化する。
+
+```yaml
+queryParameters:
+  - parameterRef: $orderPic
+  - parameterRef: $customerId
+    required: true
+```
+
+Raw Model でも `required` は省略可能とし、省略時は `false` として扱う。
+
+Resolve 時には `required` のデフォルト値を解決し、
+Resolved Model の `queryParameters` では `required` を必須属性として保持する。
 
 ### 7.3 Request Header
 
@@ -560,6 +583,10 @@ Service と Operation の双方から同一 Header を重複指定すること�
 Service の `requestHeaders` は Resolve 時にユーザー定義 Operation へ展開する。
 
 `/health` / `/version` 等の ARIADNE built-in Operation は Service `requestHeaders` の展開対象外とする。
+
+Request Header は Service / Operation のどちらから指定する場合も必須とし、常に `required: true` とする。
+
+Request Header では optional / required の切り替えを行わない。
 
 ### 7.4 Pagination
 
@@ -594,8 +621,10 @@ Pagination を利用する Operation では、これらを通常の Parameter �
 
 ```yaml
 queryParameters:
-- parameterRef: $limit
-- parameterRef: $offset
+  - parameterRef: $limit
+    required: false
+  - parameterRef: $offset
+    required: false
 ```
 
 Pagination Response では、後続データの有無を Has-More Response Header として返す。
@@ -993,7 +1022,7 @@ Source of Truth ではなく、ARIADNE Source から再生成可能な成果物�
 
 Raw Model は YAML として出力し、デバッグや Golden Test に利用できるようにする。
 
-生成先の現時点案:
+生成先:
 
 ``` text
 dist/api/model/order-management.raw.yaml
@@ -1066,6 +1095,7 @@ Main / Sub の違いは `parentRef` の有無で表現する。
 - API Usage Override
 - `pagination: true`
 - Service / Operation の Parameter Definition 参照
+- Query Parameter の `required` 指定
 - Action / Custom の Local Resource Scope
 - Custom の Response 定義
   - `success`
@@ -1074,6 +1104,12 @@ Main / Sub の違いは `parentRef` の有無で表現する。
   - `description`
   - Response Body
 - `externalDocs`
+
+Query Parameter の `required` は Raw Model では省略可能とする。
+
+省略時は `false` として扱うが、Raw Model では省略された `required` を明示的には補完しない。
+
+`required` のデフォルト値の補完は Resolve 時に行う。
 
 ### 9.6 参照表現
 
@@ -1098,7 +1134,7 @@ Property 名など、同一定義内部の構成要素を選択するための�
 
 File Validation の範囲で一意に導出できる情報のみ補完する。
 
-現時点では Path Token から `pathParameters` を生成する。
+Path Token から `pathParameters` を生成する。
 
 ``` yaml
 member:
@@ -1156,6 +1192,8 @@ Raw Model
         ↓
 ② API Validation
         ↓
+Resolve
+        ↓
 Resolved Model
         ↓
 ③ Service Validation
@@ -1208,85 +1246,83 @@ Phase 2 と Phase 3 を接続して検証する。
 
 ------------------------------------------------------------------------
 
-## 11. Validation Rules v0.1
+## 11. Validation Rules
 
-Phase 2 の Validation ID `V-01` ～ `V-20` に続き、Phase 3 は `V-21`
-以降を使用する。
-
-**注:** Phase 3 は設計途中のため、以下は現時点で確定している Rule
-群の整理である。最終 ID 割当および Rule の追加・統合は Phase 3
-完了時に見直す。
+Validation Rule ID は ARIADNE 全体で通番とする。
+Phase 2 の Validation ID `V-01` ～ `V-22` に続き、Phase 3 では `V-23` 以降を使用する。
 
 ### 11.1 File Validation
 
 | ID | Validation Rule | 判定 |
 | --- | --- | --- |
-| V-21 | 共通 Header の必須項目が存在する | Error |
-| V-22 | `formatVersion` が ARIADNE の対応する Phase 3 Format である | Error |
-| V-23 | `updatedAt` が ISO 8601 として妥当である | Error |
-| V-24 | `domain` が `api` である | Error |
-| V-25 | `kind` が Phase 3 で許可された値である | Error |
-| V-26 | 各名称が対象ごとの命名規約を満たす | Error |
-| V-27 | `kind` ごとの必須 / 許可属性を満たす | Error |
-| V-28 | 未定義属性を持たない | Error |
-| V-29 | YAML Map に重複 Key が存在しない | Error |
-| V-30 | Resource Property は `element` / `resource` / `array` のいずれか一つだけを持つ | Error |
-| V-31 | `readOnly: true` と `writeOnly: true` を同時指定しない | Error |
-| V-32 | Phase 3 で Scalar Constraint を再定義しない | Error |
-| V-33 | Array は `element` / `resource` のいずれか一つだけを持つ | Error |
-| V-34 | `minItems` / `maxItems` は 0 以上の整数であり、両方指定時は `minItems <= maxItems` | Error |
-| V-35 | 空 Map / 空 Array を明示的に記述しない | Error |
-| V-36 | 必須文字列属性に空文字 / 空白のみを指定しない | Error |
-| V-37 | `/health` / `/version` をユーザー API として定義しない | Error |
-| V-38 | 同一 Path 内で同じ Path Token を複数回使用しない | Error |
-| V-39 | Path Token が snake_case の命名規約を満たす | Error |
-| V-40 | HTTP Method が `get/post/put/patch/delete` のいずれかである | Error |
-| V-41 | GET に Request Body を定義しない | Error |
-| V-42 | DELETE に Request / Response Body を定義しない | Error |
-| V-43 | `pagination` は GET にのみ指定する | Error |
-| V-44 | `externalDocs` を指定する場合 `url` が存在する | Error |
-| V-45 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない | Error |
-| V-46 | `limit` / `offset` を Source の Parameter Definition 名として定義しない | Error |
-| V-47 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
-| V-48 | `location` は POST にのみ指定する | Error |
-| V-49 | `location` を指定する場合 `example` が存在する | Error |
+| V-23 | 共通 Header の必須項目が存在する | Error |
+| V-24 | `formatVersion` が ARIADNE の対応する Phase 3 Format である | Error |
+| V-25 | `updatedAt` が ISO 8601 として妥当である | Error |
+| V-26 | `domain` が `api` である | Error |
+| V-27 | `kind` が Phase 3 で許可された値である | Error |
+| V-28 | 各名称が対象ごとの命名規約を満たす | Error |
+| V-29 | `kind` ごとの必須 / 許可属性を満たす | Error |
+| V-30 | 未定義属性を持たない | Error |
+| V-31 | YAML Map に重複 Key が存在しない | Error |
+| V-32 | Resource Property は `element` / `resource` / `array` のいずれか一つだけを持つ | Error |
+| V-33 | `readOnly: true` と `writeOnly: true` を同時指定しない | Error |
+| V-34 | Phase 3 で Scalar Constraint を再定義しない | Error |
+| V-35 | Array は `element` / `resource` のいずれか一つだけを持つ | Error |
+| V-36 | `minItems` / `maxItems` は 0 以上の整数であり、両方指定時は `minItems <= maxItems` | Error |
+| V-37 | 空 Map / 空 Array を明示的に記述しない | Error |
+| V-38 | 必須文字列属性に空文字 / 空白のみを指定しない | Error |
+| V-39 | `/health` / `/version` をユーザー API として定義しない | Error |
+| V-40 | 同一 Path 内で同じ Path Token を複数回使用しない | Error |
+| V-41 | Path Token が snake_case の命名規約を満たす | Error |
+| V-42 | HTTP Method が `get/post/put/patch/delete` のいずれかである | Error |
+| V-43 | GET に Request Body を定義しない | Error |
+| V-44 | DELETE に Request / Response Body を定義しない | Error |
+| V-45 | `pagination` は GET にのみ指定する | Error |
+| V-46 | `externalDocs` を指定する場合 `url` が存在する | Error |
+| V-47 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない | Error |
+| V-48 | `limit` / `offset` を Source の Parameter Definition 名として定義しない | Error |
+| V-49 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
+| V-50 | `location` は POST にのみ指定する | Error |
+| V-51 | `location` を指定する場合 `example` が存在する | Error |
 
 ### 11.2 API Validation
 
-以下は Rule 内容を確定済みとし、最終 ID は Phase 3
-完了時に連番整理する。
-
-- Resource 参照先が存在する
-- Variant 参照先が存在する
-- Parameter Definition 参照先が存在する
-- Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である
-- Variant の `add` が既存 Property と衝突しない
-- 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない
-- SubResource の `parent` が存在し、Main Resource である
-- SubResource を親とする多段 SubResource を禁止する
-- `parentVariants` の対象と統合内容が妥当である
-- Resource Reference Cycle が存在しない
-- Local Resource の参照 Scope が妥当である
-- Service 内で Resource / Local Resource の名前が衝突しない
-- `(path, method)` が Service 内で一意である
-- Phase 3 の全 Source が同一 `formatVersion` を使用する
-- Service と Operation で同一 Request Header を重複指定しない
-- Service YAML が Service 内に1つだけ存在する
-- parameters.yaml は Service 内に0または1つとする
-- ユーザー定義 Operation が1件以上存在する
-- Resolve 後に生成される Schema 名が衝突しない
-- Custom の同一 Operation 内で `response.errors[].status` が重複しない
-- Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である
-- 生成される `operationId` が Service 内で一意である
+| ID | Validation Rule | 判定 |
+| --- | --- | --- |
+| V-52 | Resource 参照先が存在する | Error |
+| V-53 | Variant 参照先が存在する | Error |
+| V-54 | Parameter Definition 参照先が存在する | Error |
+| V-55 | Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である | Error |
+| V-56 | Variant の `add` が既存 Property と衝突しない | Error |
+| V-57 | 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない | Error |
+| V-58 | SubResource の `parent` が存在し、Main Resource である | Error |
+| V-59 | SubResource を親とする多段 SubResource を定義しない | Error |
+| V-60 | `parentVariants` の対象と統合内容が妥当である | Error |
+| V-61 | Resource Reference Cycle が存在しない | Error |
+| V-62 | Local Resource の参照 Scope が妥当である | Error |
+| V-63 | Service 内で Resource / Local Resource の名前が衝突しない | Error |
+| V-64 | `(path, method)` が Service 内で一意である | Error |
+| V-65 | Phase 3 の全 Source が同一 `formatVersion` を使用する | Error |
+| V-66 | Service と Operation で同一 Request Header を重複指定しない | Error |
+| V-67 | Service YAML が Service 内に1つだけ存在する | Error |
+| V-68 | `parameters.yaml` は Service 内に0または1つとする | Error |
+| V-69 | ユーザー定義 Operation が1件以上存在する | Error |
+| V-70 | Resolve 後に生成される Schema 名が衝突しない | Error |
+| V-71 | Custom の同一 Operation 内で `response.errors[].status` が重複しない | Error |
+| V-72 | Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である | Error |
+| V-73 | 生成される `operationId` が Service 内で一意である | Error |
+| V-74 | Path Token から正規化した semantic key が Parameter Definition に存在する | Error |
+| V-75 | Service ディレクトリ名が `service.yaml` の Service ID と一致する | Error |
 
 ### 11.3 Service Validation
 
-以下は Phase 2 / Phase 3 の接続ルールとして扱う。
+Phase 2 / Phase 3 の接続を検証する。
 
-- すべての `element` 参照先が Phase 2 に存在する
-- Path Token から正規化した semantic key が Parameter Definition に存在する
-- Path Parameter が参照する Element の effective `identifier` が `true` である
-- `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する
+| ID | Validation Rule | 判定 |
+| --- | --- | --- |
+| V-76 | すべての `element` 参照先が Phase 2 に存在する | Error |
+| V-77 | Path Parameter が参照する Element の effective `identifier` が `true` である | Error |
+| V-78 | `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する | Error |
 
 ------------------------------------------------------------------------
 
@@ -1301,7 +1337,7 @@ Parameter Usage、built-in 等を解決し、OpenAPI 3.1 へ変換可能な完�
 
 Resolved Model は Source of Truth ではなく、Raw Model から再生成可能な中間成果物とする。
 
-生成先の現時点案:
+生成先:
 
 ```text
 dist/api/model/order-management.resolved.yaml
@@ -1641,9 +1677,45 @@ parameters:
 
 Path Parameter は `required: true` とする。
 
-Query Parameter は明示的な Override がない場合 `required: false` とする。
+Query Parameter はOperationでrequiredが省略された場合falseとする。
 
-Service 共通 Request Header は `required: true` とする。
+Query Parameter の `required` は Operation Usage の属性として解決する。
+
+Source / Raw Model で `required` が省略されている場合、Resolve 時に `false` を補完する。
+
+Resolved Model の各 Operation の `queryParameters` では、 `required` を必須属性として保持する。
+
+例:
+
+```yaml
+queryParameters:
+  - parameterRef: $orderPic
+    required: false
+  - parameterRef: $customerId
+    required: true
+```
+
+また、Resolved Parameter の `usages` には、実際に必要となる Query Parameter の物理的な利用形態を保持する。
+
+同一 Parameter Definition が optional / required の双方で利用される場合は、それぞれ別の Usage として保持する。
+
+```yaml
+parameters:
+  customerId:
+    elementRef: $customerId
+    description: 顧客ID。
+    usages:
+      - in: query
+        name: customer_id
+        required: false
+      - in: query
+        name: customer_id
+        required: true
+```
+
+`usages` は Operation ごとの利用履歴ではなく、OpenAPI Parameter として必要となる物理的な利用形態の集合を表す。
+
+Request Header は Service / Operation のどちらから指定する場合も `required: true` とする。
 
 Source の `headerName` は Resolve 時に `usages.name` へ反映する。
 
@@ -1673,8 +1745,15 @@ Pagination を利用する Operation は以下を参照する。
 ```yaml
 queryParameters:
   - parameterRef: $limit
+    required: false
   - parameterRef: $offset
+    required: false
 ```
+
+Pagination Parameter の `limit` / `offset` は常に optional とする。
+
+Resolved Operation では Query Parameter の `required` が必須であるため、
+`limit` / `offset` についても `required: false` を明示する。
 
 `limit` / `offset` は Phase 2 Element を参照しないため、 `elementRefs` には含めない。
 
@@ -1821,7 +1900,7 @@ Resolve では内容を展開しない。
 相対 `url` の基準は Source と同様に Service Root とする。
 
 Resolved Model では Source の Markdown URL をそのまま保持する。
-Markdown から HTML への変換および OAS 上の URL 変換は OpenAPI Generation / API Document Generation の責務とする。
+Markdown から HTML への変換および OAS 上の URL 変換は OpenAPI Generation の責務とする。
 
 ### 12.15 Request / Response Schema
 
@@ -1931,7 +2010,7 @@ Custom が明示的な Error Status を持つ場合も、 `default` Standard Err
 `builtIn` は、Source で業務 API として明示的に定義されたものではなく、
 ARIADNE が規約に基づいて Resolve 時に補完した定義であることを示す。
 
-現時点で以下を使用する。
+Phase 3 では以下を使用する。
 
 | builtIn | 対象 | 意味 |
 | --- | --- | --- |
@@ -2155,23 +2234,128 @@ elementRef: $customerId
 
 ### 13.4 Parameter Generation
 
-Resolved Model の `parameters` は、 `elementRef` と `usages` を組み合わせて OpenAPI Parameter Object へ変換する。
+Resolved Model の `parameters` は、`elementRef` と `usages` を組み合わせて OpenAPI Parameter Object へ変換する。
 
-ARIADNE Parameter Definition は semantic な Parameter を表すが、
-OpenAPI Parameter Object は `in` / `name` / `required` 等を含む物理的な HTTP Parameter を表す。
+ARIADNE Parameter Definition は semantic な Parameter を表すが、OpenAPI Parameter Object は
+ `in` / `name` / `required` 等を含む物理的な HTTP Parameter を表す。
 
-そのため、1つの Resolved Parameter が複数の `usages` を持つ場合、
-Usage ごとに OpenAPI Parameter Object を生成する。
+そのため、1つの Resolved Parameter が複数の `usages` を持つ場合、Usage ごとに OpenAPI Parameter Object を生成する。
 
-Operation 側の
+例えば同じ Query Parameter が、Operation によって optional / required の双方で利用される場合、
+Resolved Model では以下のように異なる Usage として保持する。
 
 ```yaml
-parameterRef: $customerId
+parameters:
+  customerId:
+    elementRef: $customerId
+    description: 顧客ID。
+    usages:
+      - in: query
+        name: customer_id
+        required: false
+      - in: query
+        name: customer_id
+        required: true
 ```
 
-は、その Operation に対応する Usage の OpenAPI Parameter Component への `$ref` に変換する。
+OpenAPI Parameter Object では `required` は Parameter Component 自体の属性となる。
 
-Pagination により生成された `limit` / `offset` も、通常の OpenAPI Query Parameter として生成する。
+そのため、同じ Parameter Definition を optional / required の双方で利用する場合、それぞれ別の Parameter Component を生成する。
+
+```yaml
+components:
+  parameters:
+    customerId-query-optional:
+      name: customer_id
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/customerId'
+
+    customerId-query-required:
+      name: customer_id
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/customerId'
+```
+
+Resolved Operation の `queryParameters` は、
+`parameterRef` と `required` の組み合わせによって、参照する OpenAPI Parameter Component を決定する。
+
+例:
+
+```yaml
+queryParameters:
+  - parameterRef: $orderPic
+    required: false
+  - parameterRef: $customerId
+    required: true
+```
+
+上記はそれぞれ以下へ変換する。
+
+```yaml
+parameters:
+  - $ref: '#/components/parameters/orderPic-query-optional'
+  - $ref: '#/components/parameters/customerId-query-required'
+```
+
+OpenAPI の `$ref` 参照側で `required` を Override することはしない。
+
+Resolved Operation の `required` に対応する OpenAPI Parameter Component を選択する。
+
+Query Parameter が optional の場合:
+
+```yaml
+parameters:
+  - $ref: '#/components/parameters/customerId-query-optional'
+```
+
+Query Parameter が required の場合:
+
+```yaml
+parameters:
+  - $ref: '#/components/parameters/customerId-query-required'
+```
+
+OpenAPI の `$ref` 参照側で `required` を Override することはせず、required 状態を含めて Parameter Component を確定する。
+
+Path Parameter は常に `required: true`、Request Header も Service / Operation の指定元によらず
+常に `required: true` であるため、required 状態による複数 Component は生成しない。
+
+Pagination により生成された `limit` / `offset` も通常の OpenAPI Query Parameter として生成し、
+`required: false` の optional Query Parameter とする。
+
+OpenAPI `components/parameters` の Component 名は、Parameter Definition key と Usage の物理形態から生成する。
+
+基本形式は以下とする。
+
+```text
+Path Parameter:
+<parameterKey>-path
+
+Request Header:
+<parameterKey>-header
+
+Query Parameter:
+<parameterKey>-query-optional
+<parameterKey>-query-required
+```
+
+例:
+
+```text
+receivedOrderNo-path
+traceId-header
+customerId-query-optional
+customerId-query-required
+limit-query-optional
+offset-query-optional
+```
+
+同一 Parameter Definition であっても、`in` または Query Parameter の `required` が異なる場合は、
+別の OpenAPI Parameter Component として生成する。
 
 ### 13.5 Path / Operation Generation
 
@@ -2541,7 +2725,7 @@ Wails Application への API Document 表示機能の組み込み方式は、
 
 生成した OpenAPI 3.1 は、API Document の生成だけでなく、Backend / Frontend の開発支援環境からも利用する。
 
-Prototype では以下を想定する。
+ARIADNE の Development Tools として以下を想定する。
 
 | Tool | 主な利用者 | 用途 |
 | --- | --- | --- |
@@ -2597,6 +2781,10 @@ DDL
 
 PostgreSQL の初期化方法および DDL 適用方式は Phase 4 で設計する。
 Database Migration は Prototype Phase 4 の必須要件とはしない。
+
+Prototype Phase 3 では Development Tools の利用方針までを定義対象とし、
+Docker Compose を用いた Swagger UI / Mock Server の実動検証は、
+Phase 4 の DDL 定義後に Task Application を用いた End-to-End 検証として行う。
 
 ------------------------------------------------------------------------
 
@@ -2687,7 +2875,7 @@ Prototype Phase 3 は現在進行中である。
 - [x] Prototype Task API の Raw Model 作成
 - [x] Prototype Task API の Resolved Model 作成
 - [x] Prototype Task API の OAS 3.1 作成
-- [ ] Validation Rule ID の最終整理
+- [x] Validation Rule ID の最終整理
 - [ ] Phase 3 ドキュメント最終更新
 - [ ] Prototype Phase 3 最終レビュー
 

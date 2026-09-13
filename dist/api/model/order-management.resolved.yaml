@@ -30,7 +30,7 @@ parameters:
     usages:
       - in: query
         name: customer_id
-        required: false
+        required: true
 
   traceId:
     elementRef: $traceId
@@ -586,9 +586,13 @@ apis:
 
       queryParameters:
         - parameterRef: $orderPic
+          required: false
         - parameterRef: $customerId
+          required: true
         - parameterRef: $limit
+          required: false
         - parameterRef: $offset
+          required: false
 
       responses:
         "200":

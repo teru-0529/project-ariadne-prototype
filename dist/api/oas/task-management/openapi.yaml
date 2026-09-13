@@ -21,7 +21,7 @@ components:
         $ref: "#/components/schemas/taskId"
       description: タスクID
 
-    taskStatus-query:
+    taskStatus-query-optional:
       name: task_status
       in: query
       required: false
@@ -29,7 +29,7 @@ components:
         $ref: "#/components/schemas/taskStatus"
       description: タスクの状態
 
-    priority-query:
+    priority-query-optional:
       name: priority
       in: query
       required: false
@@ -37,7 +37,7 @@ components:
         $ref: "#/components/schemas/priority"
       description: 優先度
 
-    taskPic-query:
+    taskPic-query-optional:
       name: task_pic
       in: query
       required: false
@@ -53,7 +53,7 @@ components:
         $ref: "#/components/schemas/traceId"
       description: トレースID。
 
-    limit-query:
+    limit-query-optional:
       name: limit
       in: query
       required: false
@@ -63,7 +63,7 @@ components:
       description: 1ページ当りの最大取得件数。
       example: 1
 
-    offset-query:
+    offset-query-optional:
       name: offset
       in: query
       required: false
@@ -217,11 +217,11 @@ paths:
 
       parameters:
         - $ref: "#/components/parameters/traceId-header"
-        - $ref: "#/components/parameters/taskStatus-query"
-        - $ref: "#/components/parameters/priority-query"
-        - $ref: "#/components/parameters/taskPic-query"
-        - $ref: "#/components/parameters/limit-query"
-        - $ref: "#/components/parameters/offset-query"
+        - $ref: "#/components/parameters/taskStatus-query-optional"
+        - $ref: "#/components/parameters/priority-query-optional"
+        - $ref: "#/components/parameters/taskPic-query-optional"
+        - $ref: "#/components/parameters/limit-query-optional"
+        - $ref: "#/components/parameters/offset-query-optional"
 
       responses:
         "200":

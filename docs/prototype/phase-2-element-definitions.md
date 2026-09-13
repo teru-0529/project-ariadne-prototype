@@ -539,10 +539,9 @@ OAS / DDL は別のモデルであり、将来それぞれ `formatVersion`
 を持つ場合でも、Item Definition Format
 と同じバージョンにする必要はない。
 
-## 11. Validation Rules v0.1
+## 11. Validation Rules
 
-Prototype では Validator
-を実装しないが、正しい状態を仕様として定義する。
+Prototype では Validator を実装しないが、正しい状態を仕様として定義する。
 
 | ID | Validation Rule | 判定 |
 | --- | --- | --- |

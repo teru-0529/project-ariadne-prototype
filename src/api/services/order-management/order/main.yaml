@@ -94,8 +94,9 @@ api:
       pagination: true
 
       queryParameters:
-        - orderPic
-        - customerId
+        - parameter: orderPic
+        - parameter: customerId
+          required: true
 
       response:
         array:

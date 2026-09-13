@@ -127,10 +127,15 @@ apis:
 
       queryParameters:
         - parameterRef: $taskStatus
+          required: false
         - parameterRef: $priority
+          required: false
         - parameterRef: $taskPic
+          required: false
         - parameterRef: $limit
+          required: false
         - parameterRef: $offset
+          required: false
 
       responses:
         "200":

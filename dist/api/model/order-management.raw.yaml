@@ -122,6 +122,7 @@ resources:
           queryParameters:
             - parameterRef: $orderPic
             - parameterRef: $customerId
+              required: true
 
           response:
             array:
