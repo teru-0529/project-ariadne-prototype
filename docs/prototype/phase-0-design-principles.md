@@ -54,24 +54,26 @@ Git で差分を確認でき、専用アプリケーションなしでも人間�
 
 ## 3. 技術スタック
 
-| 領域                   | 採用技術 / 方針         |
-|------------------------|-------------------------|
-| Frontend               | Svelte + TypeScript     |
-| Desktop / Backend      | Wails + Go              |
-| Prototype 内部 DB      | SQLite                  |
-| ファイル正本           | YAML                    |
-| API 仕様               | OpenAPI Specification   |
-| OAS 検証・加工         | Redocly CLI             |
-| Version Control        | Git / GitHub            |
-| ローカル Build         | `build.bat`             |
-| Prototype 実行ファイル | `ARIADNE-Prototype.exe` |
+| 領域                   | 採用技術 / 方針              |
+|------------------------|------------------------------|
+| Frontend               | Svelte + TypeScript          |
+| Desktop / Backend      | Wails + Go                   |
+| Prototype 内部 DB      | SQLite                       |
+| ファイル正本           | YAML                         |
+| API 仕様               | OpenAPI 3.1                  |
+| OAS 検証・加工         | Redocly CLI                  |
+| Version Control        | Git / GitHub                 |
+| ローカル Development   | `tools/dev.sh`               |
+| ローカル Build         | `tools/build.sh`             |
+| Prototype 実行ファイル | `ariadne-prototype.exe`      |
 
 ### 補足
 
 - Wails の Windows アプリとして構築し、Frontend / Backend を別コンテナとして構成しない。
 - ARIADNE 本体は Docker 化しない。
-- Redocly は ARIADNE 本体へ組み込まず、外部 CLI として扱う。
-- Redocly 等の外部ツールはバージョンを固定する。
+- Redocly CLI は外部ツールとして扱い、ARIADNE のドメインロジックへ組み込まない。
+- Core では、最終利用者に Node.js / npm / Redocly CLI の個別インストールを要求しない実行方式を採用する。
+- Redocly 等の外部ツールは ARIADNE リリース単位でバージョンを固定する。
 - GitHub Actions は Prototype の必須範囲外とする。
 - Core で Docker を利用する可能性は残す。主用途は、ARIADNE 本体ではなく、PostgreSQL や生成 Backend 等の成果物検証環境を想定する。
 
@@ -139,21 +141,24 @@ Core 利用時に ARIADNE が設計対象とする PostgreSQL 等の実 DB は�
 
 Phase 0 では詳細なファイル名や YAML の分割単位までは固定しない。役割として以下の構成を採用する。
 
-``` text
+```text
 src/
 ├─ definitions/
-│   ├─ 項目定義 YAML
-│   └─ Task Template YAML
+│   └─ elements/
+│       ├─ types.yaml
+│       └─ elements.yaml
 │
 ├─ database/
 │   └─ DB 設計情報 YAML
-│       ※ファイル分割単位は Phase 0 では決めない
+│       ※具体構造は Phase 4 で確定する
 │
 └─ api/
-    ├─ root.yaml
-    ├─ paths/
-    ├─ resources/
-    └─ ...
+    └─ services/
+        └─ {service-id}/
+            └─ API 定義 YAML(ARIADNE Source)
+
+templates/
+└─ Task 管理アプリ等の Prototype 用データ
 
         ↓ 生成・変換
 
@@ -162,8 +167,15 @@ dist/
 │   └─ *.sql
 │
 └─ api/
-    ├─ openapi.yaml
-    └─ openapi.html
+    ├─ model/
+    │   ├─ {service-id}.raw.yaml
+    │   └─ {service-id}.resolved.yaml
+    │
+    └─ oas/
+        └─ {service-id}/
+            ├─ openapi.yaml
+            ├─ redoc.html
+            └─ docs/
 
         ↓ 実行
 
@@ -272,28 +284,38 @@ Prototype では SQLite を利用する。
 
 Core 利用時の設計対象 DB は PostgreSQL 等になり得るが、その実 DB は ARIADNE の外部に存在する。
 
-### 9.3 OAS
+### 9.3 API / OAS
 
-OAS の正本を `src/api` で管理し、Redocly を利用して検証・生成する。
+API 定義の Source of Truth は `src/api/services/` 配下の ARIADNE YAML とする。
 
-``` text
-src/api/
-   ↓
-Redocly lint
-   ↓
-Redocly bundle
-   ↓
-dist/api/openapi.yaml
-   ↓
-HTML 生成
-   ↓
-dist/api/openapi.html
+Prototype では以下の流れを検証する。
+
+```text
+ARIADNE Source
+      ↓
+Raw Model
+      ↓
+Resolved Model
+      ↓
+OpenAPI 3.1 Generation
+      ↓
+dist/api/oas/{service-id}/openapi.yaml
+      ↓
+OpenAPI Validation
+      ↓
+API Document
 ```
 
-- `openapi.yaml` は後工程・Generate 用
-- `openapi.html` は人間によるレビュー・確認用
+OpenAPI 3.1 自体は Source of Truth ではなく、ARIADNE Source から生成される成果物とする。
 
-Prototype アプリ自体から OAS を読み書きする機能は優先度を下げる。YAML Read / Write の技術検証は Task Template で実施できるためである。
+Raw Model / Resolved Model は Source of Truth ではなく、ARIADNE Source から再生成可能な中間成果物とする。
+
+生成した OpenAPI 3.1 は以下で利用する。
+
+- ReDoc による API Document
+- Swagger UI
+- Mock Server
+- Backend / Frontend 等の後工程
 
 ---
 
@@ -301,8 +323,8 @@ Prototype アプリ自体から OAS を読み書きする機能は優先度を�
 
 OAS のフォルダ構成・内容が後工程で利用可能であることを証明するため、Backend 側の出口検証を Prototype の必須範囲とする。
 
-``` text
-dist/api/openapi.yaml
+```text
+dist/api/oas/{service-id}/openapi.yaml
         ↓
 Backend Generate
         ↓
@@ -326,11 +348,11 @@ Prototype は Git / GitHub で管理する。
 ローカルでは以下の手順で実行ファイルを再生成できることを必須とする。
 
 ``` text
-build.bat
+tools/build.sh
    ↓
 Wails build 等
    ↓
-ARIADNE-Prototype.exe
+ariadne-prototype.exe
 ```
 
 「特定の開発環境で偶然動く」状態ではなく、決められた手順で Build 可能な状態を目指す。
@@ -366,7 +388,7 @@ Prototype は、以下の2つを満たした時点で Done とする。
 
 ### A. Task 管理 Windows アプリとして成立している
 
-- `build.bat` から `ARIADNE-Prototype.exe` を生成できる
+- `tools/build.sh` から `ariadne-prototype.exe` を生成できる
 - Template を YAML から読み書きできる
 - Task を SQLite から読み書きできる
 - Template から Task へ初期値をコピーできる
@@ -377,9 +399,10 @@ Prototype は、以下の2つを満たした時点で Done とする。
 
 - `src / dist / runtime` の責務を実際の構成で確認できる
 - DB 設計情報から DDL を生成し SQLite を初期化できる
-- OAS を分割管理できる
-- Redocly で lint / bundle / HTML 生成できる
-- bundle 済み OAS から Backend Generate し、API を公開できる
+- API 定義を ARIADNE YAML として分割管理できる
+- ARIADNE Source から Raw Model / Resolved Model / OpenAPI 3.1 を生成できる
+- Redocly で OpenAPI Validation / API Document 生成ができる
+- 生成済み OpenAPI 3.1 を後工程で利用できる
 - 各技術要素と責務境界を説明できる
 
 ---

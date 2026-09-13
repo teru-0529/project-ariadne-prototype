@@ -52,7 +52,7 @@ src/definitions/elements/elements.yaml
 | 領域 | 責務 |
 | --- | --- |
 | `src/definitions/` | 項目定義等、ARIADNE 設計情報の正本 |
-| `src/api/` | OAS 関連の正本・生成処理で使用する資材 |
+| `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
 | `src/database/` | DDL 関連の正本・生成処理で使用する資材 |
 | `templates/` | Task 管理アプリ等、Prototype で利用するテンプレート／アプリデータ側の資材 |
 | `dist/` | ARIADNE が生成した成果物 |
@@ -760,9 +760,9 @@ RESULT  : VALID
 
 ## 14. OAS / DDL への受け渡し
 
-### 14.1 Phase 3：OAS
+### 14.1 Phase 3：API Definition / OAS
 
-OAS 側は項目定義から共通意味を継承する。
+Phase 3 の API Definition は、Element Definition から共通意味を継承する。
 
 主な入力は以下。
 
@@ -777,13 +777,36 @@ OAS 側は項目定義から共通意味を継承する。
 - ENUM values
 - OpenAPI mapping
 
-Type 固有の `validation` は、OpenAPI で表現可能な場合、対応する Schema 制約へ変換する。
+Type 固有の `validation` は、OpenAPI で表現可能な場合、OpenAPI Schema の対応する制約へ変換する。
 
-OAS 側では利用文脈に応じて `name / description / example` 等を override 可能とする。
+Phase 3 では Element を参照し、
+Resource / Parameter / Request / Response / Operation 等のAPI 利用文脈を定義する。
 
-ARIADNE 標準として、OAS の body は camelCase、path parameter は snake_case とする。
+Resource Property / Variant / API Usage / Parameter Definition 等では、
+それぞれの責務に応じて `name` / `description` / `example` 等のコンテキスト情報を追加・Overrideできる。
 
-項目定義から OAS 完成形を直接生成するのではなく、OAS 側の正本が項目定義の意味を利用する。
+ARIADNE 標準として、
+
+- Request / Response Body の Property は camelCase
+- Path / Query Parameter の物理名は snake_case
+
+とする。
+
+項目定義から OpenAPI 完成形を直接生成するのではない。
+
+```text
+Phase 2 Element Definition
+        ↓
+Phase 3 ARIADNE API Source
+        ↓
+Raw Model
+        ↓
+Resolved Model
+        ↓
+OpenAPI 3.1
+```
+
+Phase 2 は共通の値定義を提供し、Phase 3 が API 文脈を付与したうえで OpenAPI 3.1 を生成する。
 
 ### 14.2 Phase 4：DDL
 

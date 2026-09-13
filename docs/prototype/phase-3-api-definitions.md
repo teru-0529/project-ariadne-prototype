@@ -1,11 +1,11 @@
 # Prototype Phase 3：API定義 YAML
 
-**Status:** IN PROGRESS
+**Status:** COMPLETE
 
-> 本ドキュメントは Prototype Phase 3
-> の途中時点における設計決定事項を記録する。\
-> Phase 3 完了までに、Resolved Model、Validation Rule、OAS 3.1
-> Generation 等の設計進展に合わせて更新する。
+> 本ドキュメントは Prototype Phase 3 における設計決定事項を記録する。
+> Phase 3 では、API Definition、Raw Model / Resolved Model、
+> Validation Architecture、OpenAPI 3.1 Generation、
+> API Document / Development Tools の設計方針を確定した。
 
 ------------------------------------------------------------------------
 
@@ -2876,9 +2876,9 @@ Prototype Phase 3 は現在進行中である。
 - [x] Prototype Task API の Resolved Model 作成
 - [x] Prototype Task API の OAS 3.1 作成
 - [x] Validation Rule ID の最終整理
-- [ ] Phase 3 ドキュメント最終更新
-- [ ] Prototype Phase 3 最終レビュー
+- [x] Phase 3 ドキュメント最終更新
+- [x] Prototype Phase 3 最終レビュー
 
 ------------------------------------------------------------------------
 
-**Prototype Phase 3：API定義 YAML** --- IN PROGRESS
+## Prototype Phase 3：API定義 YAML — COMPLETE
