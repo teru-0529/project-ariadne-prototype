@@ -1,0 +1,357 @@
+openapi: 3.1.0
+
+info:
+  title: Task管理サービス
+  description: |
+    タスクを管理するサービス。
+  version: 0.0.0
+
+servers:
+  - url: https://not-configured.invalid
+    description: 実行環境で設定
+
+components:
+  # parameters
+  parameters:
+    taskId-path:
+      name: task_id
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/taskId"
+      description: タスクID
+
+    taskStatus-query-optional:
+      name: task_status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/taskStatus"
+      description: タスクの状態
+
+    priority-query-optional:
+      name: priority
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/priority"
+      description: 優先度
+
+    taskPic-query-optional:
+      name: task_pic
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/userId"
+      description: タスク担当ユーザー
+
+    traceId-header:
+      name: X-Trace-ID
+      in: header
+      required: true
+      schema:
+        $ref: "#/components/schemas/traceId"
+      description: トレースID。
+
+    limit-query-optional:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+      description: 1ページ当りの最大取得件数。
+      example: 1
+
+    offset-query-optional:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+      description: 取得するページ番号。
+      example: 1
+
+  schemas:
+    # resources
+    Task:
+      type: object
+      description: |
+        タスク情報を表すメインリソース。
+      required:
+        - taskId
+        - title
+        - createUser
+        - taskStatus
+        - priority
+        - urgent
+      properties:
+        taskId:
+          allOf:
+            - $ref: "#/components/schemas/taskId"
+          readOnly: true
+
+        title:
+          $ref: "#/components/schemas/title"
+
+        description:
+          $ref: "#/components/schemas/description"
+
+        createUser:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: タスク登録ユーザー
+
+        taskPic:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: タスク担当ユーザー
+
+        taskStatus:
+          $ref: "#/components/schemas/taskStatus"
+
+        priority:
+          $ref: "#/components/schemas/priority"
+
+        urgent:
+          $ref: "#/components/schemas/urgent"
+
+    # built-in
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - traceId
+      properties:
+        code:
+          type: string
+          description: アプリケーション固有のエラーコード。
+          example: ORDER_NOT_FOUND
+
+        message:
+          type: string
+          description: エラー内容を示すメッセージ。
+          example: 受注が存在しません。
+
+        traceId:
+          $ref: "#/components/schemas/traceId"
+
+    # elements
+    taskId:
+      type: string
+      description: タスクを一意に識別するID
+      minLength: 26
+      maxLength: 26
+      pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+      example: "01ARZ3NDEKTSV4RRFFQ69G5FAV"
+
+    taskStatus:
+      type: string
+      description: タスクの状態
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - DONE
+      example: TODO
+
+    priority:
+      type: integer
+      description: タスクの優先度,数値が小さいほど優先
+      minimum: 1
+      maximum: 5
+      example: 1
+
+    userId:
+      type: string
+      description: システムのユーザーを特定するID
+      maxLength: 5
+      minLength: 5
+      pattern: "^U[0-9]{4}$"
+      example: "U0672"
+
+    traceId:
+      type: string
+      description: |
+        分散トレーシングに使用されるID。
+        形式は ULID + "::" + 任意の非空文字列
+      maxLength: 128
+      pattern: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
+      example: "01ARZ3NDEKTSV4RRFFQ69G5FAV::U0672"
+
+    title:
+      type: string
+      description: タスクのタイトル
+      maxLength: 50
+      example: "タスクのタイトル"
+
+    description:
+      type: string
+      description: タスクの説明
+      minLength: 10
+      example: "タスクの詳細な説明です。"
+
+    urgent:
+      type: boolean
+      description: 至急対応が必要かを示すフラグ
+      example: true
+
+  responses:
+    StandardError:
+      description: エラー
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+paths:
+  /tasks:
+    get:
+      operationId: tasks-get
+      tags:
+        - Task
+      summary: タスク一覧取得
+      description: |
+        条件に一致するタスク情報を取得する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+        - $ref: "#/components/parameters/taskStatus-query-optional"
+        - $ref: "#/components/parameters/priority-query-optional"
+        - $ref: "#/components/parameters/taskPic-query-optional"
+        - $ref: "#/components/parameters/limit-query-optional"
+        - $ref: "#/components/parameters/offset-query-optional"
+
+      responses:
+        "200":
+          description: 正常終了
+          headers:
+            Has-More:
+              description: 後続データが存在するかを示す。
+              schema:
+                type: boolean
+              example: true
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+    post:
+      operationId: tasks-post
+      tags:
+        - Task
+      summary: タスク登録
+      description: |
+        タスク情報を登録する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+
+      responses:
+        "201":
+          description: 正常終了
+          headers:
+            Location:
+              description: 登録されたリソースのURI。
+              schema:
+                type: string
+                format: uri-reference
+              example: /tasks/01F8MECHZX3TBDSZ7XRADM79XE
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /tasks/{task_id}:
+    parameters:
+      - $ref: "#/components/parameters/taskId-path"
+
+    get:
+      operationId: tasks-task-id-get
+      tags:
+        - Task
+      summary: タスク取得
+      description: |
+        指定されたタスクIDのタスク情報を取得する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        default:
+          $ref: "#/components/responses/StandardError"
+
+    put:
+      operationId: tasks-task-id-put
+      tags:
+        - Task
+      summary: タスク更新
+      description: |
+        指定されたタスク情報を全体更新する。
+
+      parameters:
+        - $ref: "#/components/parameters/traceId-header"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+
+      responses:
+        "200":
+          description: 正常終了
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /health:
+    get:
+      operationId: health-get
+      tags:
+        - System
+      summary: ヘルスチェック
+      responses:
+        "200":
+          description: 正常終了
+        default:
+          $ref: "#/components/responses/StandardError"
+
+  /version:
+    get:
+      operationId: version-get
+      tags:
+        - System
+      summary: バージョン取得
+      responses:
+        "200":
+          description: 正常終了
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - version
+                properties:
+                  version:
+                    type: string
+              example:
+                version: 0.0.0
+        default:
+          $ref: "#/components/responses/StandardError"

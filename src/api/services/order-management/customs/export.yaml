@@ -1,0 +1,65 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T20:20:00+09:00"
+domain: api
+kind: custom
+
+custom: ExportOrders
+
+resources:
+  ExportCondition:
+    properties:
+      customerId:
+        element: customerId
+
+      orderDateFrom:
+        element: orderDate
+        name: 受注日From
+
+      orderDateTo:
+        element: orderDate
+        name: 受注日To
+
+  ExportResult:
+    properties:
+      downloadUrl:
+        element: url
+        required: true
+        readOnly: true
+        name: ダウンロードURL
+
+  ValidationError:
+    properties:
+      errorDescription:
+        element: description
+        required: true
+        readOnly: true
+        name: エラー内容
+
+api:
+  export:
+    path: /orders/export
+
+    post:
+      tag: Order
+
+      summary: 受注エクスポート
+
+      description: |
+        指定された条件に一致する受注情報をファイル化し、
+        一時ストレージに保存したダウンロード用URLを返却する。
+
+      request:
+        resource: ExportCondition
+
+      response:
+        success:
+          status: 202
+          description: エクスポート正常終了
+          resource: ExportResult
+        errors:
+          - status: 400
+            description: 入力チェックエラー
+            array:
+              resource: ValidationError
+          - status: 409
+            description: 処理コンフリクト

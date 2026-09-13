@@ -1,53 +1,195 @@
 formatVersion: "1.0"
 updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: elements
 
 elements:
   taskId:
     name: タスクID
-    type: ULID
+    type: GENERATED_ID
     description: タスクを特定するID
+    constraints:
+      maxLength: 26
+      minLength: 26
+      regex: "^[0-9A-HJKMNP-TV-Z]{26}$"
     example: "01F8MECHZX3TBDSZ7XRADM79XE"
 
   title:
     name: タイトル
     type: STRING
     description: タスクのタイトル
-    example: "タスクのタイトル"
     constraints:
       maxLength: 50
+    example: "タスクのタイトル"
 
   description:
     name: 説明
     type: TEXT
     description: タスクの説明
-    example: "タスクの詳細な説明です。"
     constraints:
       minLength: 10
+    example: "タスクの詳細な説明です。"
 
-  status:
+  taskStatus:
     name: 状態
     type: ENUM
     description: タスクの状態
-    example: "TODO"
     values:
-      - TODO:
-          name: 未着手
-      - IN_PROGRESS:
-          name: 進行中
-      - DONE:
-          name: 完了
+      TODO:
+        name: 未着手
+      IN_PROGRESS:
+        name: 進行中
+      DONE:
+        name: 完了
+    example: "TODO"
 
   priority:
     name: 優先度
     type: INTEGER
     description: タスクの優先度,数値が小さいほど優先
-    example: 1
     constraints:
       minimum: 1
       maximum: 5
+    example: 1
 
   recordDateTime:
     name: レコード管理日時
     type: DATETIME
     description: レコードの生成・更新時にシステムが管理する日時
     example: "2023-10-01T12:00:00+09:00"
+
+  receivedOrderNo:
+    name: 受注番号
+    type: GENERATED_ID
+    description: 受注を特定する番号
+    constraints:
+      maxLength: 16
+      minLength: 16
+      regex: "^ORD-[0-9]{8}-[0-9]{3}$"
+    example: "ORD-20230827-001"
+
+  orderDate:
+    name: 受注日
+    type: DATE
+    description: 受注が発生した日付
+    example: "2023-08-27"
+
+  userId:
+    name: ユーザーID
+    type: PROVIDED_ID
+    description: システムのユーザーを特定するID
+    constraints:
+      maxLength: 5
+      minLength: 5
+      regex: "^U[0-9]{4}$"
+    example: "U0672"
+
+  customerId:
+    name: 顧客ID
+    type: GENERATED_ID
+    description: 顧客を特定するID
+    constraints:
+      maxLength: 8
+      minLength: 8
+      regex: "^C[0-9]{7}$"
+    example: "C1234567"
+
+  comment:
+    name: 摘要
+    type: TEXT
+    description: 受注に関する補足情報
+    example: "至急対応が必要。"
+
+  orderDetailNo:
+    name: 明細番号
+    type: INTEGER
+    identifier: true
+    description: 受注内で明細を識別する番号
+    constraints:
+      minimum: 1
+    example: 1
+
+  productNo:
+    name: 商品番号
+    type: GENERATED_ID
+    description: 商品を特定する番号
+    constraints:
+      maxLength: 7
+      minLength: 7
+      regex: "^P[0-9]{6}$"
+    example: "P123456"
+
+  quantity:
+    name: 数量
+    type: INTEGER
+    description: 受注数、出荷済数、キャンセル数などの数量
+    constraints:
+      minimum: 0
+    example: 10
+
+  price:
+    name: 金額
+    type: INTEGER
+    description: 販売単価、想定原価などの金額
+    constraints:
+      minimum: 0
+    example: 1000
+
+  profitRate:
+    name: 利益率
+    type: DECIMAL
+    description: 販売単価と想定原価から計算される利益率
+    constraints:
+      precision: 5
+      scale: 2
+      minimum: 0.0
+      maximum: 100.0
+    example: 22.5
+
+  traceId:
+    name: トレースID
+    type: GENERATED_ID
+    description: |
+      分散トレーシングに使用されるID。
+      形式は　ULID + "::" + 任意の非空文字列
+    constraints:
+      maxLength: 128
+      regex: "^[0-9A-HJKMNP-TV-Z]{26}::.+$"
+    example: 01ARZ3NDEKTSV4RRFFQ69G5FAV::U0672
+
+  url:
+    name: URL
+    type: STRING
+    description: |
+      ファイルをダウンロードするためのURL。
+      一時ストレージに保存されたファイルへのアクセスに使用される。
+    constraints:
+      maxLength: 2048
+      regex: "^https?://[a-zA-Z0-9\\-\\.]+(/[a-zA-Z0-9\\-\\._~:/?#\\[\\]@!$&'()*+,;=]*)?"
+    example: "https://example.com/downloads/orders_export_20230827.csv"
+
+  orderShipmentId:
+    name: 受注出荷番号
+    type: SEQUENCE_ID
+    description: 出荷情報の受注反映時に受注領域で採番する連番
+    example: 32
+
+  orderStatus:
+    name: 受注ステータス
+    type: CODE
+    description: 受注の状態を表すコード
+    constraints:
+      maxLength: 20
+    example: "CONFIRMED"
+
+  urgent:
+    name: 至急フラグ
+    type: BOOLEAN
+    description: 至急対応が必要かを示すフラグ
+    example: true
+
+  desiredDeliveryTime:
+    name: 希望納品時刻
+    type: TIME
+    description: 顧客が希望する納品時刻
+    example: "15:30:00"

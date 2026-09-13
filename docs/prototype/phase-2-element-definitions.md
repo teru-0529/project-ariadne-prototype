@@ -15,7 +15,7 @@ Prototype では項目定義を編集する UI、YAML の読み書き機能、Va
 
 - 項目定義で何を管理するか
 - 論理 Type と Element の責務
-- 正本 YAML の構造
+- 正本 YAML の構造（共通ヘッダー `formatVersion` / `updatedAt` / `domain` / `kind` を含む）
 - 配置・命名
 - YAML 間の整合性ルール
 - OAS / DDL への受け渡し方針
@@ -52,7 +52,7 @@ src/definitions/elements/elements.yaml
 | 領域 | 責務 |
 | --- | --- |
 | `src/definitions/` | 項目定義等、ARIADNE 設計情報の正本 |
-| `src/api/` | OAS 関連の正本・生成処理で使用する資材 |
+| `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
 | `src/database/` | DDL 関連の正本・生成処理で使用する資材 |
 | `templates/` | Task 管理アプリ等、Prototype で利用するテンプレート／アプリデータ側の資材 |
 | `dist/` | ARIADNE が生成した成果物 |
@@ -70,11 +70,16 @@ src/definitions/elements/elements.yaml
 Type は以下を管理する。
 
 - 論理型の名称・説明
-- 識別子として利用可能か
+- API 上の識別子として利用可能か
 - 利用可能な constraint
+- Type 固有の validation
 - PostgreSQL へのマッピング
 - OpenAPI へのマッピング
 - 推奨命名
+
+`validation` は、その Type を使用するすべての Element に共通して適用される、Type 固有の不変な形式制約を定義する。
+
+Element ごとに指定可能な `constraints` とは区別する。
 
 ### 3.2 Element
 
@@ -88,6 +93,7 @@ Element は以下を管理する。
 - Type
 - 説明
 - example
+- API 上の識別子として利用可能か（必要な場合のみ）
 - Element 固有の constraint 値
 - ENUM の値集合
 
@@ -134,7 +140,7 @@ ARIADNE の標準 Type は以下の14種類とする。
 識別子系
 ├─ PROVIDED_ID
 ├─ SEQUENCE_ID
-└─ ULID
+└─ GENERATED_ID
 
 文字列系
 ├─ FIXED_STRING
@@ -163,10 +169,23 @@ ARIADNE の標準 Type は以下の14種類とする。
 
 - `PROVIDED_ID`：外部または人が指定する文字列識別子
 - `SEQUENCE_ID`：システム／DB により自動採番される数値識別子
-- `ULID`：順序性を持つシステム生成識別子
+- `GENERATED_ID`：システムが生成する文字列識別子
 
-`identifier: true` は「単独識別子として利用可能」を意味し、PK
-を意味しない。 複合キー等は DDL 側で扱う。
+Type の `identifier: true` は、その Type を使用する Element が
+API 上の識別子（例：Path Parameter）として利用可能であることを示す。
+
+また、Type の `identifier` が `false` の場合でも、
+個別の Element に `identifier: true` を指定することで、その Element を API 上の識別子として利用可能にできる。
+
+実効的な identifier は以下とする。
+
+effective identifier = Type.identifier OR Element.identifier
+
+Element 側の `identifier` は必要な場合のみ `true` を指定する。 `false` は記述しない。
+
+単独主キー・単独一意キーであることは意味しない。複合識別子の一要素として利用してもよい。
+
+PK / UNIQUE / 複合キー等のデータベース上の制約は DDL 側で扱う。
 
 ### 5.2 ENUM と CODE
 
@@ -195,6 +214,36 @@ ENUM と CODE は明確に区別する。
 ENUM では `NORMAL = 0` のような別 value を持たせない。 EnumValue
 キー自体を実値として扱う。
 
+### 5.3 TIME
+
+`TIME` は、タイムゾーンを持たない時刻値を表す。
+
+形式は `HH:mm:ss` 固定とし、Type 固有の `validation` により形式を定義する。
+
+```text
+00:00:00
+15:30:00
+23:59:59
+```
+
+TIME の形式は Element 固有の制約ではないため、各 Element の constraints には定義しない。
+
+### 5.4 DATETIME
+
+`DATETIME` は、UTC オフセットを持つ日時値を表す。
+
+OpenAPI では `string / date-time` として扱う。
+
+例：
+
+```text
+2023-10-01T12:00:00+09:00
+2023-10-01T03:00:00Z
+```
+
+DATETIME は、UTC オフセットを持つ date-time 形式とする。UTC は Z による表現も許容する。
+ARIADNE が定義する example では、原則として ±HH:mm 形式の UTC オフセットを使用する。
+
 ## 6. Constraint
 
 Type ごとの constraint は以下とする。
@@ -203,7 +252,7 @@ Type ごとの constraint は以下とする。
 | --- | --- | --- |
 | `PROVIDED_ID` | `maxLength` | `minLength`, `regex` |
 | `SEQUENCE_ID` | なし | なし |
-| `ULID` | なし | なし |
+| `GENERATED_ID` | `maxLength` | `minLength`, `regex` |
 | `FIXED_STRING` | `length` | `regex` |
 | `STRING` | `maxLength` | `minLength`, `regex` |
 | `TEXT` | なし | `minLength`, `regex` |
@@ -234,7 +283,7 @@ Java / Go / TypeScript / Python 等の言語型は `types.yaml`
 | --- | --- | --- |
 | `PROVIDED_ID` | `varchar(n)` | `string` |
 | `SEQUENCE_ID` | `bigint` | `integer / int64` |
-| `ULID` | `char(26)` | `string` |
+| `GENERATED_ID` | `varchar(n)` | `string` |
 | `FIXED_STRING` | `char(n)` | `string` |
 | `STRING` | `varchar(n)` | `string` |
 | `TEXT` | `text` | `string` |
@@ -251,16 +300,15 @@ Java / Go / TypeScript / Python 等の言語型は `types.yaml`
 DECIMAL は `precision / scale`
 を持つ10進数であり、特定言語の倍精度浮動小数点型へのマッピングは生成側の責務とする。
 
-ULID の26文字等、生成ロジックが知ればよい詳細を `types.yaml`
-に完全な仕様として重複定義しない。
-
 ## 8. `types.yaml`
 
 トップレベルは以下とする。
 
 ``` yaml
 formatVersion: "1.0"
-updatedAt: "..."
+updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: types
 
 types:
   ...
@@ -278,27 +326,31 @@ TYPE_KEY:
     required: []
     optional: []
 
+  validation:          # 必要な場合のみ
+    regex: ...
+
   postgresql:
     type: ...
 
   openapi:
     type: ...
-    format: ...       # 必要な場合のみ
+    format: ...        # 必要な場合のみ
 
   recommendations: []
 ```
 
-`constraints.required / optional` および `recommendations`
-は0件の場合も空リストを明示する。
+`constraints.required / optional` および `recommendations` は0件の場合も空リストを明示する。
+
+`validation` は Type 固有の形式制約が存在する場合のみ記述する。 Prototype では `regex` を使用する。
 
 ### 8.1 Naming Recommendations
 
 標準の推奨命名は以下とする。
 
 ``` text
-PROVIDED_ID  → *Id, *No
-SEQUENCE_ID  → *Id, *No
-ULID         → *Id, *No
+PROVIDED_ID   → *Id, *No
+SEQUENCE_ID   → *Id, *No
+GENERATED_ID  → *Id, *No
 
 BOOLEAN      → is*, has*, can*, should*
 ENUM         → *Type
@@ -319,7 +371,9 @@ Warning とする。
 
 ``` yaml
 formatVersion: "1.0"
-updatedAt: "..."
+updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: elements
 
 elements:
   ...
@@ -333,9 +387,13 @@ ELEMENT_KEY
 ├─ type           必須
 ├─ description    必須
 ├─ example        必須
+├─ identifier     必要な場合のみ（true のみ）
 ├─ constraints    必要な場合のみ
 └─ values         ENUM のみ
 ```
+
+`identifier: true` は、Type 側の `identifier` が `false` であっても、
+その Element を API 上の識別子として利用可能にする場合に指定する。
 
 例：
 
@@ -344,11 +402,20 @@ customerId:
   name: 得意先ID
   type: PROVIDED_ID
   description: 得意先を一意に識別するID
-  example: "C001"
   constraints:
     maxLength: 10
     minLength: 1
     regex: "^[A-Z0-9]+$"
+  example: "C001"
+
+orderDetailNo:
+  name: 明細番号
+  type: INTEGER
+  identifier: true
+  description: 受注内で明細を識別する番号
+  constraints:
+    minimum: 1
+  example: 1
 ```
 
 constraint が0件の場合、`constraints` 自体を記述しない。
@@ -441,10 +508,40 @@ OAS / DDL は別のモデルであり、将来それぞれ `formatVersion`
 を持つ場合でも、Item Definition Format
 と同じバージョンにする必要はない。
 
-## 11. Validation Rules v0.1
+### 10.1 `domain` / `kind`
 
-Prototype では Validator
-を実装しないが、正しい状態を仕様として定義する。
+ARIADNE が管理する正本 YAML は、ファイル名や配置場所だけに依存せず、ファイル自身が「どの設計領域の、何の定義か」を宣言できるようにする。
+
+- `domain`：どの設計領域に属するかを表す
+- `kind`：その領域の中で何の定義かを表す
+
+Phase 2 の項目定義では以下とする。
+
+| ファイル | `domain` | `kind` |
+| --- | --- | --- |
+| `types.yaml` | `elements` | `types` |
+| `elements.yaml` | `elements` | `elements` |
+
+Phase 2 の正本 YAML の共通ヘッダーは以下の形となる。
+
+``` yaml
+formatVersion: "1.0"
+updatedAt: "2026-08-25T23:00:00+09:00"
+domain: elements
+kind: types     # types.yaml の場合
+```
+
+`elements.yaml` の場合は `kind: elements` とする。
+
+`domain` / `kind` は機械向けの自己記述情報であり、ファイル名やディレクトリ構成を置き換えるものではない。配置・命名とあわせて、正本 YAML の種別を明確にするために使用する。
+
+OAS / DDL は別のモデルであり、将来それぞれ `formatVersion`
+を持つ場合でも、Item Definition Format
+と同じバージョンにする必要はない。
+
+## 11. Validation Rules
+
+Prototype では Validator を実装しないが、正しい状態を仕様として定義する。
 
 | ID | Validation Rule | 判定 |
 | --- | --- | --- |
@@ -454,7 +551,7 @@ Prototype では Validator
 | `V-04` | Type の `required` constraint を Element がすべて持つ | Error |
 | `V-05` | Element は Type の `required / optional` に存在しない constraint を持たない | Error |
 | `V-06` | constraint の値そのものが妥当である | Error |
-| `V-07` | `example` が論理 Type の型・形式に適合し、設定された constraint を満たす | Error |
+| `V-07` | `example` が論理 Type の型・形式、Type 固有の `validation`、Element の constraint を満たす | Error |
 | `V-08` | `type: ENUM` の Element は `values` を持つ | Error |
 | `V-09` | ENUM の `values` が1件以上存在する | Error |
 | `V-10` | ENUM 以外の Element は `values` を持たない | Error |
@@ -466,6 +563,10 @@ Prototype では Validator
 | `V-16` | Element / EnumValue キーを同一概念のまま rename しない | 運用ルール |
 | `V-17` | `updatedAt` が各ファイルに存在する | Error |
 | `V-18` | `updatedAt` が ISO 8601 形式である | Error |
+| `V-19` | `domain` が存在し、値が `elements` である | Error |
+| `V-20` | `kind` が存在し、定義種別と一致する（`types` / `elements`） | Error |
+| `V-21` | Type の `validation` の定義内容が妥当である | Error |
+| `V-22` | Element の `identifier` は、指定する場合 true である | Error |
 
 ### 11.1 Constraint Validation
 
@@ -487,12 +588,26 @@ minimum <= maximum
 regex = 有効な正規表現
 ```
 
-### 11.2 Example Validation
+### 11.2 Type Validation
+
+Type に `validation` が定義されている場合、その内容自体を Validation する。
+
+Prototype では以下を確認する。
+
+``` text
+validation.regex = 有効な正規表現
+```
+
+Type 固有の `validation` は、その Type を使用するすべての Element の Example Validation に適用する。
+
+Element の実効 identifier は、Type.identifier または Element.identifier のいずれかが true の場合に true とする。
+
+### 11.3 Example Validation
 
 型の基本対応は以下とする。
 
 ``` text
-PROVIDED_ID / FIXED_STRING / STRING / TEXT / CODE
+PROVIDED_ID / GENERATED_ID / FIXED_STRING / STRING / TEXT / CODE
   → string
 
 SEQUENCE_ID / INTEGER
@@ -511,19 +626,17 @@ DATE
   → string + date 形式
 
 TIME
-  → string + time 形式
+  → string + Type 固有 validation（HH:mm:ss）に適合
 
 DATETIME
   → string + date-time 形式
 
-ULID
-  → string + ULID として妥当
 ```
 
 さらに Element 固有の
 `minimum / maximum / minLength / maxLength / regex` 等も満たすこと。
 
-### 11.3 Error / Warning / Operation Rule
+### 11.4 Error / Warning / Operation Rule
 
 ``` text
 ERROR
@@ -607,7 +720,7 @@ Prototype では Task を題材に、複数 Type と constraint
 を実際に使用してモデルを検証した。
 
 ``` text
-taskId          → ULID
+taskId          → GENERATED_ID
 title           → STRING
 description     → TEXT
 status          → ENUM
@@ -617,7 +730,6 @@ recordDateTime  → DATETIME
 
 主な検証内容は以下。
 
-- ULID の識別子利用
 - STRING の `maxLength`
 - TEXT の `minLength`
 - ENUM の Map / example / values
@@ -648,9 +760,9 @@ RESULT  : VALID
 
 ## 14. OAS / DDL への受け渡し
 
-### 14.1 Phase 3：OAS
+### 14.1 Phase 3：API Definition / OAS
 
-OAS 側は項目定義から共通意味を継承する。
+Phase 3 の API Definition は、Element Definition から共通意味を継承する。
 
 主な入力は以下。
 
@@ -660,17 +772,41 @@ OAS 側は項目定義から共通意味を継承する。
 - `description`
 - `example`
 - constraints
+- identifier
+- Type 固有 validation
 - ENUM values
 - OpenAPI mapping
 
-OAS 側では利用文脈に応じて `name / description / example` 等を override
-可能とする。
+Type 固有の `validation` は、OpenAPI で表現可能な場合、OpenAPI Schema の対応する制約へ変換する。
 
-ARIADNE 標準として、OAS の body は camelCase、path parameter は
-snake_case とする。
+Phase 3 では Element を参照し、
+Resource / Parameter / Request / Response / Operation 等のAPI 利用文脈を定義する。
 
-項目定義から OAS 完成形を直接生成するのではなく、OAS
-側の正本が項目定義の意味を利用する。
+Resource Property / Variant / API Usage / Parameter Definition 等では、
+それぞれの責務に応じて `name` / `description` / `example` 等のコンテキスト情報を追加・Overrideできる。
+
+ARIADNE 標準として、
+
+- Request / Response Body の Property は camelCase
+- Path / Query Parameter の物理名は snake_case
+
+とする。
+
+項目定義から OpenAPI 完成形を直接生成するのではない。
+
+```text
+Phase 2 Element Definition
+        ↓
+Phase 3 ARIADNE API Source
+        ↓
+Raw Model
+        ↓
+Resolved Model
+        ↓
+OpenAPI 3.1
+```
+
+Phase 2 は共通の値定義を提供し、Phase 3 が API 文脈を付与したうえで OpenAPI 3.1 を生成する。
 
 ### 14.2 Phase 4：DDL
 

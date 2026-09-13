@@ -110,7 +110,7 @@ project-ariadne-prototype/
 | `app/build/` | Wails build configuration |
 | `app/bin/` | Application build output |
 | `src/definitions/` | 項目定義等、ARIADNE設計情報の正本 |
-| `src/api/` | OAS関連の正本・生成処理で使用する資材 |
+| `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
 | `src/database/` | DDL関連の正本・生成処理で使用する資材 |
 | `templates/` | Task管理アプリ等、Prototypeで使用するテンプレート／アプリデータ側の資材 |
 | `dist/` | Project ARIADNEが生成した成果物 |
@@ -124,7 +124,7 @@ Phase 0で決定した以下の原則を維持する。
 
 - ARIADNE設計情報の正本は `src/` 配下で管理する
 - 項目定義は `src/definitions/` に配置する
-- OAS関連は `src/api/` に配置する
+- API定義は `src/api/` に配置する
 - DDL関連は `src/database/` に配置する
 - Task管理アプリ等のテンプレート／アプリデータ側の資材は `templates/` として分離する
 - 成果物と実行時データを分離する
@@ -345,6 +345,9 @@ Prototypeでは以下を対象外とする。
 
 - Dockerによる実行環境構築
 - GitHub ActionsによるCI/CD
+
+ここで対象外とする Docker は、Phase 1 における ARIADNE Application 自体の実行環境を指す。
+後続 Phase で生成成果物を検証するための Development Environment に Docker / Docker Compose を利用することは妨げない。
 
 Wails標準構成としてDockerや他platform向けの設定が存在していても、
 Prototypeで利用することを意味しない。

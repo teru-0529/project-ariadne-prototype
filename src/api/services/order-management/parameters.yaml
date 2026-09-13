@@ -1,0 +1,27 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T23:12:00+09:00"
+domain: api
+kind: parameters
+
+parameters:
+  receivedOrderNo:
+    element: receivedOrderNo
+    description: 受注番号。
+
+  orderPic:
+    element: userId
+    description: 受注担当者。
+    example: U1234
+
+  customerId:
+    element: customerId
+    description: 顧客ID。
+
+  traceId:
+    element: traceId
+    headerName: X-Trace-ID
+    description: トレースID。
+
+  detailNo:
+    element: orderDetailNo
+    description: 受注明細番号。

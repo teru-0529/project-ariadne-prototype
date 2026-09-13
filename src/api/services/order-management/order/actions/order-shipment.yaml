@@ -1,0 +1,63 @@
+formatVersion: "1.0"
+updatedAt: "2026-08-27T17:50:00+09:00"
+domain: api
+kind: action
+
+action: OrderShipment
+
+resources:
+  OrderShipment:
+    properties:
+      shipmentId:
+        element: orderShipmentId
+        readOnly: true
+        required: true
+
+      customerId:
+        element: customerId
+        required: true
+
+      details:
+        array:
+          resource: OrderShipmentDetail
+        minItems: 1
+        required: true
+        name: 出荷対象明細
+        description: |
+          出荷対象となる受注明細。
+          同一顧客であれば複数受注にまたがって指定できる。
+
+  OrderShipmentDetail:
+    properties:
+      orderNo:
+        element: receivedOrderNo
+        required: true
+
+      detailNo:
+        element: orderDetailNo
+        required: true
+
+      quantity:
+        element: quantity
+        required: true
+        name: 出荷数量
+        description: 今回出荷する数量。
+
+api:
+  collection:
+    path: /order-shipments
+
+    post:
+      summary: 受注出荷反映
+
+      description: |
+        出荷・在庫領域で確定した出荷情報を受注領域へ反映する。
+        対象となる受注明細の出荷済数を増加し、受注残を減少させる。
+
+      request:
+        resource: OrderShipment
+
+      response:
+        array:
+          resource: OrderDetail
+          variant: Summary

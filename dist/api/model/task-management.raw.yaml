@@ -1,0 +1,129 @@
+formatVersion: "1.0"
+
+service:
+  id: task-management
+  name: Task管理サービス
+  description: |
+    タスクを管理するサービス。
+  requestHeaders:
+    - parameterRef: $traceId
+
+parameters:
+  taskId:
+    elementRef: $taskId
+    description: タスクID
+
+  taskStatus:
+    elementRef: $taskStatus
+    description: タスクの状態
+
+  priority:
+    elementRef: $priority
+    description: 優先度
+
+  taskPic:
+    elementRef: $userId
+    description: タスク担当ユーザー
+
+  traceId:
+    elementRef: $traceId
+    headerName: X-Trace-ID
+    description: トレースID。
+
+resources:
+  Task:
+    name: タスク
+    description: |
+      タスク情報を表すメインリソース。
+
+    properties:
+      taskId:
+        elementRef: $taskId
+        required: true
+        readOnly: true
+
+      title:
+        elementRef: $title
+        required: true
+
+      description:
+        elementRef: $description
+
+      createUser:
+        elementRef: $userId
+        required: true
+        name: 登録ユーザー
+        description: タスク登録ユーザー
+
+      taskPic:
+        elementRef: $userId
+        name: 担当者
+        description: タスク担当ユーザー
+
+      taskStatus:
+        elementRef: $taskStatus
+        required: true
+
+      priority:
+        elementRef: $priority
+        required: true
+
+      urgent:
+        elementRef: $urgent
+        required: true
+
+    api:
+      collection:
+        path: /tasks
+
+        get:
+          summary: タスク一覧取得
+
+          description: |
+            条件に一致するタスク情報を取得する。
+
+          pagination: true
+
+          queryParameters:
+            - parameterRef: $taskStatus
+            - parameterRef: $priority
+            - parameterRef: $taskPic
+
+          response:
+            array:
+              resourceRef: $Task
+
+        post:
+          summary: タスク登録
+
+          description: |
+            タスク情報を登録する。
+
+          location:
+            example: /tasks/01F8MECHZX3TBDSZ7XRADM79XE
+
+          request:
+            resourceRef: $Task
+
+      member:
+        path: /tasks/{task_id}
+        pathParameters:
+          - parameterRef: $taskId
+
+        get:
+          summary: タスク取得
+
+          description: |
+            指定されたタスクIDのタスク情報を取得する。
+
+          response:
+            resourceRef: $Task
+
+        put:
+          summary: タスク更新
+
+          description: |
+            指定されたタスク情報を全体更新する。
+
+          request:
+            resourceRef: $Task

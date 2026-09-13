@@ -1,0 +1,518 @@
+formatVersion: "1.0"
+
+service:
+  id: order-management
+  name: 受注サービス
+  description: |
+    受注および顧客情報を管理するサービス。
+  requestHeaders:
+    - parameterRef: $traceId
+
+parameters:
+  receivedOrderNo:
+    elementRef: $receivedOrderNo
+    description: 受注番号。
+
+  orderPic:
+    elementRef: $userId
+    description: 受注担当者。
+    example: U1234
+
+  customerId:
+    elementRef: $customerId
+    description: 顧客ID。
+
+  traceId:
+    elementRef: $traceId
+    headerName: X-Trace-ID
+    description: トレースID。
+
+  detailNo:
+    elementRef: $orderDetailNo
+    description: 受注明細番号。
+
+resources:
+  Order:
+    name: 受注
+    description: |
+      受注情報を表すメインリソース。
+
+    properties:
+      orderNo:
+        elementRef: $receivedOrderNo
+        required: true
+        readOnly: true
+        name: 受注番号
+        description: 登録時に自動採番される受注番号。
+
+      orderDate:
+        elementRef: $orderDate
+        required: true
+        readOnly: true
+        name: 受注日
+        description: 登録時に自動設定される受注日。
+
+      orderPic:
+        elementRef: $userId
+        required: true
+        name: 受注担当者
+        description: この受注を担当するユーザーのID。
+
+      customerId:
+        elementRef: $customerId
+        required: true
+        name: 顧客ID
+
+      orderStatus:
+        elementRef: $orderStatus
+        required: true
+        readOnly: true
+        name: 受注ステータス
+
+      urgent:
+        elementRef: $urgent
+        required: true
+        name: 至急
+
+      notes:
+        elementRef: $comment
+        name: 摘要
+        description: 受注に関する補足情報。
+        example: 要注意顧客。
+
+      desiredDeliveryTime:
+        elementRef: $desiredDeliveryTime
+        name: 希望納品時刻
+
+    variants:
+      Summary:
+        exclude:
+          - urgent
+          - notes
+          - desiredDeliveryTime
+
+        add:
+          price:
+            elementRef: $price
+            name: 金額
+            description: 受注の合計金額。
+
+          detailCount:
+            elementRef: $quantity
+            readOnly: true
+            name: 明細件数
+            description: 受注明細の件数。
+
+      DateUpdate:
+        include:
+          - orderDate
+
+    api:
+      collection:
+        path: /orders
+
+        get:
+          summary: 受注一覧取得
+
+          description: |
+            条件に一致する受注情報を取得する。
+
+          pagination: true
+
+          queryParameters:
+            - parameterRef: $orderPic
+            - parameterRef: $customerId
+              required: true
+
+          response:
+            array:
+              resourceRef: $Order
+              variantRef: $Summary
+
+      member:
+        path: /orders/{received_order_no}
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+
+        put:
+          summary: 受注更新
+
+          description: |
+            指定された受注情報を全体更新する。
+
+          request:
+            resourceRef: $Order
+
+          response:
+            resourceRef: $Order
+
+      date:
+        path: /orders/{received_order_no}/date
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+
+        patch:
+          summary: 受注日変更
+
+          description: |
+            指定された受注の受注日を変更する。
+
+          request:
+            resourceRef: $Order
+            variantRef: $DateUpdate
+
+          response:
+            resourceRef: $Order
+
+  OrderDetail:
+    parentRef: $Order
+    name: 受注明細
+    description: |
+      受注に紐づく明細情報を表すサブリソース。
+
+    properties:
+      detailNo:
+        elementRef: $orderDetailNo
+        required: true
+        readOnly: true
+        name: 明細番号
+        description: 登録時に自動採番される明細番号。
+
+      productNo:
+        elementRef: $productNo
+        required: true
+        name: 商品番号
+
+      quantity:
+        elementRef: $quantity
+        required: true
+        name: 受注数
+        description: 受注数量
+
+      shippingQuantity:
+        elementRef: $quantity
+        readOnly: true
+        name: 出荷済数
+        description: 出荷済数量
+
+      cancelQuantity:
+        elementRef: $quantity
+        readOnly: true
+        name: キャンセル数
+        description: キャンセル数量
+
+      remainingQuantity:
+        elementRef: $quantity
+        readOnly: true
+        name: 受注残
+        description: |
+          受注数から出荷済数およびキャンセル数を差し引いた数量。
+        example: 5
+
+      sellingPrice:
+        elementRef: $price
+        required: true
+        name: 販売単価
+        description: 販売単価
+
+      costPrice:
+        elementRef: $price
+        readOnly: true
+        name: 想定原価
+        description: 想定原価
+
+      profitRate:
+        elementRef: $profitRate
+        readOnly: true
+        name: 想定利益率
+        description: 想定利益率
+
+    variants:
+      Summary:
+        exclude:
+          - sellingPrice
+          - costPrice
+          - profitRate
+
+        overrides:
+          remainingQuantity:
+            name: 未出荷・未キャンセル数
+            description: |
+              受注数のうち、まだ出荷またはキャンセルされていない数量。
+
+    parentVariants:
+      WithDetails:
+        add:
+          details:
+            array:
+              resourceRef: $OrderDetail
+            required: true
+            minItems: 1
+            name: 受注明細
+            description: |
+              受注に含まれる明細情報。
+
+      WithDetailSummaries:
+        add:
+          details:
+            array:
+              resourceRef: $OrderDetail
+              variantRef: $Summary
+            required: true
+            minItems: 1
+            name: 受注明細サマリ
+            description: |
+              受注に含まれる明細情報（主要情報のみ）。
+
+    api:
+      createOrder:
+        path: /orders
+
+        post:
+          summary: 受注登録
+
+          description: |
+            受注情報と1件以上の受注明細を登録する。
+
+          location:
+            example: /orders/ORD-20230827-001
+
+          request:
+            resourceRef: $Order
+            variantRef: $WithDetails
+            overrides:
+              details:
+                example:
+                  - productNo: P123456
+                    quantity: 10
+                    sellingPrice: 1000
+                  - productNo: P654321
+                    quantity: 5
+                    sellingPrice: 1200
+
+          response:
+            resourceRef: $Order
+
+          externalDocs:
+            url: ./docs/order-create.md
+            description: 受注登録の詳細仕様
+
+      getOrder:
+        path: /orders/{received_order_no}
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+
+        get:
+          summary: 受注取得
+
+          description: |
+            指定された受注番号の受注情報を取得する。
+
+          response:
+            resourceRef: $Order
+            variantRef: $WithDetailSummaries
+
+      details:
+        path: /orders/{received_order_no}/details
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+
+        get:
+          summary: 受注明細一覧取得
+
+          description: |
+            指定された受注に紐づく明細情報を取得する。
+
+          response:
+            array:
+              resourceRef: $OrderDetail
+
+        post:
+          summary: 受注明細追加
+
+          description: |
+            指定された受注に1件以上の受注明細を追加する。
+
+          request:
+            array:
+              resourceRef: $OrderDetail
+            minItems: 1
+
+          response:
+            resourceRef: $Order
+
+      detail:
+        path: /orders/{received_order_no}/details/{detail_no}
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+          - parameterRef: $detailNo
+
+        delete:
+          summary: 受注明細削除
+
+          description: |
+            指定された受注明細を削除する。
+
+actions:
+  OrderShipment:
+    resources:
+      OrderShipment:
+        properties:
+          shipmentId:
+            elementRef: $orderShipmentId
+            readOnly: true
+            required: true
+
+          customerId:
+            elementRef: $customerId
+            required: true
+
+          details:
+            array:
+              resourceRef: $OrderShipmentDetail
+            minItems: 1
+            required: true
+            name: 出荷対象明細
+            description: |
+              出荷対象となる受注明細。
+              同一顧客であれば複数受注にまたがって指定できる。
+
+      OrderShipmentDetail:
+        properties:
+          orderNo:
+            elementRef: $receivedOrderNo
+            required: true
+
+          detailNo:
+            elementRef: $orderDetailNo
+            required: true
+
+          quantity:
+            elementRef: $quantity
+            required: true
+            name: 出荷数量
+            description: 今回出荷する数量。
+
+    api:
+      collection:
+        path: /order-shipments
+
+        post:
+          summary: 受注出荷反映
+
+          description: |
+            出荷・在庫領域で確定した出荷情報を受注領域へ反映する。
+            対象となる受注明細の出荷済数を増加し、受注残を減少させる。
+
+          request:
+            resourceRef: $OrderShipment
+
+          response:
+            array:
+              resourceRef: $OrderDetail
+              variantRef: $Summary
+
+  Cancellation:
+    resources:
+      Cancellation:
+        properties:
+          details:
+            array:
+              resourceRef: $CancellationDetail
+            minItems: 1
+            required: true
+            name: キャンセル対象明細
+
+      CancellationDetail:
+        properties:
+          detailNo:
+            elementRef: $orderDetailNo
+            required: true
+
+          quantity:
+            elementRef: $quantity
+            required: true
+            name: キャンセル数量
+            description: 今回キャンセルする数量。
+
+    api:
+      collection:
+        path: /orders/{received_order_no}/cancellations
+        pathParameters:
+          - parameterRef: $receivedOrderNo
+
+        post:
+          summary: 受注キャンセル登録
+
+          description: |
+            指定された受注に対して明細単位のキャンセルを登録する。
+            対象となる受注明細のキャンセル数を増加し、受注残を減少させる。
+
+          request:
+            resourceRef: $Cancellation
+
+          response:
+            array:
+              resourceRef: $OrderDetail
+              variantRef: $Summary
+
+customs:
+  ExportOrders:
+    resources:
+      ExportCondition:
+        properties:
+          customerId:
+            elementRef: $customerId
+
+          orderDateFrom:
+            elementRef: $orderDate
+            name: 受注日From
+
+          orderDateTo:
+            elementRef: $orderDate
+            name: 受注日To
+
+      ExportResult:
+        properties:
+          downloadUrl:
+            elementRef: $url
+            required: true
+            readOnly: true
+            name: ダウンロードURL
+
+      ValidationError:
+        properties:
+          errorDescription:
+            elementRef: $description
+            required: true
+            readOnly: true
+            name: エラー内容
+
+    api:
+      export:
+        path: /orders/export
+
+        post:
+          tag: Order
+
+          summary: 受注エクスポート
+
+          description: |
+            指定された条件に一致する受注情報をファイル化し、
+            一時ストレージに保存したダウンロード用URLを返却する。
+
+          request:
+            resourceRef: $ExportCondition
+
+          response:
+            success:
+              status: 202
+              description: エクスポート正常終了
+              resourceRef: $ExportResult
+            errors:
+              - status: 400
+                description: 入力チェックエラー
+                array:
+                  resourceRef: $ValidationError
+              - status: 409
+                description: 処理コンフリクト
