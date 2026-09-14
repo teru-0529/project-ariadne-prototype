@@ -143,10 +143,9 @@ Phase 0 では詳細なファイル名や YAML の分割単位までは固定し
 
 ```text
 src/
-├─ definitions/
-│   └─ elements/
-│       ├─ types.yaml
-│       └─ elements.yaml
+├─ elements/
+│   ├─ types.yaml
+│   └─ elements.yaml
 │
 ├─ database/
 │   └─ DB 設計情報 YAML
@@ -269,7 +268,7 @@ Prototype では Task Template を題材とする。
 以下の流れを Prototype 開発時に一度通す。
 
 ``` text
-src/database/
+src/ddl/
       ↓
 DDL 生成
       ↓

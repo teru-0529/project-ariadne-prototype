@@ -85,9 +85,9 @@ project-ariadne-prototype/
 │  └─ Taskfile.yml
 │
 ├─ src/
-│  ├─ definitions/
+│  ├─ elements/
 │  ├─ api/
-│  └─ database/
+│  └─ ddl/
 │
 ├─ templates/
 ├─ dist/
@@ -109,9 +109,9 @@ project-ariadne-prototype/
 | `app/frontend/bindings/` | Wails generated bindings |
 | `app/build/` | Wails build configuration |
 | `app/bin/` | Application build output |
-| `src/definitions/` | 項目定義等、ARIADNE設計情報の正本 |
+| `src/elements/` | Type / Element による共通項目定義の正本 |
 | `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
-| `src/database/` | DDL関連の正本・生成処理で使用する資材 |
+| `src/ddl/` | Database / DDL定義のARIADNE SourceおよびDDL生成処理で使用する正本資材 |
 | `templates/` | Task管理アプリ等、Prototypeで使用するテンプレート／アプリデータ側の資材 |
 | `dist/` | Project ARIADNEが生成した成果物 |
 | `runtime/` | SQLite等の実行時データ |
@@ -123,9 +123,9 @@ project-ariadne-prototype/
 Phase 0で決定した以下の原則を維持する。
 
 - ARIADNE設計情報の正本は `src/` 配下で管理する
-- 項目定義は `src/definitions/` に配置する
+- 項目定義は `src/elements/` に配置する
 - API定義は `src/api/` に配置する
-- DDL関連は `src/database/` に配置する
+- Database / DDL定義は `src/ddl/` に配置する
 - Task管理アプリ等のテンプレート／アプリデータ側の資材は `templates/` として分離する
 - 成果物と実行時データを分離する
 - `dist/` は生成成果物

@@ -28,12 +28,11 @@ Phase 0 で決定した責務分離を維持する。
 
 ``` text
 src/
-├─ definitions/
-│  └─ elements/
-│     ├─ types.yaml
-│     └─ elements.yaml
+├─ elements/
+│  ├─ types.yaml
+│  └─ elements.yaml
 ├─ api/
-└─ database/
+└─ ddl/
 
 templates/
 dist/
@@ -43,17 +42,17 @@ runtime/
 項目定義の正本は以下とする。
 
 ``` text
-src/definitions/elements/types.yaml
-src/definitions/elements/elements.yaml
+src/elements/types.yaml
+src/elements/elements.yaml
 ```
 
 各領域の責務は以下のとおり。
 
 | 領域 | 責務 |
 | --- | --- |
-| `src/definitions/` | 項目定義等、ARIADNE 設計情報の正本 |
+| `src/elements/` | Type / Element による共通項目定義の正本 |
 | `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
-| `src/database/` | DDL 関連の正本・生成処理で使用する資材 |
+| `src/ddl/` | Database / DDL 定義の ARIADNE Source および DDL 生成処理で使用する正本資材 |
 | `templates/` | Task 管理アプリ等、Prototype で利用するテンプレート／アプリデータ側の資材 |
 | `dist/` | ARIADNE が生成した成果物 |
 | `runtime/` | SQLite 等の実行時データ |
