@@ -1,0 +1,174 @@
+formatVersion: "1.0"
+updatedAt: "2026-09-14T21:50:00+09:00"
+domain: ddl
+kind: database
+
+schema: order
+
+tables:
+  orders: #TODO: TBD
+    name: 受注
+
+    columns:
+      orderNo: #TODO: 自動登録（Function）
+        element: receivedOrderNo
+        notNull: true
+
+      orderDate:
+        element: orderDate
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      orderPic:
+        element: userId
+        name: 受注担当者ID
+
+      customerId:
+        element: customerId
+        notNull: true
+
+      status: #TODO: 自動変更（明細の同盟項目によって変更、すべてが1/2/3であれば1/2/3、それ以外は4）
+        element: orderStatus
+        default: PREPARING
+        notNull: true
+
+      urgent:
+        element: urgent
+        notNull: true
+
+      note:
+        element: comment
+        name: 備考
+
+      desiredDeliveryTime:
+        element: desiredDeliveryTime
+
+  order_details: #TODO: TBD
+    name: 受注明細
+
+    columns:
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+
+      detailNo: #TODO: 自動登録（Function）
+        element: orderDetailNo
+        notNull: true
+
+      productNo:
+        element: productNo
+        notNull: true
+
+      orderQuantity:
+        element: quantity
+        name: 受注数
+        notNull: true
+
+      shippingQuantity: #TODO: 自動変更（出荷登録時にFunction）
+        element: quantity
+        name: 出荷数
+        notNull: true
+        default: 0
+
+      cancelQuantity: #TODO: 自動変更（キャンセル登録時にFunction）
+        element: quantity
+        name: キャンセル数
+        notNull: true
+        default: 0
+
+      remainingQuantity: #TODO: 自動変更（数量変更時にFunction）
+        element: quantity
+        name: 受注残
+        notNull: true
+
+      status: #TODO: 自動変更（1:受注数=受注残→準備中、2:受注残0/出荷0→キャンセル、3:受注残0/出荷≠0→完了、4:その他→対応中）
+        element: orderStatus
+        default: PREPARING
+        notNull: true
+
+      sellingPrice:
+        element: price
+        notNull: true
+
+      costPrice:
+        element: price
+        notNull: true
+
+      profitRate: #TODO: 自動計算（初期登録時に計算）
+        element: profitRate
+        notNull: true
+
+  shipping_instructions: #TODO: TBD
+    name: 出荷指示
+
+    columns:
+      orderShipmentId:
+        element: orderShipmentId
+        notNull: true
+        sequence: true
+
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+
+      detailNo:
+        element: orderDetailNo
+        notNull: true
+
+      operationDate:
+        element: operationDate
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      personInCharge:
+        element: userId
+        name: 出荷担当者ID
+        notNull: true
+
+      quantity:
+        element: quantity
+        name: 出荷数
+        notNull: true
+
+      note:
+        element: comment
+        name: 備考
+
+  cancel_instructions: #TODO: TBD
+    name: キャンセル指示
+
+    columns:
+      orderCancelId:
+        element: orderCancelId
+        notNull: true
+        sequence: true
+
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+
+      detailNo:
+        element: orderDetailNo
+        notNull: true
+
+      operationDate:
+        element: operationDate
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      personInCharge:
+        element: userId
+        name: キャンセル担当者ID
+        notNull: true
+
+      quantity:
+        element: quantity
+        name: キャンセル数
+        notNull: true
+
+      note:
+        element: comment
+        name: 備考

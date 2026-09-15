@@ -132,9 +132,31 @@ SQLite対応のためにPostgreSQL側の表現力を制限することはしな�
 
 ## 3. Schema
 
-DDL定義はSchema単位で管理可能とする。
+DDL SourceはSchema単位で管理する。
 
-SchemaごとにTableを登録し、複数Schemaを一つのProject内で扱えるものとする。
+1つのDDL Source YAMLには1つのSchemaのみを定義し、以下に配置する。
+
+```text
+src/
+└─ ddl/
+   └─ schemas/
+      ├─ order-management.yaml
+      └─ task-management.yaml
+```
+
+DDL Source YAMLでは、Schemaを以下の形式で定義する。
+
+```yaml
+schema: order
+```
+
+`schema` はARIADNE上のSchema識別子とし、必須とする。
+
+Schema識別子は `snake_case` とする。
+
+DDL Source YAMLには物理Schema名を別途保持せず、Database上の物理Schema名はNaming Ruleに従って生成する。
+
+複数Schemaを一つのProject内で扱えるものとする。
 
 SchemaをまたぐForeign KeyはPrototype Phase 4では許可しない。
 
@@ -144,18 +166,63 @@ SQLiteにはPostgreSQLと同等のSchema概念が存在しないため、SQLite�
 
 ## 4. Table
 
-DDL YAMLではTable単位の定義を行う。
+DDL Source YAMLでは、Schema配下のTableをMapとして定義する。
 
-Tableには以下を定義可能とする。
+基本形式を以下とする。
 
-- Table名
+```yaml
+schema: order
+
+tables:
+  orders:
+    name: 受注
+    columns:
+      ...
+```
+
+TableのMap KeyはARIADNE上のTable識別子とする。
+
+Table識別子は `snake_case` とし、原則として複数形の名詞を使用する。
+
+例：
+
+```text
+orders
+order_details
+shipping_instructions
+cancel_instructions
+tasks
+statuses
+```
+
+Tableには以下を定義する。
+
+- Table識別子
+- `name`
 - Column
 - Primary Key
 - Unique Constraint
 - Foreign Key
 - Index
 
-TableおよびColumnの物理名はProject ARIADNEのNaming Ruleに従い生成する。
+`name` はTableの論理名・表示名とし、必須とする。
+
+例：
+
+```yaml
+tables:
+  orders:
+    name: 受注
+
+  order_details:
+    name: 受注明細
+```
+
+`name` はDDL Reference等での表示、およびDatabase Table Commentの生成元として利用する。
+
+DDL Source YAMLには物理Table名を別途保持しない。
+
+Database上の物理Table名はTable識別子からNaming Ruleに従って生成する。
 
 生成SQLをTable単位でファイル分割するかどうかはDDLモデルの仕様には含めない。
 
@@ -167,79 +234,343 @@ TableおよびColumnの物理名はProject ARIADNEのNaming Ruleに従い生成�
 
 ColumnはElementsに登録されたElementを参照して定義する。
 
-DDL YAMLでは原則として型・桁を直接指定しない。
+基本形式を以下とする。
 
-以下の情報はTypes / Elementsから導出する。
+```yaml
+columns:
+  orderQuantity:
+    element: quantity
+    name: 受注数
+    notNull: true
 
-- DBデータ型
-- 最大長
-- Precision
-- Scale
-- Minimum
-- Maximum
-- Enum等の値制約
+  shippingQuantity:
+    element: quantity
+    name: 出荷数
+    notNull: true
+    default: 0
+```
 
-### 5.1 Element由来の制約
+ColumnのMap KeyはARIADNE上のColumn識別子とする。
 
-ElementにMinimum / Maximum等が定義されている場合、Databaseで表現可能なものはConstraintとして生成する。
+Column識別子は `lowerCamelCase` とする。
+
+Database上の物理Column名はNaming Ruleに従って `snake_case` へ変換する。
+
+例：
+
+```text
+orderQuantity
+    ↓
+order_quantity
+```
+
+ColumnとElementは別の識別子として扱う。
+
+同一Elementを、一つのTable内または複数Table内で複数回利用できるものとする。
+
+例：
+
+```yaml
+orderQuantity:
+  element: quantity
+  name: 受注数
+
+shippingQuantity:
+  element: quantity
+  name: 出荷数
+
+cancelQuantity:
+  element: quantity
+  name: キャンセル数
+```
+
+上記はすべて同一の `quantity` Elementを参照するが、Database上ではそれぞれ別Columnとして生成される。
+
+### 5.1 Columnで定義可能な情報
+
+Columnでは以下を定義可能とする。
+
+- `element`
+- `name`
+- `notNull`
+- `default`
+- `sequence`
+
+`element` は必須とする。
+
+`name` はColumn固有の論理名・表示名とし、Optionalとする。
+
+`name` が指定されていない場合は、参照Elementの `name` を利用する。
+
+同一Elementを異なる業務上の意味で利用する場合、Column側の `name` により表示名をOverrideできる。
+
+例：
+
+```yaml
+personInCharge:
+  element: userId
+  name: 出荷担当者ID
+```
+
+### 5.2 NOT NULL
+
+ColumnごとのNULL許容性はDDL Source YAMLで定義する。
+
+```yaml
+customerId:
+  element: customerId
+  notNull: true
+```
+
+`notNull: true` の場合、Database DDLに `NOT NULL` を生成する。
+
+`notNull` が指定されていない場合はNULL許容とする。
+
+API上の `required` とDatabase上の `NOT NULL` は別の責務として扱い、自動的な相互導出は行わない。
+
+### 5.3 Element由来情報のOverride禁止
+
+DDL Source YAMLでは、参照ElementまたはTypeが管理する以下の情報を再定義またはOverrideしてはならない。
+
+- Type
+- length
+- minLength
+- maxLength
+- regex
+- minimum
+- maximum
+- precision
+- scale
+- ENUM values
+- format
+
+これらはTypes / Elementsを正本とし、DDL生成時に自動的に導出する。
+
+Columnは値そのものの型・桁・値域等を変更する場所ではなく、そのElementをDatabase上でどのように配置・利用するかを定義する。
+
+`sequence` はElement / Typeの値定義をOverrideするものではなく、
+そのColumn自身がDatabase上の採番主体となるかを指定するColumn固有の配置・利用情報として扱う。
+
+### 5.4 Element由来Constraint
+
+Types / Elementsに定義された制約は、対象Databaseで表現可能な限りDatabase DDLへ反映する。
+
+Database型そのもので保証できる制約は型として反映し、型のみでは保証できない制約はCHECK Constraint等として生成する。
+
+同一の制約をDatabase型とCHECK Constraintで重複して生成することは原則として行わない。
+
+PostgreSQLでは、Prototype Phase 4において以下を基本変換規則とする。
+
+| Type / Constraint | PostgreSQLへの反映 |
+| --- | --- |
+| `FIXED_STRING.length` | `varchar(n)` + `CHECK (LENGTH(column) = n)` |
+| `maxLength` | `varchar(n)` 等の型として反映 |
+| `minLength` | `CHECK (LENGTH(column) >= n)` |
+| `precision / scale` | `numeric(p,s)` |
+| `minimum` | `CHECK (column >= value)` |
+| `maximum` | `CHECK (column <= value)` |
+| `regex` | PostgreSQL正規表現による `CHECK` |
+| `ENUM` | PostgreSQL ENUM型 |
+| `CODE` | 値集合に対するConstraintは生成しない |
+| `format` | 一般的なCHECK Constraintの自動生成対象とはしない |
+
+`FIXED_STRING` は `char(n)` を使用しない。
+
+固定長は `varchar(n)` と `CHECK (LENGTH(column) = n)` の組合せによって保証する。
+
+例：
+
+```sql
+customer_id varchar(6)
+  CHECK (LENGTH(customer_id) = 6)
+```
+
+`maxLength` は `varchar(n)` 等のDatabase型自体によって保証できるため、同一内容の追加CHECK Constraintは生成しない。
+
+`minLength` は型のみでは保証できないためCHECK Constraintとして生成する。
+
+例：
+
+```sql
+CHECK (LENGTH(description) >= 10)
+```
+
+`regex` はPostgreSQLの正規表現演算子を利用したCHECK Constraintとして生成する。
+
+概念例：
+
+```sql
+CHECK (billing_id ~ '^BL-[0-9]{7}$')
+```
+
+`precision / scale` はPostgreSQLの `numeric(p,s)` として型に反映する。
+
+例：
+
+```text
+precision: 5
+scale: 2
+```
+
+は概念的に以下へ変換する。
+
+```sql
+numeric(5,2)
+```
+
+`minimum / maximum` は値域を保証するCHECK Constraintとして生成する。
 
 例：
 
 ```yaml
 minimum: 0
+maximum: 100
 ```
 
-から、PostgreSQLでは概念的に以下を生成する。
+は概念的に以下へ変換する。
 
 ```sql
-CHECK (quantity >= 0)
+CHECK (profit_rate >= 0)
+CHECK (profit_rate <= 100)
 ```
 
-具体的な変換規則はPhase 4で決定する。
+ENUMは `varchar + CHECK` ではなく、PostgreSQLのENUM型として生成する。
+
+CODEは値集合が運用中に変化し得るため、Element定義から値集合Constraintを生成しない。
+
+`format` は一般的なCHECK Constraintの自動生成対象とはしない。Database型への変換に影響する場合は、PostgreSQL型変換規則側で扱う。
+
+Element由来ConstraintをDDL Source YAML側からOverride、緩和、無効化することはできない。
 
 ---
 
-### 5.2 Table上で定義する情報
+### 5.5 Default
 
-以下の情報は、そのColumnがTable内でどのように利用されるかに依存するため、DDL YAML側で定義する。
+Columnの初期値をDDL Source YAMLで定義可能とする。
 
-- NOT NULL
-- Default
-- Primary Key
-- Unique Constraint
-- Foreign Key
-- Index
+Defaultには以下の2種類を許可する。
 
----
+1. Literal
+2. ARIADNE BuiltIn Expression
 
-### 5.3 Default
-
-Columnの初期値をDDL YAMLで定義可能とする。
+Literalは値を直接指定する。
 
 例：
 
 ```yaml
-columns:
-  productType:
-    element: productType
-    default: NORMAL
+status:
+  element: orderStatus
+  notNull: true
+  default: PREPARING
 ```
 
-同一Elementを利用するColumnであっても、TableまたはColumnごとに異なるDefaultを定義可能とする。
+```yaml
+shippingQuantity:
+  element: quantity
+  notNull: true
+  default: 0
+```
 
-Prototypeではまず固定値を対象とする。
+BuiltIn Expressionは以下の形式で指定する。
 
-CURRENT_TIMESTAMP等のDatabase式を一般的なDefaultとして許可するかについてはPhase 4内で検討する。
+```yaml
+orderDate:
+  element: orderDate
+  notNull: true
+  default:
+    expression: CURRENT_DATE
+```
 
-ARIADNE BuiltIn Columnについては、一般Defaultとは別にARIADNEが生成規則を管理する。
+Prototype Phase 4では、少なくとも以下のBuiltIn Expressionを定義する。
+
+```text
+CURRENT_DATE
+CURRENT_TIME
+CURRENT_DATETIME
+```
+
+`expression` に任意のDatabase SQLを直接記述することは許可しない。
+
+BuiltIn ExpressionはARIADNE上のDBMS非依存な意味として扱い、各Database向けGeneratorが対応するDatabase表現へ変換する。
+
+DefaultのLiteralおよびBuiltIn Expressionは、参照ElementのTypeおよびConstraintと整合していなければならない。
+
+同一Elementを利用するColumnであっても、Columnごとに異なるDefaultを定義可能とする。
+
+Database Function等による業務ロジックとDefaultは別の責務として扱う。
+
+DefaultはINSERT時の初期値を定義するものであり、業務ロジックによる値生成・更新はFunction / Trigger / Custom SQL等の責務とする。
+
+ARIADNE BuiltIn Columnについては、一般ColumnのDefaultとは別にARIADNEが生成規則を管理する。
+
+### 5.6 Sequence
+
+`SEQUENCE_ID` Elementを参照するColumnでは、そのColumn自身をDatabase上の連番採番主体とする場合、`sequence: true` を指定する。
+
+例：
+
+```yaml
+orderShipmentId:
+  element: orderShipmentId
+  notNull: true
+  sequence: true
+```
+
+`sequence: true` は、そのColumnの値をDatabaseの連番採番機構によって生成することを表す。
+
+`sequence` はPrimary Key、Unique Constraint、またはARIADNEの `identifier` を意味しない。
+
+`SEQUENCE_ID` は値としてのDatabase型を定義し、`sequence` はそのColumnが採番主体であるかを定義する。両者は別の責務として扱う。
+
+同一の `SEQUENCE_ID` Elementを、採番元ColumnとForeign Key等の従属Columnの双方で利用可能とする。
+
+例：
+
+```yaml
+# 採番元
+orderShipmentId:
+  element: orderShipmentId
+  notNull: true
+  sequence: true
+```
+
+```yaml
+# Foreign Key等の従属Column
+orderShipmentId:
+  element: orderShipmentId
+  notNull: true
+```
+
+PostgreSQLでは、`sequence: true` が指定された `SEQUENCE_ID` Columnを以下の形式へ変換する。
+
+```sql
+order_shipment_id bigint GENERATED BY DEFAULT AS IDENTITY
+```
+
+`sequence` が指定されていない `SEQUENCE_ID` Columnは、通常の `bigint` として生成する。
+
+```sql
+order_shipment_id bigint
+```
+
+ARIADNE Sourceの `sequence` は論理的な連番採番を表し、PostgreSQLの物理的な `CREATE SEQUENCE` の使用を直接指定するものではない。
+
+Prototype Phase 4では以下をValidation Ruleとする。
+
+- `SEQUENCE_ID` + `sequence: true`：許可
+- `SEQUENCE_ID` + `sequence` 未指定：許可
+- `SEQUENCE_ID` 以外 + `sequence: true`：Error
+
+`sequence` が未指定の場合は `false` と同等に扱う。
+
+`sequence: true` のColumnがPrimary KeyまたはUnique Constraintであることは必須としない。
+それらのDatabase ConstraintはDDL側で独立して定義する。
 
 ---
 
-## 6. Column名の変更
+## 6. Column名と論理名
 
-Element名とは異なるColumn名を定義可能とする。
-
-これにより、一つのElementを同一Table内で複数回利用できる。
+Element名とは異なるColumn識別子を定義可能とする。
 
 例：
 
@@ -251,16 +582,24 @@ billingCustomerId:
 この場合、
 
 ```text
-Element       : customerId
-Column論理名  : billingCustomerId
-Column物理名  : billing_customer_id
+Element              : customerId
+Column識別子         : billingCustomerId
+Column物理名         : billing_customer_id
 ```
 
 として扱う。
 
-生成DDLには、Columnの説明と参照元Elementを追跡可能な情報をCommentとして出力する。
+さらにColumn固有の論理名が必要な場合は `name` を指定する。
 
-Commentの内容はElementsのdescription等から生成し、DDL YAML内への重複記載は原則行わない。
+```yaml
+orderQuantity:
+  element: quantity
+  name: 受注数
+```
+
+`name` が指定されていない場合は参照Elementの `name` を利用する。
+
+生成DDLのColumn Commentでは、Columnの実効論理名および参照元Elementを追跡可能な情報を利用する。
 
 Commentの具体的な生成形式はPhase 4内で決定する。
 
@@ -778,6 +1117,7 @@ Prototype Phase 4ではValidatorそのものは実装しない。
 - Schema内でTable名が重複しないこと
 - Table内でColumn名が重複しないこと
 - DefaultがElementの型・制約と矛盾しないこと
+- `sequence: true` を指定したColumnの参照Elementは `SEQUENCE_ID` でなければならない
 
 ### Primary Key / Unique Constraint
 
@@ -847,14 +1187,14 @@ Phase 4では、以下を確定する。
 
 ### Step 1：DDL基本仕様
 
-- [ ] DDL YAML全体構造を確定する
-- [ ] Schema定義形式を確定する
-- [ ] Table定義形式を確定する
-- [ ] Column定義形式を確定する
-- [ ] Element参照方式を確定する
-- [ ] Column別名定義方式を確定する
-- [ ] Default定義方式を確定する
-- [ ] Element由来Constraintの導出規則を確定する
+- [x] DDL YAML全体構造を確定する
+- [x] Schema定義形式を確定する
+- [x] Table定義形式を確定する
+- [x] Column定義形式を確定する
+- [x] Element参照方式を確定する
+- [x] Column別名定義方式を確定する
+- [x] Default定義方式を確定する
+- [x] Element由来Constraintの導出規則を確定する
 
 ### Step 2：BuiltIn / Audit
 

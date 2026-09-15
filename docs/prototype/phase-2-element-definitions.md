@@ -283,7 +283,7 @@ Java / Go / TypeScript / Python 等の言語型は `types.yaml`
 | `PROVIDED_ID` | `varchar(n)` | `string` |
 | `SEQUENCE_ID` | `bigint` | `integer / int64` |
 | `GENERATED_ID` | `varchar(n)` | `string` |
-| `FIXED_STRING` | `char(n)` | `string` |
+| `FIXED_STRING` | `varchar(n)` + `CHECK (LENGTH(column) = n)` | `string` |
 | `STRING` | `varchar(n)` | `string` |
 | `TEXT` | `text` | `string` |
 | `INTEGER` | `bigint` | `integer / int64` |
@@ -294,6 +294,26 @@ Java / Go / TypeScript / Python 等の言語型は `types.yaml`
 | `DATE` | `date` | `string / date` |
 | `TIME` | `time` | `string` |
 | `DATETIME` | `timestamp with time zone` | `string / date-time` |
+
+`SEQUENCE_ID` は値としてのDatabase型を `bigint` とする。
+
+`SEQUENCE_ID` 自体は、そのElementを参照するすべてのColumnが採番主体であることを意味しない。
+
+Database上でそのColumn自身が連番を生成するかどうかはDDL側の責務とし、DDL Columnの `sequence` により定義する。
+
+これにより、同一の `SEQUENCE_ID` Elementを採番元ColumnとForeign Key等の従属Columnの双方で利用可能とする。
+
+`FIXED_STRING` は PostgreSQL の `char(n)` へ直接マッピングせず、
+`varchar(n)` と固定長を保証する `CHECK Constraint` の組合せとして生成する。
+
+概念例：
+
+```sql
+customer_id varchar(6)
+  CHECK (LENGTH(customer_id) = 6)
+```
+
+`char(n)` 固有の空白Paddingの挙動を固定長制約の意味に含めず、文字列長が指定値と一致することを明示的に保証する。
 
 `DECIMAL` の OpenAPI `format` に `double` は指定しない。 ARIADNE の
 DECIMAL は `precision / scale`

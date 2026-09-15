@@ -147,14 +147,14 @@ src/
 │   ├─ types.yaml
 │   └─ elements.yaml
 │
-├─ database/
-│   └─ DB 設計情報 YAML
-│       ※具体構造は Phase 4 で確定する
+├─ ddl/
+│   └─ schemas/
+│       └─ Schema 定義 YAML
 │
 └─ api/
     └─ services/
         └─ {service-id}/
-            └─ API 定義 YAML(ARIADNE Source)
+            └─ API 定義 YAML
 
 templates/
 └─ Task 管理アプリ等の Prototype 用データ
