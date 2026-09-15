@@ -24,7 +24,7 @@ properties:
     required: true
     name: 商品番号
 
-  quantity:
+  orderQuantity:
     element: quantity
     required: true
     name: 受注数
@@ -32,22 +32,31 @@ properties:
 
   shippingQuantity:
     element: quantity
+    required: true
     readOnly: true
     name: 出荷済数
     description: 出荷済数量
 
   cancelQuantity:
     element: quantity
+    required: true
     readOnly: true
     name: キャンセル数
     description: キャンセル数量
 
   remainingQuantity:
     element: quantity
+    required: true
     readOnly: true
     name: 受注残
     description: |
       受注数から出荷済数およびキャンセル数を差し引いた数量。
+
+  orderStatus:
+    element: orderStatus
+    required: true
+    readOnly: true
+    name: 受注ステータス
 
   sellingPrice:
     element: price
@@ -57,12 +66,13 @@ properties:
 
   costPrice:
     element: price
-    readOnly: true
+    required: true
     name: 想定原価
     description: 想定原価
 
   profitRate:
     element: profitRate
+    required: true
     readOnly: true
     name: 想定利益率
     description: 想定利益率
@@ -125,11 +135,13 @@ api:
           details:
             example:
               - productNo: P123456
-                quantity: 10
+                orderQuantity: 10
                 sellingPrice: 1000
+                costPrice: 800
               - productNo: P654321
-                quantity: 5
+                orderQuantity: 5
                 sellingPrice: 1200
+                costPrice: 900
 
       response:
         resource: Order

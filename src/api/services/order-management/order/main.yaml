@@ -65,7 +65,7 @@ variants:
       - desiredDeliveryTime
 
     add:
-      price:
+      totalPrice:
         element: price
         readOnly: true
         name: 受注金額

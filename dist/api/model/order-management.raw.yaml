@@ -92,8 +92,9 @@ resources:
           - desiredDeliveryTime
 
         add:
-          price:
+          totalPrice:
             elementRef: $price
+            readOnly: true
             name: 金額
             description: 受注の合計金額。
 
@@ -183,7 +184,7 @@ resources:
         required: true
         name: 商品番号
 
-      quantity:
+      orderQuantity:
         elementRef: $quantity
         required: true
         name: 受注数
@@ -209,6 +210,12 @@ resources:
           受注数から出荷済数およびキャンセル数を差し引いた数量。
         example: 5
 
+      orderStatus:
+        elementRef: $orderStatus
+        required: true
+        readOnly: true
+        name: 受注ステータス
+
       sellingPrice:
         elementRef: $price
         required: true
@@ -217,12 +224,13 @@ resources:
 
       costPrice:
         elementRef: $price
-        readOnly: true
+        required: true
         name: 想定原価
         description: 想定原価
 
       profitRate:
         elementRef: $profitRate
+        required: true
         readOnly: true
         name: 想定利益率
         description: 想定利益率
@@ -284,11 +292,13 @@ resources:
               details:
                 example:
                   - productNo: P123456
-                    quantity: 10
+                    orderQuantity: 10
                     sellingPrice: 1000
+                    costPrice: 800
                   - productNo: P654321
-                    quantity: 5
+                    orderQuantity: 5
                     sellingPrice: 1200
+                    costPrice: 900
 
           response:
             resourceRef: $Order
@@ -358,14 +368,21 @@ actions:
     resources:
       OrderShipment:
         properties:
-          shipmentId:
-            elementRef: $orderShipmentId
-            readOnly: true
-            required: true
-
           customerId:
             elementRef: $customerId
             required: true
+
+          personInCharge:
+            elementRef: $userId
+            required: true
+            name: 出荷担当者
+            description: 出荷担当者
+
+          notes:
+            elementRef: $comment
+            name: 摘要
+            description: 補足情報
+            example: 別途報告必要
 
           details:
             array:
@@ -416,6 +433,18 @@ actions:
     resources:
       Cancellation:
         properties:
+          personInCharge:
+            elementRef: $userId
+            required: true
+            name: キャンセル担当者
+            description: キャンセル担当者
+
+          notes:
+            elementRef: $comment
+            name: 摘要
+            description: 補足情報
+            example: 緊急キャンセル
+
           details:
             array:
               resourceRef: $CancellationDetail

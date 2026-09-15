@@ -149,12 +149,9 @@ components:
 
     taskStatus:
       type: string
-      description: タスクの状態
-      enum:
-        - TODO
-        - IN_PROGRESS
-        - DONE
-      example: TODO
+      maxLength: 15
+      description: タスクの状態を表すコード
+      example: "DONE"
 
     priority:
       type: integer

@@ -32,16 +32,11 @@ elements:
 
   taskStatus:
     name: 状態
-    type: ENUM
-    description: タスクの状態
-    values:
-      TODO:
-        name: 未着手
-      IN_PROGRESS:
-        name: 進行中
-      DONE:
-        name: 完了
-    example: "TODO"
+    type: CODE
+    description: タスクの状態を表すコード
+    constraints:
+      maxLength: 15
+    example: "DONE"
 
   priority:
     name: 優先度
@@ -86,7 +81,7 @@ elements:
 
   customerId:
     name: 顧客ID
-    type: GENERATED_ID
+    type: PROVIDED_ID
     description: 顧客を特定するID
     constraints:
       maxLength: 8
@@ -111,7 +106,7 @@ elements:
 
   productNo:
     name: 商品番号
-    type: GENERATED_ID
+    type: PROVIDED_ID
     description: 商品を特定する番号
     constraints:
       maxLength: 7
@@ -176,11 +171,18 @@ elements:
 
   orderStatus:
     name: 受注ステータス
-    type: CODE
-    description: 受注の状態を表すコード
-    constraints:
-      maxLength: 20
-    example: "CONFIRMED"
+    type: ENUM
+    description: 受注状態
+    values:
+      PREPARING:
+        name: 準備中
+      IN_PROGRESS:
+        name: 進行中
+      CANCELED:
+        name: キャンセル済
+      COMPLETED:
+        name: 出荷済
+    example: "IN_PROGRESS"
 
   urgent:
     name: 至急フラグ
@@ -193,3 +195,15 @@ elements:
     type: TIME
     description: 顧客が希望する納品時刻
     example: "15:30:00"
+
+  operationDate:
+    name: 指示日
+    type: DATE
+    description: 指示した日付
+    example: "2023-08-27"
+
+  orderCancelId:
+    name: 受注キャンセル番号
+    type: SEQUENCE_ID
+    description: 出荷情報のキャンセル時に採番する連番
+    example: 32
