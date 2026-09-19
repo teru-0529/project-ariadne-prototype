@@ -72,6 +72,7 @@ Type は以下を管理する。
 - API 上の識別子として利用可能か
 - 利用可能な constraint
 - Type 固有の validation
+- DDL Default として利用可能な値の種類
 - PostgreSQL へのマッピング
 - OpenAPI へのマッピング
 - 推奨命名
@@ -186,7 +187,55 @@ Element 側の `identifier` は必要な場合のみ `true` を指定する。 `
 
 PK / UNIQUE / 複合キー等のデータベース上の制約は DDL 側で扱う。
 
-### 5.2 ENUM と CODE
+### 5.2 Default 利用可否
+
+Type は、DDL Column の Default として利用可能な値の種類を `defaultAllowed` により定義する。
+
+`defaultAllowed` は以下の構造とする。
+
+```yaml
+defaultAllowed:
+  literal: true
+  expressions:
+    - CURRENT_DATE
+```
+
+- `literal`：Literal Default を利用可能かを示す
+- `expressions`：その Type で利用可能な ARIADNE BuiltIn Default Expression を列挙する
+
+`defaultAllowed` は Type 固有の性質とし、Element 側では Override できない。
+
+標準 Type の `defaultAllowed` は以下とする。
+
+| Type | literal | expressions |
+| --- | --- | --- |
+| `PROVIDED_ID` | `false` | `[]` |
+| `SEQUENCE_ID` | `false` | `[]` |
+| `GENERATED_ID` | `false` | `[]` |
+| `FIXED_STRING` | `true` | `[]` |
+| `STRING` | `true` | `[]` |
+| `TEXT` | `true` | `[]` |
+| `INTEGER` | `true` | `[]` |
+| `DECIMAL` | `true` | `[]` |
+| `BOOLEAN` | `true` | `[]` |
+| `ENUM` | `true` | `[]` |
+| `CODE` | `false` | `[]` |
+| `DATE` | `true` | `CURRENT_DATE` |
+| `TIME` | `true` | `CURRENT_TIME` |
+| `DATETIME` | `true` | `CURRENT_DATETIME` |
+
+識別子系 Type は値の提供・生成主体を別に持つため、Literal Default を許可しない。
+
+`CODE` は値集合を項目定義の外部で管理するため、Literal Default を許可しない。
+
+`ENUM` は値集合自体が項目定義の仕様として固定されるため、Literal Default を許可する。
+
+`CURRENT_DATE` / `CURRENT_TIME` / `CURRENT_DATETIME` は ARIADNE が定義する BuiltIn Default Expression を設定可能とする。
+
+BuiltIn Default Expression の Database 固有表現は `types.yaml` では定義しない。
+PostgreSQL / SQLite 等への変換は DDL 生成側の責務とする。
+
+### 5.3 ENUM と CODE
 
 ENUM と CODE は明確に区別する。
 
@@ -213,7 +262,7 @@ ENUM と CODE は明確に区別する。
 ENUM では `NORMAL = 0` のような別 value を持たせない。 EnumValue
 キー自体を実値として扱う。
 
-### 5.3 TIME
+### 5.4 TIME
 
 `TIME` は、タイムゾーンを持たない時刻値を表す。
 
@@ -227,7 +276,7 @@ ENUM では `NORMAL = 0` のような別 value を持たせない。 EnumValue
 
 TIME の形式は Element 固有の制約ではないため、各 Element の constraints には定義しない。
 
-### 5.4 DATETIME
+### 5.5 DATETIME
 
 `DATETIME` は、UTC オフセットを持つ日時値を表す。
 
@@ -335,7 +384,7 @@ types:
 
 Type の基本構造は以下とする。
 
-``` yaml
+```yaml
 TYPE_KEY:
   name: ...
   description: ...
@@ -344,6 +393,10 @@ TYPE_KEY:
   constraints:
     required: []
     optional: []
+
+  defaultAllowed:
+    literal: true
+    expressions: []
 
   validation:          # 必要な場合のみ
     regex: ...
@@ -358,9 +411,15 @@ TYPE_KEY:
   recommendations: []
 ```
 
-`constraints.required / optional` および `recommendations` は0件の場合も空リストを明示する。
+`constraints.required / optional`、`defaultAllowed.expressions` および `recommendations` は0件の場合も空リストを明示する。
 
-`validation` は Type 固有の形式制約が存在する場合のみ記述する。 Prototype では `regex` を使用する。
+`defaultAllowed` はすべての Type で必須とする。
+
+`defaultAllowed.literal` は boolean とし、Literal Default の利用可否を示す。
+
+`defaultAllowed.expressions` は、その Type で利用可能な ARIADNE BuiltIn Default Expression の一覧とする。
+
+`validation` は Type 固有の形式制約が存在する場合のみ記述する。Prototype では `regex` を使用する。
 
 ### 8.1 Naming Recommendations
 
@@ -586,6 +645,10 @@ Prototype では Validator を実装しないが、正しい状態を仕様と�
 | `V-20` | `kind` が存在し、定義種別と一致する（`types` / `elements`） | Error |
 | `V-21` | Type の `validation` の定義内容が妥当である | Error |
 | `V-22` | Element の `identifier` は、指定する場合 true である | Error |
+| `V-23` | Type が `defaultAllowed` を持つ | Error |
+| `V-24` | `defaultAllowed.literal` が boolean である | Error |
+| `V-25` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ | Error |
+| `V-26` | Element は `defaultAllowed` を定義しない | Error |
 
 ### 11.1 Constraint Validation
 
@@ -621,7 +684,35 @@ Type 固有の `validation` は、その Type を使用するすべての Elemen
 
 Element の実効 identifier は、Type.identifier または Element.identifier のいずれかが true の場合に true とする。
 
-### 11.3 Example Validation
+### 11.3 Default Allowed Validation
+
+`defaultAllowed` は、DDL Column の Default として利用可能な値の種類を Type ごとに定義する。
+
+``` text
+defaultAllowed.literal
+  true  → Literal Default を利用可能
+  false → Literal Default を利用不可
+
+defaultAllowed.expressions
+  → 利用可能な ARIADNE BuiltIn Default Expression
+```
+
+`defaultAllowed.expressions` に指定できる値は、ARIADNE が定義する BuiltIn Default Expression に限る。
+
+Prototype では以下を定義する。
+
+``` text
+CURRENT_DATE
+CURRENT_TIME
+CURRENT_DATETIME
+```
+
+Element は `defaultAllowed` を Override できない。
+
+DDL Column に指定された Default が実際に利用可能かどうかの Validation は、
+参照 Element の Type に定義された `defaultAllowed` を使用して DDL 側で行う。
+
+### 11.4 Example Validation
 
 型の基本対応は以下とする。
 
@@ -655,7 +746,7 @@ DATETIME
 さらに Element 固有の
 `minimum / maximum / minLength / maxLength / regex` 等も満たすこと。
 
-### 11.4 Error / Warning / Operation Rule
+### 11.5 Error / Warning / Operation Rule
 
 ``` text
 ERROR
@@ -839,6 +930,7 @@ DDL 側も項目定義から共通意味を継承する。
 - `description`
 - constraints
 - ENUM values
+- `defaultAllowed`
 - PostgreSQL mapping
 
 DDL 固有の以下の情報は DDL 側で管理する。
@@ -853,6 +945,15 @@ DDL 固有の以下の情報は DDL 側で管理する。
 - INDEX
 - テーブル固有 CHECK
 - 同一 Element を複数カラムとして利用する場合の役割・別名
+
+DDL Column の `default` は DDL 側で定義する。
+
+ただし、その Column で利用可能な Default の種類は、参照 Element の Type に定義された `defaultAllowed` に従う。
+
+Literal Default を指定する場合は `defaultAllowed.literal`、
+BuiltIn Default Expression を指定する場合は `defaultAllowed.expressions` を参照する。
+
+BuiltIn Default Expression の PostgreSQL / SQLite 等への具体的な変換は DDL 生成側の責務とする。
 
 基本原則は以下とする。
 
