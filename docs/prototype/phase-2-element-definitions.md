@@ -623,36 +623,36 @@ Prototype では Validator を実装しないが、正しい状態を仕様と�
 
 | ID | Validation Rule | 判定 |
 | --- | --- | --- |
-| `V-01` | `types.yaml.formatVersion` と `elements.yaml.formatVersion` が一致する | Error |
-| `V-02` | `formatVersion` が ARIADNE の対応する Item Definition Format である | Error |
-| `V-03` | Element の `type` が `types.yaml` に存在する | Error |
-| `V-04` | Type の `required` constraint を Element がすべて持つ | Error |
-| `V-05` | Element は Type の `required / optional` に存在しない constraint を持たない | Error |
-| `V-06` | constraint の値そのものが妥当である | Error |
-| `V-07` | `example` が論理 Type の型・形式、Type 固有の `validation`、Element の constraint を満たす | Error |
-| `V-08` | `type: ENUM` の Element は `values` を持つ | Error |
-| `V-09` | ENUM の `values` が1件以上存在する | Error |
-| `V-10` | ENUM 以外の Element は `values` を持たない | Error |
-| `V-11` | EnumValue キーが `UPPER_SNAKE_CASE` に適合する | Error |
-| `V-12` | ENUM の `example` が `values` に存在するキーである | Error |
-| `V-13` | Element キーが `camelCase` に適合する | Error |
-| `V-14` | Type キーが `UPPER_SNAKE_CASE` に適合する | Error |
-| `V-15` | Element キーが Type の `recommendations.naming` に適合する | Warning |
-| `V-16` | Element / EnumValue キーを同一概念のまま rename しない | 運用ルール |
-| `V-17` | `updatedAt` が各ファイルに存在する | Error |
-| `V-18` | `updatedAt` が ISO 8601 形式である | Error |
-| `V-19` | `domain` が存在し、値が `elements` である | Error |
-| `V-20` | `kind` が存在し、定義種別と一致する（`types` / `elements`） | Error |
-| `V-21` | Type の `validation` の定義内容が妥当である | Error |
-| `V-22` | Element の `identifier` は、指定する場合 true である | Error |
-| `V-23` | Type が `defaultAllowed` を持つ | Error |
-| `V-24` | `defaultAllowed.literal` が boolean である | Error |
-| `V-25` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ | Error |
-| `V-26` | Element は `defaultAllowed` を定義しない | Error |
+| `V-001` | `types.yaml.formatVersion` と `elements.yaml.formatVersion` が一致する | Error |
+| `V-002` | `formatVersion` が ARIADNE の対応する Item Definition Format である | Error |
+| `V-003` | Element の `type` が `types.yaml` に存在する | Error |
+| `V-004` | Type の `required` constraint を Element がすべて持つ | Error |
+| `V-005` | Element は Type の `required / optional` に存在しない constraint を持たない | Error |
+| `V-006` | constraint の値そのものが妥当である | Error |
+| `V-007` | `example` が論理 Type の型・形式、Type 固有の `validation`、Element の constraint を満たす | Error |
+| `V-008` | `type: ENUM` の Element は `values` を持つ | Error |
+| `V-009` | ENUM の `values` が1件以上存在する | Error |
+| `V-010` | ENUM 以外の Element は `values` を持たない | Error |
+| `V-011` | EnumValue キーが `UPPER_SNAKE_CASE` に適合する | Error |
+| `V-012` | ENUM の `example` が `values` に存在するキーである | Error |
+| `V-013` | Element キーが `camelCase` に適合する | Error |
+| `V-014` | Type キーが `UPPER_SNAKE_CASE` に適合する | Error |
+| `V-015` | Element キーが Type の `recommendations.naming` に適合する | Warning |
+| `V-016` | Element / EnumValue キーを同一概念のまま rename しない | 運用ルール |
+| `V-017` | `updatedAt` が各ファイルに存在する | Error |
+| `V-018` | `updatedAt` が ISO 8601 形式である | Error |
+| `V-019` | `domain` が存在し、値が `elements` である | Error |
+| `V-020` | `kind` が存在し、定義種別と一致する（`types` / `elements`） | Error |
+| `V-021` | Type の `validation` の定義内容が妥当である | Error |
+| `V-022` | Element の `identifier` は、指定する場合 true である | Error |
+| `V-023` | Type が `defaultAllowed` を持つ | Error |
+| `V-024` | `defaultAllowed.literal` が boolean である | Error |
+| `V-025` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ | Error |
+| `V-026` | Element は `defaultAllowed` を定義しない | Error |
 
 ### 11.1 Constraint Validation
 
-`V-06` では少なくとも以下を確認する。
+`V-006` では少なくとも以下を確認する。
 
 ``` text
 length > 0

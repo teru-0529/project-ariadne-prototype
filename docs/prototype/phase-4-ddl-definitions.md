@@ -1580,44 +1580,271 @@ Prototype Phase 4ではValidatorそのものは実装しない。
 
 将来のValidatorが検証すべきRuleを定義する。
 
-少なくとも以下を対象とする。
+Phase 4のValidationは、DDL Source YAMLの構造・記述形式を検証する
+File Validationと、DDL Modelとしての意味的な整合性を検証する各種Validationに分離する。
 
-### Element / Column
+Phase 2 / Phase 3からValidation IDを継続し、Phase 4では `V-083` 以降を使用する。
 
-- 参照Elementが存在すること
-- Schema内でTable名が重複しないこと
-- Table内でColumn名が重複しないこと
-- DefaultがElementの型・制約と矛盾しないこと
-- `sequence: true` を指定したColumnの参照Elementは `SEQUENCE_ID` でなければならない
+### 23.1 File Validation
 
-### Primary Key / Unique Constraint
+File Validationでは、DDL Source YAMLの構造・記述形式・Source上の命名規約を検証する。
 
-- 対象Columnが存在すること
-- 複合定義内でColumnが重複しないこと
+Phase 2 Element / Typeの参照解決や、Constraint間の意味的な整合性は後続Validationで検証する。
 
-### Foreign Key
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-083 | 共通Headerの必須項目が存在する | Error |
+| V-084 | `formatVersion` がARIADNEの対応するPhase 4 Formatである | Error |
+| V-085 | `updatedAt` がISO 8601として妥当である | Error |
+| V-086 | `domain` が `ddl` である | Error |
+| V-087 | `kind` が `database` である | Error |
+| V-088 | 未定義属性を持たない | Error |
+| V-089 | YAML Mapに重複Keyが存在しない | Error |
+| V-090 | 空Map / 空Arrayを明示的に記述しない | Error |
+| V-091 | 必須文字列属性に空文字 / 空白のみを指定しない | Error |
+| V-092 | `schema` が存在する | Error |
+| V-093 | `tables` が存在し、1件以上のTableを持つ | Error |
+| V-094 | Schema識別子が `snake_case` の命名規約を満たす | Error |
+| V-095 | Table識別子が `snake_case` の命名規約を満たす | Error |
+| V-096 | 各Tableが `name` を持つ | Error |
+| V-097 | 各Tableが `columns` を持ち、1件以上のSource Columnを持つ | Error |
+| V-098 | Column識別子が `lowerCamelCase` の命名規約を満たす | Error |
+| V-099 | 各Columnが `element` を持つ | Error |
+| V-100 | `notNull` を指定する場合は `true` のみを許可する | Error |
+| V-101 | `sequence` を指定する場合は `true` のみを許可する | Error |
+| V-102 | `audit` を指定する場合はMapであり、`element` を持つ | Error |
+| V-103 | `default` はScalarまたはExpression Mapである | Error |
+| V-104 | Expression Map形式の `default` は `expression` を持つ | Error |
+| V-105 | `default` を指定する場合、値は `null` ではない | Error |
+| V-106 | `primaryKey` はMapであり、`columns` を持つ | Error |
+| V-107 | `primaryKey.columns` は1件以上のArrayである | Error |
+| V-108 | `uniqueConstraints` を指定する場合、Unique Constraint Mapを要素とする1件以上のArrayである | Error |
+| V-109 | 各Unique Constraintは `columns` を持ち、1件以上のArrayである | Error |
+| V-110 | `foreignKeys` を指定する場合、Foreign Key Mapを要素とする1件以上のArrayである | Error |
+| V-111 | 各Foreign Keyは `columns` を持ち、1件以上のArrayである | Error |
+| V-112 | 各Foreign Keyは `reference` Mapを持つ | Error |
+| V-113 | Foreign Keyの `reference` は `table` を持つ | Error |
+| V-114 | Foreign Keyの `reference` は `columns` を持ち、1件以上のArrayである | Error |
+| V-115 | `onDelete` / `onUpdate` を指定する場合は `NO_ACTION` / `CASCADE` / `SET_NULL` / `SET_DEFAULT` のいずれかである | Error |
+| V-116 | `indexes` を指定する場合、Index Mapを要素とする1件以上のArrayである | Error |
+| V-117 | 各Indexは `columns` を持ち、Index Column Mapを要素とする1件以上のArrayである | Error |
+| V-118 | 各Index Columnが `column` を持つ | Error |
+| V-119 | Index Columnの `order` を指定する場合は `ASC` / `DESC` のいずれかである | Error |
+| V-120 | Index Columnの `nulls` を指定する場合は `FIRST` / `LAST` のいずれかである | Error |
 
-- 参照元Columnが存在すること
-- 参照先Schema / Table / Columnが存在すること
-- Schemaをまたいでいないこと
-- 参照元Columnと参照先Columnが同一Elementであること
-- 複合FKのColumn数が一致すること
-- 複合FKの対応する各ColumnのElementが一致すること
+### 23.2 Element / Column Validation
 
-### Index
+Element / Column Validationでは、DDL ColumnとPhase 2 Element / Typeとの意味的な整合性を検証する。
 
-- Index対象Columnが存在すること
-- 同一Index内でColumnが重複しないこと
-- 同一Column・同一順序のIndexが重複しないこと
-- Unique Constraintと完全に同一Column・同一順序のIndexを定義していないこと
-- `nulls` は `FIRST` または `LAST` であること
-- `nulls` が指定されたIndex ColumnはNULL許容Columnであること
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-121 | Columnの `element` がPhase 2で定義されたElementとして存在する | Error |
+| V-122 | ColumnからElement / Type由来の `type` / `length` / `minLength` / `maxLength` / `regex` / `minimum` / `maximum` / `precision` / `scale` / `enum` / `format` を再定義またはOverrideしない | Error |
+| V-123 | `sequence: true` を指定したColumnの参照Element Typeが `SEQUENCE_ID` である | Error |
+| V-124 | `createdAt` / `updatedAt` / `createdBy` / `updatedBy` をユーザー定義Columnとして定義しない | Error |
 
-### Naming
+`SEQUENCE_ID` Elementを参照するColumnであっても、 `sequence: true` の指定は必須ではない。
 
-- 自動生成されるConstraint / Index名が衝突しないこと
+### 23.3 Default Validation
 
-Validation RuleはPhase 4で追加・精緻化する。
+Default Validationでは、Column Defaultと参照Element / Typeとの整合性を検証する。
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-125 | Literal Defaultを指定した場合、参照Element Typeの `defaultAllowed.literal` が `true` である | Error |
+| V-126 | Literal Defaultが参照Elementの論理Type / Format / Type固有Validation / Element Constraintを満たす | Error |
+| V-127 | Expression Defaultを指定した場合、そのExpressionが参照Element Typeの `defaultAllowed.expressions` に含まれる | Error |
+
+Literal Defaultでは暗黙の型変換を行わない。
+
+例えばINTEGERに対する `"0"` と `0`、BOOLEANに対する `"true"` と `true` は異なる値型として扱う。
+
+任意のDatabase SQLをExpressionとして指定することはできない。
+利用可能なExpressionは `defaultAllowed.expressions` により決定する。
+
+### 23.4 Primary Key / Unique Constraint Validation
+
+#### Primary Key
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-128 | すべてのTableがPrimary Keyをちょうど1つ持つ | Error |
+| V-129 | `primaryKey.columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-130 | 同一Primary Key内で同じColumnを重複指定しない | Error |
+| V-131 | Primary Keyを構成するすべてのColumnに明示的な `notNull: true` が指定されている | Error |
+
+Primary KeyのColumn順序はSourceのArray記載順を保持する。
+
+#### Unique Constraint
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-132 | `uniqueConstraints[].columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-133 | 同一Unique Constraint内で同じColumnを重複指定しない | Error |
+| V-134 | 同一Table内に同じColumn集合を持つUnique Constraintを複数定義しない | Error |
+
+Unique ConstraintのColumn順序はDDL生成時に保持する。
+
+ただし、重複判定ではColumn順序を区別しない。
+
+例えば `[a, b]` と `[b, a]` は、同一Column集合を持つUnique Constraintとして重複Errorとする。
+
+### 23.5 Foreign Key Validation
+
+Foreign Key Validationでは、Foreign Keyの参照関係およびReferential Actionの意味的整合性を検証する。
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-135 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-136 | `reference.table` に指定されたTableが同一Schema内に存在する | Error |
+| V-137 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する | Error |
+| V-138 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する | Error |
+| V-139 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である | Error |
+| V-140 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
+| V-141 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない | Error |
+| V-142 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない | Error |
+| V-143 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない | Error |
+
+Foreign KeyのIdentityは以下により決定する。
+
+```text
+Table
+＋ Local Columns（記載順）
+＋ Reference Table
+```
+
+`reference.columns`、`onDelete`、`onUpdate` は Foreign KeyのIdentityには含めない。
+
+したがって、同一Tableから同一Local Columnsを使用して
+同一Reference Tableへ複数のForeign Keyを定義することは許可しない。
+
+Foreign Keyは同一Schema内のみを参照可能とする。
+
+Self Referenceは許可する。
+
+### 23.6 Foreign Key Element一致 Validation
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-144 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
+
+Database上の型が互換であっても、異なるElement間にForeign Keyを定義することは許可しない。
+
+Foreign KeyにおけるElement一致は、
+Database型の一致ではなく、同一の業務上の値を参照していることを保証するためのRuleとする。
+
+### 23.7 Composite Foreign Key Validation
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-145 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
+
+複合Foreign KeyのColumn対応はArrayの記載順とする。
+
+第n Local Columnは第n Reference Columnに対応する。
+
+各対応Columnには Foreign Key Element一致Validationを適用する。
+
+### 23.8 Index Validation
+
+| ID | Rule | Level |
+| --- | --- | --- |
+| V-146 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-147 | 同一Index内で同じColumnを複数回指定しない | Error |
+| V-148 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない | Error |
+| V-149 | `notNull: true` のColumnに `nulls` を指定しない | Error |
+| V-150 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
+
+IndexのCanonical Identityは以下により決定する。
+
+```text
+Table
+＋ Columns（記載順）
+    ＋ Effective Order
+    ＋ Nulls
+```
+
+Canonical Identity上では以下として扱う。
+
+```text
+order省略 → ASC
+nulls省略 → DEFAULT
+```
+
+したがって、
+
+```yaml
+- column: orderNo
+```
+
+と、
+
+```yaml
+- column: orderNo
+  order: ASC
+```
+
+は同一定義として扱う。
+
+一方、`nulls` の明示指定は設計意図としてCanonical Identityに含める。
+
+Primary Key / Unique Constraintとの重複判定では、
+Primary Key / Unique Constraint側のEffective Orderを `ASC`、 `nulls` を `DEFAULT` として比較する。
+
+Column順序、Order、または有効な `nulls` 指定が異なるIndexは別のIndexとして許可する。
+
+Prefix Indexも別定義として許可する。
+
+例：
+
+```text
+Unique Constraint : (a, b)
+Index             : (a)
+```
+
+上記Indexは重複とはみなさない。
+
+### 23.9 Naming Ruleとの関係
+
+Constraint / Indexの物理名はARIADNEがNaming Ruleに従って自動生成するため、Naming自体を独立したValidation Ruleとはしない。
+
+生成名は以下の形式とする。
+
+```text
+Primary Key       : pk_<table>
+Unique Constraint : uq_<table>_<hash8>
+Foreign Key       : fk_<table>_<hash8>
+Index              : idx_<table>_<hash8>
+```
+
+`hash8` は対象定義のCanonical InputをUTF-8で表現し、SHA-256を計算した結果の先頭8桁をlowercaseで使用する。
+
+Unique ConstraintのCanonical Inputは以下とする。
+
+```text
+Table
+＋ Columns（記載順）
+```
+
+Foreign KeyのCanonical Inputは以下とする。
+
+```text
+Table
+＋ Local Columns（記載順）
+＋ Reference Table
+```
+
+IndexのCanonical Inputは以下とする。
+
+```text
+Table
+＋ Columns（記載順）
+    ＋ Effective Order
+    ＋ Nulls
+```
+
+ARIADNEが異なる定義から同一物理名を生成するHash Collision等が発生した場合は、
+Source ValidationではなくGeneratorの生成不能Errorとして扱う。
 
 ---
 
@@ -1690,14 +1917,14 @@ Phase 4では、以下を確定する。
 
 ### Step 4：Validation Rule
 
-- [ ] Element / Column Validation Ruleを確定する
-- [ ] Default Validation Ruleを確定する
-- [ ] PK / Unique Validation Ruleを確定する
-- [ ] FK Validation Ruleを確定する
-- [ ] FK Element一致Ruleを確定する
-- [ ] 複合FK Validation Ruleを確定する
-- [ ] Index Validation Ruleを確定する
-- [ ] Naming Validation Ruleを確定する
+- [x] Element / Column Validation Ruleを確定する
+- [x] Default Validation Ruleを確定する
+- [x] PK / Unique Validation Ruleを確定する
+- [x] FK Validation Ruleを確定する
+- [x] FK Element一致Ruleを確定する
+- [x] 複合FK Validation Ruleを確定する
+- [x] Index Validation Ruleを確定する
+- [x] Naming Validation Ruleを確定する
 
 ### Step 5：Resolved DDL Model
 
