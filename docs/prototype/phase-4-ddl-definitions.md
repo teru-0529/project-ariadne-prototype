@@ -1372,49 +1372,257 @@ Phase 4では、業務固有採番を汎用YAMLモデルとして抽象化する
 
 ## 16. Resolved DDL Model
 
-SourceとなるDDL YAMLから、DDL生成に必要な情報をすべて解決したResolved DDL Modelを定義する。
+SourceとなるDDL YAMLから、参照・省略表現・Naming Rule等を解決し、後続処理が一意に解釈可能なResolved DDL Modelを定義する。
+
+Types / Elementsを正本とする情報はResolved DDL Modelへ複製せず、 `elementRef` により参照関係を保持する。
+
+Database DDL生成時には、Resolved DDL ModelとTypes / Elementsを組み合わせて利用する。
 
 ```text
-Types
-   ↓
-Elements
-   ↓
-DDL YAML
-   ↓
-Resolved DDL Model
-   ├─ PostgreSQL DDL
-   ├─ SQLite Compatibility DDL
-   └─ DDL Reference
+DDL Source YAML
+      ↓
+Resolved DDL Model ─────┐
+                        ├─ PostgreSQL DDL
+Types / Elements ───────┤
+                        ├─ SQLite Compatibility DDL
+                        └─ DDL Reference
 ```
 
-Resolved DDL Modelでは、少なくとも以下を解決済みとする。
+Resolved DDL Modelでは、以下を解決済みとする。
 
-- Schema
-- Table
-- Column
-- Element
-- Column Alias / 実効論理名
-- 論理型
-- 桁
-- Precision / Scale
-- Minimum / Maximum
-- Element由来Constraint
-- NULL制約
-- Default
-- Sequence
+- Schema識別子
+- Table / ColumnのPhysical Name
+- Element参照（`elementRef`）
+- Column固有論理名のOverride
 - Primary Key
 - Unique Constraint
 - Foreign Key
-- Foreign Key Action
+- Foreign Key ActionのDefault
 - Index
 - Constraint / Index Physical Name
+- Constraint / Index Naming用Hash
+- Index Columnの実効Order
 - BuiltIn Columns
 - Audit Columns
-- Comment生成情報
+- Default
+- Sequence / Generation Strategy
+- Comment生成に必要な参照情報
+
+Types / Elementsを正本とする以下の情報は、Resolved DDL Modelへ複製しない。
+
+- 論理Type
+- length / minLength / maxLength
+- precision / scale
+- minimum / maximum
+- regex
+- enum
+- format
+- Element由来Constraint
+
+これらはDatabase DDL生成時に `elementRef` からTypes / Elementsを参照して導出する。
 
 DBMS固有SQLへの変換はResolved後の処理とする。
 
 Prototype Phase 4ではResolved DDL Modelの仕様およびSampleを定義し、Generator実装は行わない。
+
+### 16.1 Resolved DDL Model形式
+
+Resolved DDL ModelはSchema単位で生成する。
+
+```yaml
+formatVersion: "1.0"
+
+schema:
+  id: order
+
+tables:
+  orders:
+    name: 受注
+    physicalName: orders
+
+    columns:
+      orderNo:
+        elementRef: $receivedOrderNo
+        physicalName: order_no
+        notNull: true
+
+      personInCharge:
+        elementRef: $userId
+        physicalName: person_in_charge
+        override:
+          name: 出荷担当者ID
+```
+
+Source YAML上のColumn `element` は、Resolved DDL Modelでは `elementRef` として保持する。
+
+Table / ColumnのDatabase上の物理名はNaming Ruleを適用し、 `physicalName` として解決する。
+
+Column固有の `name` が指定されている場合は、Elementの論理名に対するOverrideとして `override.name` に保持する。
+
+### 16.2 BuiltIn / Audit Columns
+
+DDL Source YAMLに記載されないBuiltIn Columnは、Resolved DDL Modelで明示的に展開する。
+
+```yaml
+createdAt:
+  builtIn: system
+  physicalName: created_at
+  notNull: true
+  default:
+    expression: CURRENT_DATETIME
+
+updatedAt:
+  builtIn: system
+  physicalName: updated_at
+  notNull: true
+  default:
+    expression: CURRENT_DATETIME
+
+createdBy:
+  builtIn: audit
+  elementRef: $traceId
+  physicalName: created_by
+  notNull: true
+
+updatedBy:
+  builtIn: audit
+  elementRef: $traceId
+  physicalName: updated_by
+  notNull: true
+```
+
+`createdAt` / `updatedAt` は `builtIn: system` とする。
+
+Auditが有効な場合に展開される `createdBy` / `updatedBy` は
+`builtIn: audit` とし、`audit.element` を `elementRef` として保持する。
+
+### 16.3 Constraint / Index
+
+Primary Key、Unique Constraint、Foreign Key、Indexでは、
+対象となるTable / Columnの物理名およびNaming Ruleによる物理名を解決する。
+
+Primary Keyの例：
+
+```yaml
+primaryKey:
+  physicalName: pk_order_details
+  columns:
+    - order_no
+    - detail_no
+```
+
+Unique Constraintの例：
+
+```yaml
+uniqueConstraints:
+  - physicalName: uq_shipping_instructions_ba368286
+    columns:
+      - operation_date
+      - order_no
+      - detail_no
+    hash: ba3682869c048f7b175132052d27e475d10ebc570a0bf20dad5f06467631a7f3
+```
+
+Foreign Keyの例：
+
+```yaml
+foreignKeys:
+  - physicalName: fk_shipping_instructions_3c47e712
+    columns:
+      - order_no
+      - detail_no
+    reference:
+      table: order_details
+      columns:
+        - order_no
+        - detail_no
+    onUpdate: NO_ACTION
+    onDelete: NO_ACTION
+    hash: 3c47...
+```
+
+Foreign Keyの `onUpdate` / `onDelete` がSourceで省略されている場合、
+Resolved DDL Modelでは実効値である `NO_ACTION` を明示する。
+
+Indexの例：
+
+```yaml
+indexes:
+  - physicalName: idx_tasks_fb4a92c9
+    columns:
+      - column: status_code
+        order: ASC
+      - column: priority
+        order: DESC
+      - column: task_pic
+        order: ASC
+        nulls: FIRST
+      - column: task_id
+        order: ASC
+    hash: fb4...
+```
+
+Index Columnの `order` がSourceで省略されている場合、Resolved DDL Modelでは実効値である `ASC` を明示する。
+
+`nulls` がSourceで省略されている場合はResolved DDL Modelにも出力せず、対象DatabaseのDefault Semanticsに従う。
+
+Unique Constraint、Foreign Key、Indexでは、Naming Ruleによって算出したSHA-256 Hashを `hash` として保持する。
+
+### 16.4 Default / Sequence
+
+Literal DefaultはResolved DDL ModelでもLiteralとして保持する。
+
+```yaml
+status:
+  elementRef: $orderStatus
+  physicalName: status
+  default: PREPARING
+```
+
+ARIADNE BuiltIn ExpressionもDBMS固有表現へ変換せず保持する。
+
+```yaml
+orderDate:
+  elementRef: $orderDate
+  physicalName: order_date
+  default:
+    expression: CURRENT_DATE
+```
+
+Source YAMLの `sequence: true` は、Resolved DDL Modelでは値生成方式として明示的に解決する。
+
+```yaml
+orderShipmentId:
+  elementRef: $orderShipmentId
+  physicalName: order_shipment_id
+  notNull: true
+  generation:
+    strategy: SEQUENCE
+```
+
+`generation.strategy` はARIADNE上の値生成方式を表し、
+PostgreSQLの `IDENTITY` 等のDBMS固有表現への変換はGeneratorの責務とする。
+
+### 16.5 Comment生成情報
+
+Database CommentそのものはResolved DDL Modelへ保持しない。
+
+Table CommentはTableの `name` を生成元とする。
+
+Column Commentは、Columnに `override.name` が存在する場合はその値を利用し、
+存在しない場合は `elementRef` が参照するElementの `name` を利用する。
+
+したがってComment生成に必要な情報はResolved DDL ModelとTypes / Elementsの参照関係によって保持され、
+Comment文字列そのものをResolved DDL Modelへ複製しない。
+
+### 16.6 Element由来Constraint
+
+Types / Elementsに定義された型・桁・値域等のConstraintは、Resolved DDL Modelへ複製しない。
+
+Resolved DDL Modelは `elementRef` を保持し、
+Database DDL生成時に参照先のElement / Typeから必要なConstraintを導出する。
+
+したがって、Element由来ConstraintのDatabase表現への変換はGeneratorの責務とする。
 
 ---
 
