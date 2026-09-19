@@ -21,6 +21,12 @@ tables:
       description:
         element: description
 
+      createUser:
+        element: userId
+
+      taskPic:
+        element: userId
+
       priority:
         element: priority
         notNull: true
@@ -29,6 +35,29 @@ tables:
         element: taskStatus
         name: ステータスコード
         notNull: true
+
+    primaryKey:
+      - taskId
+
+    indexes:
+      - columns: #INFO: (検索条件)
+          - column: statusCode
+          - column: priority
+            order: DESC
+          - column: taskPic
+            nulls: FIRST
+          - column: taskId
+      - columns: #INFO: 登録ユーザーで絞る
+          - column: createUser
+          - column: taskId
+
+    foreignKeys:
+      - columns:
+          - statusCode
+        reference: #INFO: PK
+          table: statuses
+          columns:
+            - statusCode
 
   statuses: #TODO: TBD
     name: ステータス
@@ -42,3 +71,6 @@ tables:
       description:
         element: description
         notNull: true
+
+    primaryKey:
+      - statusCode

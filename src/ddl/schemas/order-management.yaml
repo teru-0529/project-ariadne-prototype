@@ -5,12 +5,15 @@ kind: database
 
 schema: order
 
+audit:
+  element: traceId
+
 tables:
   orders: #TODO: TBD
     name: 受注
 
     columns:
-      orderNo: #TODO: 自動登録（Function）
+      orderNo: #TODO: 自動採番（登録時にFunction：ORD-YYYYMMDD-999、登録日内連番）
         element: receivedOrderNo
         notNull: true
 
@@ -28,7 +31,7 @@ tables:
         element: customerId
         notNull: true
 
-      status: #TODO: 自動変更（明細の同盟項目によって変更、すべてが1/2/3であれば1/2/3、それ以外は4）
+      status: #TODO: 自動変更（order_details登録/変更時にFunction：、受注明細すべてが1/2/3であれば1/2/3、それ以外は4）
         element: orderStatus
         default: PREPARING
         notNull: true
@@ -44,6 +47,22 @@ tables:
       desiredDeliveryTime:
         element: desiredDeliveryTime
 
+    primaryKey:
+      - orderNo
+
+    indexes:
+      - columns: #INFO: (検索条件)
+          - column: orderPic
+            nulls: LAST
+          - column: customerId
+          - column: orderNo
+      - columns: #INFO: ステータスで絞る
+          - column: status
+          - column: orderNo
+      - columns: #INFO: 緊急出荷
+          - column: urgent
+          - column: orderNo
+
   order_details: #TODO: TBD
     name: 受注明細
 
@@ -52,7 +71,7 @@ tables:
         element: receivedOrderNo
         notNull: true
 
-      detailNo: #TODO: 自動登録（Function）
+      detailNo: #TODO: 自動採番（登録時にFunction：orderNo単位で連番）
         element: orderDetailNo
         notNull: true
 
@@ -65,29 +84,29 @@ tables:
         name: 受注数
         notNull: true
 
-      shippingQuantity: #TODO: 自動変更（出荷登録時にFunction）
+      shippingQuantity: #TODO: 自動変更（shipping_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
         element: quantity
         name: 出荷数
         notNull: true
         default: 0
 
-      cancelQuantity: #TODO: 自動変更（キャンセル登録時にFunction）
+      cancelQuantity: #TODO: 自動変更（cancel_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
         element: quantity
         name: キャンセル数
         notNull: true
         default: 0
 
-      remainingQuantity: #TODO: 自動変更（数量変更時にFunction）
+      remainingQuantity: #TODO: 自動変更（登録/変更時にFunction：remainingQuantity = orderQuantity - shippingQuantity - cancelQuantity）
         element: quantity
         name: 受注残
         notNull: true
 
-      status: #TODO: 自動変更（1:受注数=受注残→準備中、2:受注残0/出荷0→キャンセル、3:受注残0/出荷≠0→完了、4:その他→対応中）
+      status: #TODO: 自動変更（登録/変更時にFunction：1:受注数=受注残→準備中、2:受注残0/出荷0→キャンセル、3:受注残0/出荷≠0→完了、4:その他→対応中）
         element: orderStatus
         default: PREPARING
         notNull: true
 
-      sellingPrice:
+      sellingPrice: #TODO: 制約（sellingPrice > costPrice）
         element: price
         notNull: true
 
@@ -95,9 +114,42 @@ tables:
         element: price
         notNull: true
 
-      profitRate: #TODO: 自動計算（初期登録時に計算）
+      profitRate: #TODO: 自動計算（登録/profitRate = （sellingPrice - costPrice) / sellingPrice * 100)
         element: profitRate
         notNull: true
+
+    primaryKey:
+      - orderNo
+      - detailNo
+
+    indexes:
+      - columns: #INFO: 受注残がある順番
+          - column: remainingQuantity
+          - column: orderNo
+          - column: detailNo
+      - columns: #INFO: ステータスで絞る
+          - column: status
+          - column: orderNo
+          - column: detailNo
+      - columns: #INFO: 商品で絞る
+          - column: productNo
+          - column: orderNo
+          - column: detailNo
+      - columns: #INFO: 利益率で絞る
+          - column: profitRate
+            order: DESC
+          - column: productNo
+          - column: orderNo
+          - column: detailNo
+
+    foreignKeys:
+      - columns:
+          - orderNo
+        reference: #INFO: PKの一部
+          table: orders
+          columns:
+            - orderNo
+        onDelete: CASCADE
 
   shipping_instructions: #TODO: TBD
     name: 出荷指示
@@ -136,6 +188,32 @@ tables:
         element: comment
         name: 備考
 
+    primaryKey:
+      - orderShipmentId
+
+    uniqueConstraints:
+      - columns: #INFO: 同一日に同一受注明細を複数回出荷してはいけない
+          - operationDate
+          - orderNo
+          - detailNo
+
+    indexes:
+      - columns: #INFO: 受注明細順
+          - column: orderNo
+          - column: detailNo
+          - column: operationDate
+            order: DESC
+
+    foreignKeys:
+      - columns:
+          - orderNo
+          - detailNo
+        reference: #INFO: PK
+          table: order_details
+          columns:
+            - orderNo
+            - detailNo
+
   cancel_instructions: #TODO: TBD
     name: キャンセル指示
 
@@ -172,3 +250,23 @@ tables:
       note:
         element: comment
         name: 備考
+
+    primaryKey:
+      - orderCancelId
+
+    indexes:
+      - columns: #INFO: 受注明細順
+          - column: orderNo
+          - column: detailNo
+          - column: operationDate
+            order: DESC
+
+    foreignKeys:
+      - columns:
+          - orderNo
+          - detailNo
+        reference: #INFO: PK
+          table: order_details
+          columns:
+            - orderNo
+            - detailNo

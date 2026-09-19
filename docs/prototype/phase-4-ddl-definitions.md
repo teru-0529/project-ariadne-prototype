@@ -609,82 +609,182 @@ Commentの具体的な生成形式はPhase 4内で決定する。
 
 ### 7.1 createdAt / updatedAt
 
-すべてのTableに以下をARIADNE BuiltIn Columnとして自動付与する。
+すべてのTableに、以下のColumnをARIADNE BuiltIn Columnとして自動付与する。
 
-- createdAt
-- updatedAt
+- `createdAt`
+- `updatedAt`
 
-各TableのDDL YAMLへ個別に記載する必要はない。
+これらはDDL Source YAMLには記載しない。
+
+DDL Source YAMLに利用者が `createdAt` または `updatedAt` を定義した場合はValidation Errorとする。
 
 #### createdAt
 
-Record作成日時を保持する。
+`createdAt` はRecord作成日時を保持するBuiltIn Columnとする。
 
-INSERT時に現在日時を自動設定する。
+以下の仕様を持つ。
+
+```text
+Column識別子 : createdAt
+物理Column名 : created_at
+論理名       : 作成日時
+Type         : DATETIME
+NOT NULL     : true
+Default      : CURRENT_DATETIME
+```
+
+INSERT時に現在日時を設定する。
+
+UPDATE時には変更しない。
 
 #### updatedAt
 
-Record更新日時を保持する。
+`updatedAt` はRecord最終更新日時を保持するBuiltIn Columnとする。
 
-INSERT時に現在日時を自動設定する。
+以下の仕様を持つ。
 
-UPDATE時にはARIADNEが生成するBuiltIn Function / Trigger等により現在日時へ自動更新する。
+```text
+Column識別子 : updatedAt
+物理Column名 : updated_at
+論理名       : 更新日時
+Type         : DATETIME
+NOT NULL     : true
+Default      : CURRENT_DATETIME
+```
 
-PostgreSQLでの具体的な実現方式はPhase 4で決定する。
+INSERT時に現在日時を設定する。
+
+UPDATE時にはARIADNEが生成するBuiltIn Function / Triggerにより現在日時へ自動更新する。
+
+PostgreSQLでは、Schema単位のBuiltIn FunctionとTable単位のTriggerによって実現する。
 
 SQLiteでは必要に応じて代替方式を採用する。
 
 ---
 
-### 7.2 Audit Trace Element
+### 7.2 Audit
 
-作成・更新を追跡するための識別情報は、ARIADNE固定の型・桁とはしない。
+作成者・更新者等のAudit情報を保持する場合、Schema単位でAuditを有効化する。
 
-Projectごとに、追跡情報として利用するElementを指定可能とする。
+AuditはOptionalとし、以下の形式で定義する。
+
+```yaml
+schema: order
+
+audit:
+  element: traceId
+```
+
+`audit.element` には、Audit Contextの値表現として利用するElementを指定する。
 
 例：
 
-```text
-Audit Trace Element = traceId
+```yaml
+audit:
+  element: userId
 ```
 
-`traceId`の型・桁・制約等はTypes / Elementsから導出する。
+Auditが定義された場合、そのSchemaに属するすべてのTableへ以下のARIADNE BuiltIn Columnを自動付与する。
 
-指定されたElementを利用して、作成時・更新時の追跡Columnを自動付与する。
+- `createdBy`
+- `updatedBy`
 
-概念例：
+Auditが定義されていない場合、`createdBy` / `updatedBy` は付与しない。
 
-```text
-createdAt
-createdTraceId  → Element: traceId
-
-updatedAt
-updatedTraceId  → Element: traceId
-```
-
-作成用・更新用Columnは同一Elementを参照するが、Column名を分離する。
-
-具体的なColumn名およびDDL YAML上の指定形式はPhase 4で決定する。
-
-Audit Trace Elementが指定されていない場合は、`createdAt` / `updatedAt`のみをBuiltIn Columnとして付与する。
+`createdAt` / `updatedAt` はAuditの有無にかかわらず、すべてのTableへ付与する。
 
 ---
 
-### 7.3 Audit Trace値の設定
+### 7.3 createdBy / updatedBy
 
-Database自身は、アプリケーション上の利用者やTrace IDを直接知ることができない。
+`createdBy` / `updatedBy` はARIADNE BuiltIn Columnとし、DDL Source YAMLには記載しない。
 
-そのため、Audit Trace値をDatabaseへどのように伝搬するかについてはPhase 4で方式を整理する。
+DDL Source YAMLに利用者が `createdBy` または `updatedBy` を定義した場合はValidation Errorとする。
 
-PostgreSQLでは、Transaction単位のSession Parameter等を利用し、Trigger / Functionから取得する方式も候補とする。
+#### createdBy
 
-例：
+Record作成時のAudit Contextを保持する。
 
-```sql
-SET LOCAL app.trace_id = '...';
+以下の仕様を持つ。
+
+```text
+Column識別子 : createdBy
+物理Column名 : created_by
+論理名       : 作成者
+NOT NULL     : true
+値表現       : audit.elementから導出
 ```
 
-ただし、接続PoolやTransaction管理との関係があるため、Prototype Phase 4では仕様整理と実証までを対象とし、汎用実装はCoreで行う。
+INSERT時にAudit Contextを設定する。
+
+UPDATE時には変更しない。
+
+#### updatedBy
+
+Record最終更新時のAudit Contextを保持する。
+
+以下の仕様を持つ。
+
+```text
+Column識別子 : updatedBy
+物理Column名 : updated_by
+論理名       : 更新者
+NOT NULL     : true
+値表現       : audit.elementから導出
+```
+
+INSERT時にAudit Contextを設定する。
+
+UPDATE時には現在のAudit Contextへ更新する。
+
+---
+
+### 7.4 audit.elementから継承する情報
+
+`audit.element` は、`createdBy` / `updatedBy` の値をDatabase上で表現するために利用する。
+
+Types / Elementsから、少なくとも以下の情報を導出する。
+
+- Database型へ変換するためのType情報
+- length / minLength / maxLength
+- precision / scale
+- minimum / maximum
+- regex
+- その他Database上の値表現に必要なConstraint
+
+一方、以下の情報は継承しない。
+
+- Elementの `name`
+- `identifier`
+- Element固有の業務上の意味
+
+`createdBy` / `updatedBy` は、参照Elementそのものを表すColumnではなく、ARIADNEが定義するAudit用BuiltIn Columnである。
+
+---
+
+### 7.5 Audit Context
+
+Auditが有効なSchemaでは、アプリケーションからDatabaseへAudit Contextを伝搬する。
+
+ARIADNEは「誰をAudit Contextとするか」というアプリケーション上の判断は行わない。
+
+アプリケーションがTransaction開始後にAudit Contextを設定し、Database側のBuiltIn Function / Triggerがその値を取得する。
+
+PostgreSQLでは、Transaction単位の設定値を利用する。
+
+概念例：
+
+```sql
+SET LOCAL ariadne.audit_by = '...';
+```
+
+BuiltIn Functionでは、Transactionに設定された値を取得して `createdBy` / `updatedBy` へ設定する。
+
+Connection Pool利用時に別RequestのAudit Contextが残存することを防ぐため、Session全体ではなくTransaction単位で管理する。
+
+Auditが有効であるにもかかわらずAudit Contextが設定されていない場合はDatabase Errorとする。
+
+`SET LOCAL` 等の具体的な実現方式はPostgreSQL向け実装仕様とし、ARIADNEのDBMS非依存なAudit概念そのものには含めない。
 
 ---
 
@@ -692,13 +792,40 @@ SET LOCAL app.trace_id = '...';
 
 Primary KeyはTable側の責務としてDDL YAMLに定義する。
 
-Elementsの`identifier: true`はAPI上の識別子として利用可能であることを示すものであり、Database上のPrimary Keyを意味しない。
+Elementsの `identifier: true` はAPI上の識別子として利用可能であることを示すものであり、Database上のPrimary Keyを意味しない。
 
-単一Primary Keyおよび複合Primary Keyを許可する。
+Primary KeyはすべてのTableで必須とする。
+
+TableごとにPrimary Keyを1つ定義しなければならない。
+
+Primary Keyは単一Columnまたは複数Columnで構成できる。単一Column、複合Columnのいずれの場合も配列形式で定義する。
+
+```yaml
+primaryKey:
+  - orderNo
+```
+
+複合Primary Keyは以下の形式とする。
+
+```yaml
+primaryKey:
+  - orderNo
+  - detailNo
+```
+
+配列の順序は物理Primary KeyのColumn順序として保持する。
+
+Primary Keyに指定するColumnは、DDL Source YAML上で明示的に `notNull: true` が指定されていなければならない。
+
+Primary Key指定によって暗黙的に `notNull: true` へ昇格させることはしない。
+
+Primary Keyに指定されたColumnが `notNull: true` でない場合はValidation Errorとする。
+
+`identifier`、`sequence`、`notNull`、Primary Keyはそれぞれ独立した意味として扱う。
 
 Primary KeyのConstraint名はARIADNEがNaming Ruleに従って自動生成する。
 
-DDL YAMLでは名称を指定しない。
+DDL YAMLではConstraint名を指定しない。
 
 ---
 
@@ -706,19 +833,52 @@ DDL YAMLでは名称を指定しない。
 
 データモデル上、一意でなければならないColumnまたはColumn組合せをUnique Constraintとして定義する。
 
-単一Columnおよび複合ColumnのUnique Constraintを許可する。
+Unique ConstraintはTableごとに複数定義可能とする。
 
-例：
+基本形式を以下とする。
 
-```text
-orderNo must be unique
+```yaml
+uniqueConstraints:
+  - columns:
+      - operationDate
+      - orderNo
+      - detailNo
 ```
 
-のように、データそのものの成立条件としての一意性を表現する。
+単一ColumnのUnique Constraintも同じ形式で定義する。
+
+```yaml
+uniqueConstraints:
+  - columns:
+      - customerId
+```
+
+各Unique Constraintには1つ以上のColumnを指定する。
+
+配列の順序は物理Unique ConstraintのColumn順序として保持する。
+
+同一Unique Constraint内で同じColumnを複数回指定してはならない。
+
+同一のColumn集合を持つUnique Constraintを複数定義してはならない。
+
+この重複判定ではColumn順序を区別しない。
+
+したがって、以下は同一の一意性を表すためValidation Errorとする。
+
+```text
+UNIQUE (A, B)
+UNIQUE (B, A)
+```
+
+Column順序は物理Constraint生成時には保持するが、順序の違いによって別の一意性とはみなさない。
+
+Unique Constraint対象Columnに `notNull: true` を必須とはしない。
+
+NULLを許容するUnique Constraintについては、基準DatabaseであるPostgreSQLの通常のUnique Constraint Semanticsに従う。
 
 Unique Constraint名はARIADNEがNaming Ruleに従って自動生成する。
 
-DDL YAMLでは名称を指定しない。
+DDL YAMLではConstraint名を指定しない。
 
 ### 9.1 Unique Index
 
@@ -734,23 +894,99 @@ PostgreSQL固有のPartial Unique Index、Expression Unique Index等が必要な
 
 Foreign KeyをDDL YAMLで管理可能とする。
 
-Foreign Keyでは以下を定義する。
+Foreign KeyはTableごとに複数定義可能とする。
 
-- 参照元Column
-- 参照先Table
-- 参照先Column
+単一Foreign Keyの基本形式を以下とする。
 
-単一Foreign Keyおよび複合Foreign Keyを許可する。
+```yaml
+foreignKeys:
+  - columns:
+      - orderNo
+    reference:
+      table: orders
+      columns:
+        - orderNo
+```
+
+複合Foreign Keyは以下の形式とする。
+
+```yaml
+foreignKeys:
+  - columns:
+      - orderNo
+      - detailNo
+    reference:
+      table: order_details
+      columns:
+        - orderNo
+        - detailNo
+```
+
+`columns` は参照元Columnを表す。
+
+`reference.table` は参照先Tableを表す。
+
+`reference.columns` は参照先Columnを表す。
+
+複合Foreign Keyでは、参照元 `columns` と参照先 `reference.columns` を配列順に対応付ける。
+
+参照元と参照先のColumn数が一致しない場合はValidation Errorとする。
+
+参照先Columnは、参照先TableのPrimary KeyまたはUnique Constraintとして一意性が保証されていなければならない。
 
 Foreign Keyで対応する参照元Columnと参照先Columnは、同一Elementを参照していることを必須とする。
 
-複合Foreign Keyでは、対応する各ColumnについてElementの一致をValidationする。
+複合Foreign Keyでは、対応するすべてのColumnについてElementの一致をValidationする。
+
+これはDatabase上の型互換性だけではなく、ARIADNE上で同一の意味を持つElement同士が参照関係を構成することを保証するためのRuleである。
 
 SchemaをまたぐForeign KeyはPrototype Phase 4では許可しない。
 
+Schemaをまたぐ参照が必要な場合はCustom SQLとして利用者の責任で定義する。
+
+同一Tableを参照先とする自己参照Foreign Keyは許可する。
+
+Foreign Keyを理由として、参照元ColumnにIndexを自動生成しない。
+
+また、参照元ColumnがIndexを持つことをARIADNEのValidation条件とはしない。
+
+Indexが必要な場合は、利用者が検索・更新特性に基づいて明示的に定義する。
+
+### 10.1 Foreign Key Action
+
+Foreign Keyには、参照先RecordのDELETE / UPDATEに対するActionを指定可能とする。
+
+```yaml
+foreignKeys:
+  - columns:
+      - orderNo
+    reference:
+      table: orders
+      columns:
+        - orderNo
+    onDelete: CASCADE
+```
+
+Prototype Phase 4では以下を利用可能とする。
+
+```text
+NO_ACTION
+CASCADE
+SET_NULL
+SET_DEFAULT
+```
+
+`onDelete` / `onUpdate` はOptionalとする。
+
+未指定の場合は `NO_ACTION` として扱う。
+
+`SET_NULL` を指定する場合、対象となる参照元ColumnはNULL許容でなければならない。
+
+`SET_DEFAULT` を指定する場合、対象となる参照元ColumnにはDefaultが定義されていなければならない。
+
 Foreign Key名はARIADNEがNaming Ruleに従って自動生成する。
 
-DDL YAMLでは名称を指定しない。
+DDL YAMLではConstraint名を指定しない。
 
 Table生成後にForeign Keyを適用する等、依存関係を考慮したDDL生成順序はGenerator側で管理する。
 
@@ -762,66 +998,274 @@ Table生成後にForeign Keyを適用する等、依存関係を考慮したDDL�
 
 検索性能等を目的として、通常IndexをDDL YAMLで定義可能とする。
 
-以下を対象とする。
+IndexはTableごとに複数定義可能とする。
 
-- 単一Column Index
-- 複合Column Index
+基本形式を以下とする。
 
-Unique Indexは独立した定義対象としない。
+```yaml
+indexes:
+  - columns:
+      - column: orderNo
+      - column: detailNo
+      - column: operationDate
+        order: DESC
+```
 
-Index名はARIADNEがNaming Ruleに従って自動生成する。
+単一Column Indexおよび複合Column Indexを許可する。
 
-DDL YAMLでは名称を指定しない。
+各Indexには1つ以上のColumnを指定する。
 
----
+Column順序はIndex定義の一部として扱う。
 
-### 11.1 Unique Constraintとの重複
+各Columnには `order` を指定可能とする。
 
-Unique Constraintにより一意性を保証するためのIndexがDatabase側で生成されることを前提とする。
+Prototype Phase 4では以下を許可する。
 
-そのため、Unique Constraintと完全に同一のColumn・同一順序を持つ通常Indexは定義不可とする。
+```text
+ASC
+DESC
+```
+
+`order` は大文字で指定する。
+
+`order` が未指定の場合は `ASC` として扱う。
+
+各Index Columnには、NULL値の並び順として `nulls` を指定可能とする。
+
+```yaml
+indexes:
+  - columns:
+      - column: operationDate
+        order: DESC
+        nulls: LAST
+```
+
+`nulls` には以下を指定可能とする。
+
+```text
+FIRST
+LAST
+```
+
+`nulls` はOptionalとする。
+
+`nulls` は、対象ColumnがNULL許容の場合のみ指定可能とする。
+
+対象Columnに `notNull: true` が指定されている場合、`nulls` を指定してはならない。
+
+NOT NULL Columnに `nulls` が指定されている場合はValidation Errorとする。
+
+未指定の場合、ARIADNEはNULLの並び順を明示せず、対象DatabaseのDefault Semanticsに従う。
+
+同一Index内で同じColumnを複数回指定してはならない。
+
+Column順序、実効的なASC / DESC指定、および `nulls` 指定が完全に同一のIndexを複数定義してはならない。
+
+以下は異なるIndexとして許可する。
+
+```text
+INDEX (A, B)
+INDEX (B, A)
+```
+
+```text
+INDEX (A ASC, B ASC)
+INDEX (A DESC, B ASC)
+```
+
+Prototype Phase 4では、以下は構造化されたIndex定義の対象外とする。
+
+- INCLUDE
+- Partial Index / WHERE
+- Expression Index
+- Unique Index
+
+これらが必要な場合はCustom SQLを利用する。
+
+### 11.1 Primary Key / Unique Constraintとの重複
+
+Primary KeyおよびUnique Constraintでは、一意性を保証するためのIndexがDatabase側で生成されることを前提とする。
+
+そのため、Primary KeyまたはUnique Constraintによって生成されるIndexと完全に同一の
+Column・同一順序・同一の実効Orderを持ち、`nulls` が指定されていない通常Indexは定義不可とする。
+
+Primary KeyおよびUnique Constraintによって生成されるIndexの実効Orderは `ASC` として比較する。
+
+Unique Constraintの対象ColumnがNULL許容であり、通常Index側に `nulls` が明示されている場合は、
+NULLの並び順に対する設計意図が異なるため、別のIndexとして許可する。
 
 例：
 
 ```text
 UNIQUE (customerId, orderNo)
-INDEX  (customerId, orderNo)
+INDEX  (customerId ASC, orderNo ASC)
 ```
 
 上記はValidation Errorとする。
 
-一方、Column順序が異なる場合は検索特性が異なるため許可する。
+一方、Column順序が異なる場合は許可する。
 
 ```text
 UNIQUE (customerId, orderNo)
 INDEX  (orderNo, customerId)
 ```
 
-また、Unique Constraintの一部Columnのみを対象とするIndexについては許可する。
+同じColumn順序であってもOrderが異なる場合は許可する。
 
-例：
+```text
+UNIQUE (customerId, orderNo)
+INDEX  (customerId DESC, orderNo ASC)
+```
+
+Column数が異なる場合も許可する。
 
 ```text
 UNIQUE (customerId, orderNo)
 INDEX  (customerId)
 ```
 
-ただし、Unique Constraintによって作成されるIndexで代替可能な場合があるため、Validation Warningの対象とすることを検討する。
+```text
+UNIQUE (customerId, orderNo)
+INDEX  (customerId, orderNo, operationDate)
+```
+
+NULL許容Columnを含むUnique Constraintに対して、`nulls` が明示されたIndexは別のIndexとして許可する。
+
+```text
+UNIQUE (customerId, orderNo)
+INDEX  (customerId ASC NULLS LAST, orderNo ASC)
+```
+
+ただし、`nulls` はNULL許容Columnにのみ指定可能である。
+
+Primary KeyのColumnは必ずNOT NULLであるため、Primary Key対象Columnに `nulls` を指定したIndexは、
+重複判定以前にValidation Errorとなる。
+
+これらのIndexが実際に必要かどうかは設計者の判断とし、ARIADNEはValidation ErrorまたはWarningとはしない。
+
+Foreign Keyの存在を理由としてIndexを自動生成したり、Indexの存在を要求したりしない。
+
+Index名はARIADNEがNaming Ruleに従って自動生成する。
+
+DDL YAMLではIndex名を指定しない。
 
 ---
 
 ## 12. Constraint / Index Naming
 
-以下の名称はARIADNEがNaming Ruleに従って自動生成する。
+以下の物理名はARIADNEがNaming Ruleに従って自動生成する。
 
 - Primary Key
 - Unique Constraint
 - Foreign Key
 - Index
 
-利用者がDDL YAML上で名称を指定することは原則として行わない。
+利用者はDDL YAML上でこれらの名称を指定しない。
 
-具体的なNaming RuleはPhase 4内で決定する。
+Naming Ruleでは、Source YAMLに人工的なConstraint / Index識別子を持たせず、定義内容から決定的かつ安定した物理名を生成する。
+
+### 12.1 Naming形式
+
+物理名は以下の形式とする。
+
+```text
+Primary Key
+  pk_<table>
+
+Unique Constraint
+  uq_<table>_<hash8>
+
+Foreign Key
+  fk_<table>_<hash8>
+
+Index
+  idx_<table>_<hash8>
+```
+
+Primary KeyはTableごとに1つであるためHashを付与しない。
+
+Unique Constraint、Foreign Key、Indexには、定義内容から生成した8桁のHashを付与する。
+
+### 12.2 Hash生成
+
+HashにはSHA-256を使用する。
+
+正規化したCanonical StringをUTF-8としてSHA-256でHash化し、lowercase hexadecimal表現の先頭8文字を利用する。
+
+SchemaはHash計算に含めない。
+
+Constraint / Indexの一意性はSchema内で管理する。
+
+### 12.3 Unique Constraint
+
+Unique ConstraintのHash入力には以下を利用する。
+
+```text
+table
+columns[順序維持]
+```
+
+Canonical Stringの概念例：
+
+```text
+unique|shipping_instructions|operation_date,order_no,detail_no
+```
+
+Column順序はHash生成時に保持する。
+
+### 12.4 Foreign Key
+
+Foreign KeyのHash入力には以下を利用する。
+
+```text
+table
+columns[順序維持]
+reference.table
+```
+
+Canonical Stringの概念例：
+
+```text
+foreign_key|shipping_instructions|order_no,detail_no|order_details
+```
+
+`reference.columns`、`onDelete`、`onUpdate` はHash入力に含めない。
+
+Foreign Key ActionはForeign Keyの属性であり、物理名上のIdentityとはしない。
+
+### 12.5 Index
+
+IndexのHash入力には以下を利用する。
+
+```text
+table
+columns[順序維持 + effective order + nulls]
+```
+
+`nulls` が未指定の場合は、Canonical String上では `DEFAULT` へ正規化してHashを生成する。
+
+`order` が未指定の場合は `ASC` へ正規化してからHashを生成する。
+
+したがって、以下は同一のCanonical表現として扱う。
+
+```yaml
+- column: orderNo
+```
+
+```yaml
+- column: orderNo
+  order: ASC
+```
+
+Canonical Stringの概念例：
+
+```text
+index|shipping_instructions|order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT,operation_date:DESC:LAST
+```
+
+これにより、Source上の省略表現の違いではHashを変化させず、意味が同一の定義から同一の物理名を生成する。
+
+物理識別子長がDatabaseの上限を超える場合のTable名等の短縮Ruleは、Physical Naming Ruleとして別途定義する。
 
 ---
 
@@ -846,6 +1290,24 @@ UPDATE時に`updatedAt`を現在日時へ変更する。
 PostgreSQLでは共通FunctionおよびTableごとのTriggerを自動生成する方式を候補とする。
 
 SQLiteでは必要に応じて代替方式を利用する。
+
+利用者がこれらのBuiltIn Function / TriggerをDDL YAMLへ直接記述する必要はない。
+
+### 13.4 createdBy自動設定
+
+Auditが有効なSchemaでは、INSERT時に現在のAudit Contextを `createdBy` へ設定する。
+
+### 13.5 updatedBy自動設定・更新
+
+Auditが有効なSchemaでは、INSERT時に現在のAudit Contextを `updatedBy` へ設定する。
+
+UPDATE時には、現在のAudit Contextを `updatedBy` へ設定する。
+
+### 13.6 PostgreSQLでのBuiltIn実装方針
+
+PostgreSQLでは、`updatedAt` およびAudit Columnの自動更新を、Schema単位のBuiltIn FunctionとTable単位のTriggerによって実現する。
+
+同一のBuiltIn FunctionでTimestamp更新およびAudit Context反映を扱うことを基本方針とする。
 
 利用者がこれらのBuiltIn Function / TriggerをDDL YAMLへ直接記述する必要はない。
 
@@ -896,9 +1358,15 @@ ORD_20260914_002
 - Table単位の採番
 - 業務単位の採番
 
-UUID / ULID等の標準的なID生成については、Types / Elements側との責務も含め別途整理する。
+`GENERATED_ID` は値の型・意味をARIADNE Types / Elementsで定義する。
 
-Phase 4では業務固有採番を汎用YAMLモデルとして抽象化すること自体を目的としない。
+一方、実際の値をどの方式・どの主体で生成するかはDDL Sourceの責務とはしない。
+
+Database側で値を生成する場合は、Prototype Phase 4では原則としてCustom SQLによる実装対象とする。
+
+UUID / ULID等の一般化可能な生成方式については、Custom SQLの仕様検討時にARIADNE BuiltIn Functionとしてパターン化する価値があるかを検討する。
+
+Phase 4では、業務固有採番を汎用YAMLモデルとして抽象化すること自体を目的としない。
 
 ---
 
@@ -925,7 +1393,7 @@ Resolved DDL Modelでは、少なくとも以下を解決済みとする。
 - Table
 - Column
 - Element
-- Column Alias
+- Column Alias / 実効論理名
 - 論理型
 - 桁
 - Precision / Scale
@@ -933,12 +1401,15 @@ Resolved DDL Modelでは、少なくとも以下を解決済みとする。
 - Element由来Constraint
 - NULL制約
 - Default
+- Sequence
 - Primary Key
 - Unique Constraint
 - Foreign Key
+- Foreign Key Action
 - Index
+- Constraint / Index Physical Name
 - BuiltIn Columns
-- Audit Trace Columns
+- Audit Columns
 - Comment生成情報
 
 DBMS固有SQLへの変換はResolved後の処理とする。
@@ -1139,8 +1610,8 @@ Prototype Phase 4ではValidatorそのものは実装しない。
 - 同一Index内でColumnが重複しないこと
 - 同一Column・同一順序のIndexが重複しないこと
 - Unique Constraintと完全に同一Column・同一順序のIndexを定義していないこと
-
-Unique Constraintの先頭Columnと重複するIndex等についてはWarning候補とする。
+- `nulls` は `FIRST` または `LAST` であること
+- `nulls` が指定されたIndex ColumnはNULL許容Columnであること
 
 ### Naming
 
@@ -1198,22 +1669,24 @@ Phase 4では、以下を確定する。
 
 ### Step 2：BuiltIn / Audit
 
-- [ ] createdAtの仕様を確定する
-- [ ] updatedAtの仕様を確定する
-- [ ] Audit Trace Elementの指定方式を確定する
-- [ ] created側Audit Trace Columnの仕様を確定する
-- [ ] updated側Audit Trace Columnの仕様を確定する
-- [ ] Audit Trace値の伝搬方式を検証する
+- [x] createdAtの仕様を確定する
+- [x] updatedAtの仕様を確定する
+- [x] Audit Trace Elementの指定方式を確定する
+- [x] created側Audit Trace Columnの仕様を確定する
+- [x] updated側Audit Trace Columnの仕様を確定する
+- [x] Audit Trace値の伝搬方式を検証する
 
 ### Step 3：Constraint / Index
 
-- [ ] Primary Key定義形式を確定する
-- [ ] Unique Constraint定義形式を確定する
-- [ ] Foreign Key定義形式を確定する
-- [ ] 複合Foreign Key定義形式を確定する
-- [ ] Index定義形式を確定する
-- [ ] Unique Constraint / Index重複Ruleを確定する
-- [ ] Constraint / Index Naming Ruleを確定する
+- [x] Primary Key定義形式を確定する
+- [x] Unique Constraint定義形式を確定する
+- [x] Foreign Key定義形式を確定する
+- [x] 複合Foreign Key定義形式を確定する
+- [x] Index定義形式を確定する
+- [x] Unique Constraint / Index重複Ruleを確定する
+- [x] Constraint / Index Naming Ruleを確定する
+- [x] Foreign Key Action仕様を確定する
+- [x] Foreign Key参照範囲・自己参照Ruleを確定する
 
 ### Step 4：Validation Rule
 
@@ -1234,6 +1707,9 @@ Phase 4では、以下を確定する。
 - [ ] Audit Trace Columnsの展開結果をSample化する
 - [ ] Constraint / Indexの解決結果をSample化する
 - [ ] Comment情報の解決結果をSample化する
+- [ ] Physical Namingの解決結果をSample化する
+- [ ] Element由来Constraintの解決結果をSample化する
+- [ ] Default / Sequenceの解決結果をSample化する
 
 ### Step 6：PostgreSQL DDL仕様
 
