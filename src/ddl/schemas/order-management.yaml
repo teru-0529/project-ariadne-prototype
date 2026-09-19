@@ -9,7 +9,7 @@ audit:
   element: traceId
 
 tables:
-  orders: #TODO: TBD
+  orders:
     name: 受注
 
     columns:
@@ -33,8 +33,8 @@ tables:
 
       status: #TODO: 自動変更（order_details登録/変更時にFunction：、受注明細すべてが1/2/3であれば1/2/3、それ以外は4）
         element: orderStatus
-        default: PREPARING
         notNull: true
+        default: PREPARING
 
       urgent:
         element: urgent
@@ -63,7 +63,7 @@ tables:
           - column: urgent
           - column: orderNo
 
-  order_details: #TODO: TBD
+  order_details:
     name: 受注明細
 
     columns:
@@ -81,38 +81,40 @@ tables:
 
       orderQuantity:
         element: quantity
-        name: 受注数
         notNull: true
+        name: 受注数
 
       shippingQuantity: #TODO: 自動変更（shipping_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
         element: quantity
-        name: 出荷数
         notNull: true
         default: 0
+        name: 出荷数
 
       cancelQuantity: #TODO: 自動変更（cancel_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
         element: quantity
-        name: キャンセル数
         notNull: true
         default: 0
+        name: キャンセル数
 
       remainingQuantity: #TODO: 自動変更（登録/変更時にFunction：remainingQuantity = orderQuantity - shippingQuantity - cancelQuantity）
         element: quantity
-        name: 受注残
         notNull: true
+        name: 受注残
 
       status: #TODO: 自動変更（登録/変更時にFunction：1:受注数=受注残→準備中、2:受注残0/出荷0→キャンセル、3:受注残0/出荷≠0→完了、4:その他→対応中）
         element: orderStatus
-        default: PREPARING
         notNull: true
+        default: PREPARING
 
       sellingPrice: #TODO: 制約（sellingPrice > costPrice）
         element: price
         notNull: true
+        name: 販売価格
 
       costPrice:
         element: price
         notNull: true
+        name: 想定原価
 
       profitRate: #TODO: 自動計算（登録/profitRate = （sellingPrice - costPrice) / sellingPrice * 100)
         element: profitRate
@@ -121,6 +123,15 @@ tables:
     primaryKey:
       - orderNo
       - detailNo
+
+    foreignKeys:
+      - columns:
+          - orderNo
+        reference: #INFO: PKの一部
+          table: orders
+          columns:
+            - orderNo
+        onDelete: CASCADE
 
     indexes:
       - columns: #INFO: 受注残がある順番
@@ -142,16 +153,7 @@ tables:
           - column: orderNo
           - column: detailNo
 
-    foreignKeys:
-      - columns:
-          - orderNo
-        reference: #INFO: PKの一部
-          table: orders
-          columns:
-            - orderNo
-        onDelete: CASCADE
-
-  shipping_instructions: #TODO: TBD
+  shipping_instructions:
     name: 出荷指示
 
     columns:
@@ -176,13 +178,13 @@ tables:
 
       personInCharge:
         element: userId
-        name: 出荷担当者ID
         notNull: true
+        name: 出荷担当者ID
 
       quantity:
         element: quantity
-        name: 出荷数
         notNull: true
+        name: 出荷数
 
       note:
         element: comment
@@ -197,13 +199,6 @@ tables:
           - orderNo
           - detailNo
 
-    indexes:
-      - columns: #INFO: 受注明細順
-          - column: orderNo
-          - column: detailNo
-          - column: operationDate
-            order: DESC
-
     foreignKeys:
       - columns:
           - orderNo
@@ -214,7 +209,14 @@ tables:
             - orderNo
             - detailNo
 
-  cancel_instructions: #TODO: TBD
+    indexes:
+      - columns: #INFO: 受注明細順
+          - column: orderNo
+          - column: detailNo
+          - column: operationDate
+            order: DESC
+
+  cancel_instructions:
     name: キャンセル指示
 
     columns:
@@ -254,13 +256,6 @@ tables:
     primaryKey:
       - orderCancelId
 
-    indexes:
-      - columns: #INFO: 受注明細順
-          - column: orderNo
-          - column: detailNo
-          - column: operationDate
-            order: DESC
-
     foreignKeys:
       - columns:
           - orderNo
@@ -270,3 +265,10 @@ tables:
           columns:
             - orderNo
             - detailNo
+
+    indexes:
+      - columns: #INFO: 受注明細順
+          - column: orderNo
+          - column: detailNo
+          - column: operationDate
+            order: DESC

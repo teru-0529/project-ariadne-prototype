@@ -6,7 +6,7 @@ kind: database
 schema: task
 
 tables:
-  tasks: #TODO: TBD　
+  tasks:
     name: タスク
 
     columns:
@@ -33,14 +33,22 @@ tables:
 
       statusCode:
         element: taskStatus
-        name: ステータスコード
         notNull: true
+        name: ステータスコード
 
     primaryKey:
       - taskId
 
+    foreignKeys:
+      - columns:
+          - statusCode
+        reference: #INFO: PK
+          table: statuses
+          columns:
+            - statusCode
+
     indexes:
-      - columns: #INFO: (検索条件)
+      - columns: #INFO: (検索条件\)
           - column: statusCode
           - column: priority
             order: DESC
@@ -51,22 +59,14 @@ tables:
           - column: createUser
           - column: taskId
 
-    foreignKeys:
-      - columns:
-          - statusCode
-        reference: #INFO: PK
-          table: statuses
-          columns:
-            - statusCode
-
-  statuses: #TODO: TBD
+  statuses:
     name: ステータス
 
     columns:
       statusCode:
         element: taskStatus
-        name: ステータスコード
         notNull: true
+        name: ステータスコード
 
       description:
         element: description

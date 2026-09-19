@@ -1928,15 +1928,15 @@ Phase 4では、以下を確定する。
 
 ### Step 5：Resolved DDL Model
 
-- [ ] Resolved DDL Modelの形式を確定する
-- [ ] Types / Elementsの解決結果をSample化する
-- [ ] BuiltIn Columnsの展開結果をSample化する
-- [ ] Audit Trace Columnsの展開結果をSample化する
-- [ ] Constraint / Indexの解決結果をSample化する
-- [ ] Comment情報の解決結果をSample化する
-- [ ] Physical Namingの解決結果をSample化する
-- [ ] Element由来Constraintの解決結果をSample化する
-- [ ] Default / Sequenceの解決結果をSample化する
+- [x] Resolved DDL Modelの形式を確定する
+- [x] Types / Elementsの解決結果をSample化する
+- [x] BuiltIn Columnsの展開結果をSample化する
+- [x] Audit Trace Columnsの展開結果をSample化する
+- [x] Constraint / Indexの解決結果をSample化する
+- [x] Comment情報の解決結果をSample化する
+- [x] Physical Namingの解決結果をSample化する
+- [x] Element由来Constraintの解決結果をSample化する
+- [x] Default / Sequenceの解決結果をSample化する
 
 ### Step 6：PostgreSQL DDL仕様
 
