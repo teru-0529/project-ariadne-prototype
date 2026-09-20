@@ -194,8 +194,7 @@ schema: received_order
 tables:
   orders:
     name: 受注
-    columns:
-      ...
+    columns: ...
 ```
 
 TableのMap KeyはARIADNE上のTable識別子とする。
@@ -313,6 +312,7 @@ Columnでは以下を定義可能とする。
 - `notNull`
 - `default`
 - `sequence`
+- `constraints`
 
 `element` は必須とする。
 
@@ -364,7 +364,11 @@ DDL Source YAMLでは、参照ElementまたはTypeが管理する以下の情報
 
 これらはTypes / Elementsを正本とし、DDL生成時に自動的に導出する。
 
-Columnは値そのものの型・桁・値域等を変更する場所ではなく、そのElementをDatabase上でどのように配置・利用するかを定義する。
+ColumnはElement / Typeを再定義またはOverrideする場所ではない。
+
+ただし、そのElementを特定のColumnとして利用する際に、Element由来Constraintよりも強い追加Constraintを課すことはできる。
+
+Column固有ConstraintはElement定義そのものを変更するものではなく、そのColumnにおける追加条件として扱う。
 
 `sequence` はElement / Typeの値定義をOverrideするものではなく、
 そのColumn自身がDatabase上の採番主体となるかを指定するColumn固有の配置・利用情報として扱う。
@@ -379,18 +383,18 @@ Database型そのもので保証できる制約は型として反映し、型の
 
 PostgreSQLでは、Prototype Phase 4において以下を基本変換規則とする。
 
-| Type / Constraint | PostgreSQLへの反映 |
-| --- | --- |
-| `FIXED_STRING.length` | `varchar(n)` + `CHECK (LENGTH(column) = n)` |
-| `maxLength` | `varchar(n)` 等の型として反映 |
-| `minLength` | `CHECK (LENGTH(column) >= n)` |
-| `precision / scale` | `numeric(p,s)` |
-| `minimum` | `CHECK (column >= value)` |
-| `maximum` | `CHECK (column <= value)` |
-| `regex` | PostgreSQL正規表現による `CHECK` |
-| `ENUM` | PostgreSQL ENUM型 |
-| `CODE` | 値集合に対するConstraintは生成しない |
-| `format` | 一般的なCHECK Constraintの自動生成対象とはしない |
+| Type / Constraint     | PostgreSQLへの反映                               |
+| --------------------- | ------------------------------------------------ |
+| `FIXED_STRING.length` | `varchar(n)` + `CHECK (LENGTH(column) = n)`      |
+| `maxLength`           | `varchar(n)` 等の型として反映                    |
+| `minLength`           | `CHECK (LENGTH(column) >= n)`                    |
+| `precision / scale`   | `numeric(p,s)`                                   |
+| `minimum`             | `CHECK (column >= value)`                        |
+| `maximum`             | `CHECK (column <= value)`                        |
+| `regex`               | PostgreSQL正規表現による `CHECK`                 |
+| `ENUM`                | PostgreSQL ENUM型                                |
+| `CODE`                | 値集合に対するConstraintは生成しない             |
+| `format`              | 一般的なCHECK Constraintの自動生成対象とはしない |
 
 `FIXED_STRING` は `char(n)` を使用しない。
 
@@ -460,9 +464,123 @@ CODEは値集合が運用中に変化し得るため、Element定義から値集
 
 Element由来ConstraintをDDL Source YAML側からOverride、緩和、無効化することはできない。
 
----
+### 5.5 Column固有Constraint
 
-### 5.5 Default
+Columnには、参照Element由来Constraintに加えて、そのColumn固有の追加Constraintを定義可能とする。
+
+基本形式を以下とする。
+
+```yaml
+orderQuantity:
+  element: quantity
+  notNull: true
+  constraints:
+    minimum: 1
+  name: 受注数
+```
+
+Column固有ConstraintはElement由来ConstraintをOverrideするものではない。
+
+Element由来ConstraintとColumn固有Constraintの双方を満たす値を、そのColumnの有効な値域とする。
+
+概念的には以下として扱う。
+
+```text
+Effective Constraint
+  = Element Constraint
+    ∩ Column Constraint
+```
+
+例えば、Element `quantity` に以下が定義されている場合、
+
+```yaml
+minimum: 0
+```
+
+Column側で、
+
+```yaml
+constraints:
+  minimum: 1
+```
+
+を指定することは許可する。
+
+この場合、そのColumnの実効Constraintは `minimum: 1` となる。
+
+一方、Column固有ConstraintによってElement由来Constraintを緩和することはできない。
+
+例えば、Elementが `minimum: 0` の場合、Columnに以下を指定してはならない。
+
+```yaml
+constraints:
+  minimum: -1
+```
+
+また、Element由来Constraintと同一内容のConstraintをColumn側へ重複して指定してはならない。
+
+例えば、Elementが `minimum: 0` の場合、以下もValidation Errorとする。
+
+```yaml
+constraints:
+  minimum: 0
+```
+
+Column固有Constraintは、そのColumnに追加の制約を課す必要がある場合にのみ利用する。
+
+Prototype Phase 4では、少なくとも以下をColumn固有Constraintとして利用可能とする。
+
+- `minLength`
+- `maxLength`
+- `minimum`
+- `maximum`
+- `regex`
+
+比較可能なConstraintについては、Element由来Constraintよりも厳しい値のみ指定可能とする。
+
+`regex` については一般的な包含関係の解析を行わない。
+
+Element由来Regexと異なるRegexがColumn側に指定された場合は、双方を満たす追加Constraintとして扱う。
+
+Element由来Regexと完全に同一のRegexをColumn側へ指定した場合は、意味のない重複としてValidation Errorとする。
+
+Column固有ConstraintはElement由来のDatabase型を変更しない。
+
+例えばElementの `maxLength: 100` がPostgreSQLで `varchar(100)` として表現され、Column側に以下が指定された場合、
+
+```yaml
+constraints:
+  maxLength: 50
+```
+
+PostgreSQL型を `varchar(50)` へ変更せず、概念的に以下として生成する。
+
+```sql
+description varchar(100),
+CHECK (LENGTH(description) <= 50)
+```
+
+Database型はElementの物理表現とし、Column固有Constraintはその利用箇所に対する追加制約として表現する。
+
+比較可能なElement由来ConstraintとColumn固有Constraintが存在する場合、
+Generatorは実効的に最も強いConstraintのみを生成し、意味的に冗長なCHECK Constraintは生成しない。
+
+例えばElementが `minimum: 0`、Columnが `minimum: 1` の場合、
+
+```sql
+CHECK (order_quantity >= 1)
+```
+
+のみを生成し、以下のような重複生成は行わない。
+
+```sql
+CHECK (order_quantity >= 0)
+CHECK (order_quantity >= 1)
+```
+
+複数Column間の関係等、単一ColumnのConstraintとして表現できない業務制約はColumn固有Constraintの対象とはせず、Custom SQLを利用する。
+
+### 5.6 Default
 
 Columnの初期値をDDL Source YAMLで定義可能とする。
 
@@ -521,7 +639,7 @@ DefaultはINSERT時の初期値を定義するものであり、業務ロジッ�
 
 ARIADNE BuiltIn Columnについては、一般ColumnのDefaultとは別にARIADNEが生成規則を管理する。
 
-### 5.6 Sequence
+### 5.7 Sequence
 
 `SEQUENCE_ID` Elementを参照するColumnでは、そのColumn自身をDatabase上の連番採番主体とする場合、`sequence: true` を指定する。
 
@@ -1410,6 +1528,7 @@ Resolved DDL Modelでは、以下を解決済みとする。
 
 - Service識別子
 - Schema識別子
+- 利用するENUM ElementとそのPhysical Name
 - Table / ColumnのPhysical Name
 - Element参照（`elementRef`）
 - Column固有論理名のOverride
@@ -1434,7 +1553,7 @@ Types / Elementsを正本とする以下の情報は、Resolved DDL Modelへ複�
 - precision / scale
 - minimum / maximum
 - regex
-- enum
+- ENUM values
 - format
 - Element由来Constraint
 
@@ -1456,6 +1575,11 @@ service:
 
 schema:
   id: received_order
+
+enums:
+  orderStatus:
+    elementRef: $orderStatus
+    physicalName: order_status
 
 tables:
   orders:
@@ -1652,6 +1776,68 @@ Database DDL生成時に参照先のElement / Typeから必要なConstraintを�
 
 したがって、Element由来ConstraintのDatabase表現への変換はGeneratorの責務とする。
 
+一方、DDL Source YAMLに明示されたColumn固有Constraintは、そのColumnに固有の定義であるためResolved DDL Modelへ保持する。
+
+例えばSourceが以下の場合、
+
+```yaml
+orderQuantity:
+  element: quantity
+  notNull: true
+  constraints:
+    minimum: 1
+```
+
+Resolved DDL Modelでは以下として保持する。
+
+```yaml
+orderQuantity:
+  elementRef: $quantity
+  physicalName: order_quantity
+  notNull: true
+  constraints:
+    minimum: 1
+```
+
+Element由来ConstraintとColumn固有ConstraintをResolved DDL Model上で統合しない。
+
+Element由来Constraintは `elementRef` から参照し、Column固有Constraintは `constraints` として保持することで、両者の責務を分離する。
+
+実効Constraintの決定、およびDatabase表現への変換はGeneratorの責務とする。
+
+### 16.7 ENUM Dependency
+
+Resolved DDL Modelでは、そのDDL Source内で利用するENUM Elementを依存情報として保持する。
+
+Resolverは各Columnの `elementRef` から参照Element / Typeを解決し、Typeが `ENUM` であるElementを抽出する。
+
+同一ENUM Elementが複数Columnから参照されている場合は、Element単位で重複を除去する。
+
+例えば `orderStatus` Elementが利用されている場合、以下として保持する。
+
+```yaml
+enums:
+  orderStatus:
+    elementRef: $orderStatus
+    physicalName: order_status
+```
+
+ENUMのMap KeyはElement IDとする。
+
+`physicalName` はElement IDをPhysical Naming Ruleに従って `snake_case` へ変換した値とする。
+
+ENUM valuesはTypes / Elementsを正本とし、Resolved DDL Modelへ複製しない。
+
+Database DDL生成時には `elementRef` から参照Element / Typeを取得し、ENUM valuesを導出する。
+
+同一ENUM Elementを複数Columnで利用する場合も、Database上では同一のENUM型を共有する。
+
+利用するENUM Elementが存在しない場合は、Resolved DDL Modelでは以下として表現する。
+
+```yaml
+enums: []
+```
+
 ---
 
 ## 17. PostgreSQL DDL
@@ -1846,60 +2032,79 @@ File Validationでは、DDL Source YAMLの構造・記述形式・Source上の�
 
 Phase 2 Element / Typeの参照解決や、Constraint間の意味的な整合性は後続Validationで検証する。
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-083 | 共通Headerの必須項目が存在する | Error |
-| V-084 | `formatVersion` がARIADNEの対応するPhase 4 Formatである | Error |
-| V-085 | `updatedAt` がISO 8601として妥当である | Error |
-| V-086 | `domain` が `ddl` である | Error |
-| V-087 | `kind` が `database` である | Error |
-| V-088 | 未定義属性を持たない | Error |
-| V-089 | YAML Mapに重複Keyが存在しない | Error |
-| V-090 | 空Map / 空Arrayを明示的に記述しない | Error |
-| V-091 | 必須文字列属性に空文字 / 空白のみを指定しない | Error |
-| V-092 | `schema` が存在する | Error |
-| V-093 | `tables` が存在し、1件以上のTableを持つ | Error |
-| V-094 | Schema識別子が `snake_case` の命名規約を満たす | Error |
-| V-095 | Table識別子が `snake_case` の命名規約を満たす | Error |
-| V-096 | 各Tableが `name` を持つ | Error |
-| V-097 | 各Tableが `columns` を持ち、1件以上のSource Columnを持つ | Error |
-| V-098 | Column識別子が `lowerCamelCase` の命名規約を満たす | Error |
-| V-099 | 各Columnが `element` を持つ | Error |
-| V-100 | `notNull` を指定する場合は `true` のみを許可する | Error |
-| V-101 | `sequence` を指定する場合は `true` のみを許可する | Error |
-| V-102 | `audit` を指定する場合はMapであり、`element` を持つ | Error |
-| V-103 | `default` はScalarまたはExpression Mapである | Error |
-| V-104 | Expression Map形式の `default` は `expression` を持つ | Error |
-| V-105 | `default` を指定する場合、値は `null` ではない | Error |
-| V-106 | `primaryKey` はMapであり、`columns` を持つ | Error |
-| V-107 | `primaryKey.columns` は1件以上のArrayである | Error |
-| V-108 | `uniqueConstraints` を指定する場合、Unique Constraint Mapを要素とする1件以上のArrayである | Error |
-| V-109 | 各Unique Constraintは `columns` を持ち、1件以上のArrayである | Error |
-| V-110 | `foreignKeys` を指定する場合、Foreign Key Mapを要素とする1件以上のArrayである | Error |
-| V-111 | 各Foreign Keyは `columns` を持ち、1件以上のArrayである | Error |
-| V-112 | 各Foreign Keyは `reference` Mapを持つ | Error |
-| V-113 | Foreign Keyの `reference` は `table` を持つ | Error |
-| V-114 | Foreign Keyの `reference` は `columns` を持ち、1件以上のArrayである | Error |
+| ID    | Rule                                                                                                           | Level |
+| ----- | -------------------------------------------------------------------------------------------------------------- | ----- |
+| V-083 | 共通Headerの必須項目が存在する                                                                                 | Error |
+| V-084 | `formatVersion` がARIADNEの対応するPhase 4 Formatである                                                        | Error |
+| V-085 | `updatedAt` がISO 8601として妥当である                                                                         | Error |
+| V-086 | `domain` が `ddl` である                                                                                       | Error |
+| V-087 | `kind` が `database` である                                                                                    | Error |
+| V-088 | 未定義属性を持たない                                                                                           | Error |
+| V-089 | YAML Mapに重複Keyが存在しない                                                                                  | Error |
+| V-090 | 空Map / 空Arrayを明示的に記述しない                                                                            | Error |
+| V-091 | 必須文字列属性に空文字 / 空白のみを指定しない                                                                  | Error |
+| V-092 | `schema` が存在する                                                                                            | Error |
+| V-093 | `tables` が存在し、1件以上のTableを持つ                                                                        | Error |
+| V-094 | Schema識別子が `snake_case` の命名規約を満たす                                                                 | Error |
+| V-095 | Table識別子が `snake_case` の命名規約を満たす                                                                  | Error |
+| V-096 | 各Tableが `name` を持つ                                                                                        | Error |
+| V-097 | 各Tableが `columns` を持ち、1件以上のSource Columnを持つ                                                       | Error |
+| V-098 | Column識別子が `lowerCamelCase` の命名規約を満たす                                                             | Error |
+| V-099 | 各Columnが `element` を持つ                                                                                    | Error |
+| V-100 | `notNull` を指定する場合は `true` のみを許可する                                                               | Error |
+| V-101 | `sequence` を指定する場合は `true` のみを許可する                                                              | Error |
+| V-102 | `audit` を指定する場合はMapであり、`element` を持つ                                                            | Error |
+| V-103 | `default` はScalarまたはExpression Mapである                                                                   | Error |
+| V-104 | Expression Map形式の `default` は `expression` を持つ                                                          | Error |
+| V-105 | `default` を指定する場合、値は `null` ではない                                                                 | Error |
+| V-106 | `primaryKey` はMapであり、`columns` を持つ                                                                     | Error |
+| V-107 | `primaryKey.columns` は1件以上のArrayである                                                                    | Error |
+| V-108 | `uniqueConstraints` を指定する場合、Unique Constraint Mapを要素とする1件以上のArrayである                      | Error |
+| V-109 | 各Unique Constraintは `columns` を持ち、1件以上のArrayである                                                   | Error |
+| V-110 | `foreignKeys` を指定する場合、Foreign Key Mapを要素とする1件以上のArrayである                                  | Error |
+| V-111 | 各Foreign Keyは `columns` を持ち、1件以上のArrayである                                                         | Error |
+| V-112 | 各Foreign Keyは `reference` Mapを持つ                                                                          | Error |
+| V-113 | Foreign Keyの `reference` は `table` を持つ                                                                    | Error |
+| V-114 | Foreign Keyの `reference` は `columns` を持ち、1件以上のArrayである                                            | Error |
 | V-115 | `onDelete` / `onUpdate` を指定する場合は `NO_ACTION` / `CASCADE` / `SET_NULL` / `SET_DEFAULT` のいずれかである | Error |
-| V-116 | `indexes` を指定する場合、Index Mapを要素とする1件以上のArrayである | Error |
-| V-117 | 各Indexは `columns` を持ち、Index Column Mapを要素とする1件以上のArrayである | Error |
-| V-118 | 各Index Columnが `column` を持つ | Error |
-| V-119 | Index Columnの `order` を指定する場合は `ASC` / `DESC` のいずれかである | Error |
-| V-120 | Index Columnの `nulls` を指定する場合は `FIRST` / `LAST` のいずれかである | Error |
-| V-121 | `service` が存在し、`id` を持つ | Error |
-| V-122 | Service IDが `kebab-case` の命名規約を満たす | Error |
-| V-123 | DDL Source YAMLのファイル名がService IDと一致する | Error |
+| V-116 | `indexes` を指定する場合、Index Mapを要素とする1件以上のArrayである                                            | Error |
+| V-117 | 各Indexは `columns` を持ち、Index Column Mapを要素とする1件以上のArrayである                                   | Error |
+| V-118 | 各Index Columnが `column` を持つ                                                                               | Error |
+| V-119 | Index Columnの `order` を指定する場合は `ASC` / `DESC` のいずれかである                                        | Error |
+| V-120 | Index Columnの `nulls` を指定する場合は `FIRST` / `LAST` のいずれかである                                      | Error |
+| V-121 | `service` が存在し、`id` を持つ                                                                                | Error |
+| V-122 | Service IDが `kebab-case` の命名規約を満たす                                                                   | Error |
+| V-123 | DDL Source YAMLのファイル名がService IDと一致する                                                              | Error |
 
 ### 23.2 Element / Column Validation
 
 Element / Column Validationでは、DDL ColumnとPhase 2 Element / Typeとの意味的な整合性を検証する。
 
+<!-- prettier-ignore-start -->
+
 | ID | Rule | Level |
-| --- | --- | --- |
+| ----- | --- | ----- |
 | V-124 | Columnの `element` がPhase 2で定義されたElementとして存在する | Error |
 | V-125 | ColumnからElement / Type由来の `type` / `length` / `minLength` / `maxLength` / `regex` / `minimum` / `maximum` / `precision` / `scale` / `enum` / `format` を再定義またはOverrideしない | Error |
 | V-126 | `sequence: true` を指定したColumnの参照Element Typeが `SEQUENCE_ID` である | Error |
 | V-127 | `createdAt` / `updatedAt` / `createdBy` / `updatedBy` をユーザー定義Columnとして定義しない | Error |
+| V-128 | Columnの `constraints` に指定されたConstraintが参照Element / Typeで利用可能なConstraintである | Error |
+| V-129 | Column固有ConstraintがElement由来Constraintと同一内容ではない | Error |
+| V-130 | 比較可能なColumn固有ConstraintがElement由来Constraintを緩和しない | Error |
+| V-131 | Column固有 `regex` がElement由来 `regex` と完全に同一ではない | Error |
+
+<!-- prettier-ignore-end -->
+
+Column固有ConstraintはElement由来ConstraintのOverrideではなく、追加Constraintとして扱う。
+
+`minimum` / `maximum` / `minLength` / `maxLength` 等、
+Constraint間の強弱を機械的に比較可能な場合は、Element由来Constraintと同一または緩いColumn固有ConstraintをValidation Errorとする。
+
+`regex` については一般的な包含関係・強弱関係の解析を行わない。
+
+Element由来Regexと異なるRegexは追加Constraintとして許可し、双方を満たすものとして扱う。
+
+Element由来Regexと完全に同一のRegexは、意味のない重複としてValidation Errorとする。
 
 `SEQUENCE_ID` Elementを参照するColumnであっても、 `sequence: true` の指定は必須ではない。
 
@@ -1907,11 +2112,11 @@ Element / Column Validationでは、DDL ColumnとPhase 2 Element / Typeとの意
 
 Default Validationでは、Column Defaultと参照Element / Typeとの整合性を検証する。
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-128 | Literal Defaultを指定した場合、参照Element Typeの `defaultAllowed.literal` が `true` である | Error |
-| V-129 | Literal Defaultが参照Elementの論理Type / Format / Type固有Validation / Element Constraintを満たす | Error |
-| V-130 | Expression Defaultを指定した場合、そのExpressionが参照Element Typeの `defaultAllowed.expressions` に含まれる | Error |
+| ID    | Rule                                                                                                         | Level |
+| ----- | ------------------------------------------------------------------------------------------------------------ | ----- |
+| V-132 | Literal Defaultを指定した場合、参照Element Typeの `defaultAllowed.literal` が `true` である                  | Error |
+| V-133 | Literal Defaultが参照Elementの論理Type / Format / Type固有Validation / Element Constraintを満たす            | Error |
+| V-134 | Expression Defaultを指定した場合、そのExpressionが参照Element Typeの `defaultAllowed.expressions` に含まれる | Error |
 
 Literal Defaultでは暗黙の型変換を行わない。
 
@@ -1924,22 +2129,22 @@ Literal Defaultでは暗黙の型変換を行わない。
 
 #### Primary Key
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-131 | すべてのTableがPrimary Keyをちょうど1つ持つ | Error |
-| V-132 | `primaryKey.columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-133 | 同一Primary Key内で同じColumnを重複指定しない | Error |
-| V-134 | Primary Keyを構成するすべてのColumnに明示的な `notNull: true` が指定されている | Error |
+| ID    | Rule                                                                           | Level |
+| ----- | ------------------------------------------------------------------------------ | ----- |
+| V-135 | すべてのTableがPrimary Keyをちょうど1つ持つ                                    | Error |
+| V-136 | `primaryKey.columns` に指定されたすべてのColumnが対象Tableに存在する           | Error |
+| V-137 | 同一Primary Key内で同じColumnを重複指定しない                                  | Error |
+| V-138 | Primary Keyを構成するすべてのColumnに明示的な `notNull: true` が指定されている | Error |
 
 Primary KeyのColumn順序はSourceのArray記載順を保持する。
 
 #### Unique Constraint
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-135 | `uniqueConstraints[].columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-136 | 同一Unique Constraint内で同じColumnを重複指定しない | Error |
-| V-137 | 同一Table内に同じColumn集合を持つUnique Constraintを複数定義しない | Error |
+| ID    | Rule                                                                          | Level |
+| ----- | ----------------------------------------------------------------------------- | ----- |
+| V-139 | `uniqueConstraints[].columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-140 | 同一Unique Constraint内で同じColumnを重複指定しない                           | Error |
+| V-141 | 同一Table内に同じColumn集合を持つUnique Constraintを複数定義しない            | Error |
 
 Unique ConstraintのColumn順序はDDL生成時に保持する。
 
@@ -1951,17 +2156,17 @@ Unique ConstraintのColumn順序はDDL生成時に保持する。
 
 Foreign Key Validationでは、Foreign Keyの参照関係およびReferential Actionの意味的整合性を検証する。
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-138 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-139 | `reference.table` に指定されたTableが同一Schema内に存在する | Error |
-| V-140 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する | Error |
-| V-141 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する | Error |
-| V-142 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である | Error |
-| V-143 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
-| V-144 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない | Error |
-| V-145 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない | Error |
-| V-146 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない | Error |
+| ID    | Rule                                                                                                         | Level |
+| ----- | ------------------------------------------------------------------------------------------------------------ | ----- |
+| V-142 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する                               | Error |
+| V-143 | `reference.table` に指定されたTableが同一Schema内に存在する                                                  | Error |
+| V-144 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する                                        | Error |
+| V-145 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する                         | Error |
+| V-146 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である                 | Error |
+| V-147 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
+| V-148 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない                                              | Error |
+| V-149 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない                                           | Error |
+| V-150 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない                   | Error |
 
 Foreign KeyのIdentityは以下により決定する。
 
@@ -1982,9 +2187,9 @@ Self Referenceは許可する。
 
 ### 23.6 Foreign Key Element一致 Validation
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-147 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
+| ID    | Rule                                                                                     | Level |
+| ----- | ---------------------------------------------------------------------------------------- | ----- |
+| V-151 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
 
 Database上の型が互換であっても、異なるElement間にForeign Keyを定義することは許可しない。
 
@@ -1993,9 +2198,9 @@ Database型の一致ではなく、同一の業務上の値を参照している
 
 ### 23.7 Composite Foreign Key Validation
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-148 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
+| ID    | Rule                                                                           | Level |
+| ----- | ------------------------------------------------------------------------------ | ----- |
+| V-152 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
 
 複合Foreign KeyのColumn対応はArrayの記載順とする。
 
@@ -2005,13 +2210,13 @@ Database型の一致ではなく、同一の業務上の値を参照している
 
 ### 23.8 Index Validation
 
-| ID | Rule | Level |
-| --- | --- | --- |
-| V-149 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-150 | 同一Index内で同じColumnを複数回指定しない | Error |
-| V-151 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない | Error |
-| V-152 | `notNull: true` のColumnに `nulls` を指定しない | Error |
-| V-153 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
+| ID    | Rule                                                                            | Level |
+| ----- | ------------------------------------------------------------------------------- | ----- |
+| V-153 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する    | Error |
+| V-154 | 同一Index内で同じColumnを複数回指定しない                                       | Error |
+| V-155 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない                  | Error |
+| V-156 | `notNull: true` のColumnに `nulls` を指定しない                                 | Error |
+| V-157 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
 
 IndexのCanonical Identityは以下により決定する。
 

@@ -100,23 +100,23 @@ project-ariadne-prototype/
 
 ### Responsibilities
 
-| Directory | Responsibility |
-| --- | --- |
-| `app/` | Project ARIADNE PrototypeのWindowsアプリケーション |
-| `app/backend/` | Go backend |
-| `app/backend/services/` | Wailsから公開するBackend Service |
-| `app/frontend/` | Svelte frontend |
-| `app/frontend/bindings/` | Wails generated bindings |
-| `app/build/` | Wails build configuration |
-| `app/bin/` | Application build output |
-| `src/elements/` | Type / Element による共通項目定義の正本 |
-| `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
-| `src/ddl/` | Database / DDL定義のARIADNE SourceおよびDDL生成処理で使用する正本資材 |
-| `templates/` | Task管理アプリ等、Prototypeで使用するテンプレート／アプリデータ側の資材 |
-| `dist/` | Project ARIADNEが生成した成果物 |
-| `runtime/` | SQLite等の実行時データ |
-| `docs/` | 設計原則・Phaseごとの決定事項等 |
-| `tools/` | Repository rootから利用する開発・build用utility script |
+| Directory                | Responsibility                                                          |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `app/`                   | Project ARIADNE PrototypeのWindowsアプリケーション                      |
+| `app/backend/`           | Go backend                                                              |
+| `app/backend/services/`  | Wailsから公開するBackend Service                                        |
+| `app/frontend/`          | Svelte frontend                                                         |
+| `app/frontend/bindings/` | Wails generated bindings                                                |
+| `app/build/`             | Wails build configuration                                               |
+| `app/bin/`               | Application build output                                                |
+| `src/elements/`          | Type / Element による共通項目定義の正本                                 |
+| `src/api/`               | API 定義の ARIADNE Source および API 生成処理で使用する正本資材         |
+| `src/ddl/`               | Database / DDL定義のARIADNE SourceおよびDDL生成処理で使用する正本資材   |
+| `templates/`             | Task管理アプリ等、Prototypeで使用するテンプレート／アプリデータ側の資材 |
+| `dist/`                  | Project ARIADNEが生成した成果物                                         |
+| `runtime/`               | SQLite等の実行時データ                                                  |
+| `docs/`                  | 設計原則・Phaseごとの決定事項等                                         |
+| `tools/`                 | Repository rootから利用する開発・build用utility script                  |
 
 ### Source of Truth
 
@@ -168,13 +168,13 @@ Prototypeでは生成結果を確認可能とするためGit管理対象とす�
 
 Prototypeでは以下を使用する。
 
-| Layer | Technology |
-| --- | --- |
-| Desktop Application | Wails v3 |
-| Frontend | Svelte 5 |
-| Frontend Language | TypeScript |
-| Backend | Go |
-| Node.js Management | Volta |
+| Layer               | Technology |
+| ------------------- | ---------- |
+| Desktop Application | Wails v3   |
+| Frontend            | Svelte 5   |
+| Frontend Language   | TypeScript |
+| Backend             | Go         |
+| Node.js Management  | Volta      |
 
 Phase 1完了時点のtoolchainは以下。
 

@@ -54,18 +54,18 @@ Git で差分を確認でき、専用アプリケーションなしでも人間�
 
 ## 3. 技術スタック
 
-| 領域                   | 採用技術 / 方針              |
-|------------------------|------------------------------|
-| Frontend               | Svelte + TypeScript          |
-| Desktop / Backend      | Wails + Go                   |
-| Prototype 内部 DB      | SQLite                       |
-| ファイル正本           | YAML                         |
-| API 仕様               | OpenAPI 3.1                  |
-| OAS 検証・加工         | Redocly CLI                  |
-| Version Control        | Git / GitHub                 |
-| ローカル Development   | `tools/dev.sh`               |
-| ローカル Build         | `tools/build.sh`             |
-| Prototype 実行ファイル | `ariadne-prototype.exe`      |
+| 領域                   | 採用技術 / 方針         |
+| ---------------------- | ----------------------- |
+| Frontend               | Svelte + TypeScript     |
+| Desktop / Backend      | Wails + Go              |
+| Prototype 内部 DB      | SQLite                  |
+| ファイル正本           | YAML                    |
+| API 仕様               | OpenAPI 3.1             |
+| OAS 検証・加工         | Redocly CLI             |
+| Version Control        | Git / GitHub            |
+| ローカル Development   | `tools/dev.sh`          |
+| ローカル Build         | `tools/build.sh`        |
+| Prototype 実行ファイル | `ariadne-prototype.exe` |
 
 ### 補足
 
@@ -87,7 +87,7 @@ Web 系技術を利用するが、通常の Web アプリケーションのデ�
 
 Prototype の基本構造は以下とする。
 
-``` text
+```text
 Svelte
   ↓
 Wails Binding
@@ -106,7 +106,7 @@ Core 利用時には、ARIADNE が管理する設計領域は実 Web 開発プ�
 `src / dist / runtime` の意味を考える際は、Prototype / Core と、開発 / 利用を区別する。
 
 | 局面           | `src / dist / runtime` の扱い                                     |
-|----------------|-------------------------------------------------------------------|
+| -------------- | ----------------------------------------------------------------- |
 | Prototype 開発 | 使用する。Core の試金石として構造を検証する                       |
 | Prototype 利用 | Task 管理が目的。DDL / OAS は利用機能ではない。runtime は利用する |
 | Core 開発      | Core 自身の設計・生成・実行に使用する                             |
@@ -118,7 +118,7 @@ Prototype の DDL / OAS は、**Prototype の利用機能ではなく、Prototyp
 
 ## 6. `src / dist / runtime` の責務
 
-``` text
+```text
 src
   = 設計情報の正本
 
@@ -218,7 +218,7 @@ Task Template は **YAML 正本**とする。
 
 最小項目：
 
-``` text
+```text
 id
 name
 defaultPriority
@@ -244,7 +244,7 @@ Task は **SQLite 正本**とする。
 
 最小項目：
 
-``` text
+```text
 id
 title
 description
@@ -270,7 +270,7 @@ Task 新規作成時には Template 選択を必須とする。
 
 Template の以下の値を Task の初期値としてコピーする。
 
-``` text
+```text
 defaultPriority
 defaultDescription
 ```
@@ -371,7 +371,7 @@ Prototype は Git / GitHub で管理する。
 
 ローカルでは以下の手順で実行ファイルを再生成できることを必須とする。
 
-``` text
+```text
 tools/build.sh
    ↓
 Wails build 等

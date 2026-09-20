@@ -26,7 +26,7 @@ Prototype では項目定義を編集する UI、YAML の読み書き機能、Va
 
 Phase 0 で決定した責務分離を維持する。
 
-``` text
+```text
 src/
 ├─ elements/
 │  ├─ types.yaml
@@ -41,21 +41,21 @@ runtime/
 
 項目定義の正本は以下とする。
 
-``` text
+```text
 src/elements/types.yaml
 src/elements/elements.yaml
 ```
 
 各領域の責務は以下のとおり。
 
-| 領域 | 責務 |
-| --- | --- |
-| `src/elements/` | Type / Element による共通項目定義の正本 |
-| `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
-| `src/ddl/` | Database / DDL 定義の ARIADNE Source および DDL 生成処理で使用する正本資材 |
-| `templates/` | Task 管理アプリ等、Prototype で利用するテンプレート／アプリデータ側の資材 |
-| `dist/` | ARIADNE が生成した成果物 |
-| `runtime/` | SQLite 等の実行時データ |
+| 領域            | 責務                                                                       |
+| --------------- | -------------------------------------------------------------------------- |
+| `src/elements/` | Type / Element による共通項目定義の正本                                    |
+| `src/api/`      | API 定義の ARIADNE Source および API 生成処理で使用する正本資材            |
+| `src/ddl/`      | Database / DDL 定義の ARIADNE Source および DDL 生成処理で使用する正本資材 |
+| `templates/`    | Task 管理アプリ等、Prototype で利用するテンプレート／アプリデータ側の資材  |
+| `dist/`         | ARIADNE が生成した成果物                                                   |
+| `runtime/`      | SQLite 等の実行時データ                                                    |
 
 `types.yaml` と `elements.yaml`
 は独立した仕様ではなく、**1つの項目定義モデルを2ファイルに分割したもの**として扱う。
@@ -99,7 +99,7 @@ Element は以下を管理する。
 
 ### 3.3 関係
 
-``` text
+```text
 Type
   1
   │
@@ -123,7 +123,7 @@ Element キーおよび EnumValue キーは、不変識別子として扱う。
 例えば `customerId` を `clientId` に変更したい場合、rename
 ではなく以下として扱う。
 
-``` text
+```text
 DELETE customerId
 CREATE clientId
 ```
@@ -136,7 +136,7 @@ EnumValue も同じ原則とする。
 
 ARIADNE の標準 Type は以下の14種類とする。
 
-``` text
+```text
 識別子系
 ├─ PROVIDED_ID
 ├─ SEQUENCE_ID
@@ -207,22 +207,22 @@ defaultAllowed:
 
 標準 Type の `defaultAllowed` は以下とする。
 
-| Type | literal | expressions |
-| --- | --- | --- |
-| `PROVIDED_ID` | `false` | `[]` |
-| `SEQUENCE_ID` | `false` | `[]` |
-| `GENERATED_ID` | `false` | `[]` |
-| `FIXED_STRING` | `true` | `[]` |
-| `STRING` | `true` | `[]` |
-| `TEXT` | `true` | `[]` |
-| `INTEGER` | `true` | `[]` |
-| `DECIMAL` | `true` | `[]` |
-| `BOOLEAN` | `true` | `[]` |
-| `ENUM` | `true` | `[]` |
-| `CODE` | `false` | `[]` |
-| `DATE` | `true` | `CURRENT_DATE` |
-| `TIME` | `true` | `CURRENT_TIME` |
-| `DATETIME` | `true` | `CURRENT_DATETIME` |
+| Type           | literal | expressions        |
+| -------------- | ------- | ------------------ |
+| `PROVIDED_ID`  | `false` | `[]`               |
+| `SEQUENCE_ID`  | `false` | `[]`               |
+| `GENERATED_ID` | `false` | `[]`               |
+| `FIXED_STRING` | `true`  | `[]`               |
+| `STRING`       | `true`  | `[]`               |
+| `TEXT`         | `true`  | `[]`               |
+| `INTEGER`      | `true`  | `[]`               |
+| `DECIMAL`      | `true`  | `[]`               |
+| `BOOLEAN`      | `true`  | `[]`               |
+| `ENUM`         | `true`  | `[]`               |
+| `CODE`         | `false` | `[]`               |
+| `DATE`         | `true`  | `CURRENT_DATE`     |
+| `TIME`         | `true`  | `CURRENT_TIME`     |
+| `DATETIME`     | `true`  | `CURRENT_DATETIME` |
 
 識別子系 Type は値の提供・生成主体を別に持つため、Literal Default を許可しない。
 
@@ -296,22 +296,22 @@ ARIADNE が定義する example では、原則として ±HH:mm 形式の UTC �
 
 Type ごとの constraint は以下とする。
 
-| Type | Required | Optional |
-| --- | --- | --- |
-| `PROVIDED_ID` | `maxLength` | `minLength`, `regex` |
-| `SEQUENCE_ID` | なし | なし |
-| `GENERATED_ID` | `maxLength` | `minLength`, `regex` |
-| `FIXED_STRING` | `length` | `regex` |
-| `STRING` | `maxLength` | `minLength`, `regex` |
-| `TEXT` | なし | `minLength`, `regex` |
-| `INTEGER` | なし | `minimum`, `maximum` |
-| `DECIMAL` | `precision`, `scale` | `minimum`, `maximum` |
-| `BOOLEAN` | なし | なし |
-| `ENUM` | なし | なし |
-| `CODE` | `maxLength` | `minLength`, `regex` |
-| `DATE` | なし | なし |
-| `TIME` | なし | なし |
-| `DATETIME` | なし | なし |
+| Type           | Required             | Optional             |
+| -------------- | -------------------- | -------------------- |
+| `PROVIDED_ID`  | `maxLength`          | `minLength`, `regex` |
+| `SEQUENCE_ID`  | なし                 | なし                 |
+| `GENERATED_ID` | `maxLength`          | `minLength`, `regex` |
+| `FIXED_STRING` | `length`             | `regex`              |
+| `STRING`       | `maxLength`          | `minLength`, `regex` |
+| `TEXT`         | なし                 | `minLength`, `regex` |
+| `INTEGER`      | なし                 | `minimum`, `maximum` |
+| `DECIMAL`      | `precision`, `scale` | `minimum`, `maximum` |
+| `BOOLEAN`      | なし                 | なし                 |
+| `ENUM`         | なし                 | なし                 |
+| `CODE`         | `maxLength`          | `minLength`, `regex` |
+| `DATE`         | なし                 | なし                 |
+| `TIME`         | なし                 | なし                 |
+| `DATETIME`     | なし                 | なし                 |
 
 `precision / scale` は10進数の桁構造を表す。
 
@@ -327,22 +327,22 @@ constraint は持たせない。
 Java / Go / TypeScript / Python 等の言語型は `types.yaml`
 では管理せず、OpenAPI Generator 等の生成側に委ねる。
 
-| Type | PostgreSQL | OpenAPI |
-| --- | --- | --- |
-| `PROVIDED_ID` | `varchar(n)` | `string` |
-| `SEQUENCE_ID` | `bigint` | `integer / int64` |
-| `GENERATED_ID` | `varchar(n)` | `string` |
-| `FIXED_STRING` | `varchar(n)` + `CHECK (LENGTH(column) = n)` | `string` |
-| `STRING` | `varchar(n)` | `string` |
-| `TEXT` | `text` | `string` |
-| `INTEGER` | `bigint` | `integer / int64` |
-| `DECIMAL` | `numeric(p,s)` | `number` |
-| `BOOLEAN` | `boolean` | `boolean` |
-| `ENUM` | `enum` | `string + enum` |
-| `CODE` | `varchar(n)` | `string` |
-| `DATE` | `date` | `string / date` |
-| `TIME` | `time` | `string` |
-| `DATETIME` | `timestamp with time zone` | `string / date-time` |
+| Type           | PostgreSQL                                  | OpenAPI              |
+| -------------- | ------------------------------------------- | -------------------- |
+| `PROVIDED_ID`  | `varchar(n)`                                | `string`             |
+| `SEQUENCE_ID`  | `bigint`                                    | `integer / int64`    |
+| `GENERATED_ID` | `varchar(n)`                                | `string`             |
+| `FIXED_STRING` | `varchar(n)` + `CHECK (LENGTH(column) = n)` | `string`             |
+| `STRING`       | `varchar(n)`                                | `string`             |
+| `TEXT`         | `text`                                      | `string`             |
+| `INTEGER`      | `bigint`                                    | `integer / int64`    |
+| `DECIMAL`      | `numeric(p,s)`                              | `number`             |
+| `BOOLEAN`      | `boolean`                                   | `boolean`            |
+| `ENUM`         | `enum`                                      | `string + enum`      |
+| `CODE`         | `varchar(n)`                                | `string`             |
+| `DATE`         | `date`                                      | `string / date`      |
+| `TIME`         | `time`                                      | `string`             |
+| `DATETIME`     | `timestamp with time zone`                  | `string / date-time` |
 
 `SEQUENCE_ID` は値としてのDatabase型を `bigint` とする。
 
@@ -372,14 +372,13 @@ DECIMAL は `precision / scale`
 
 トップレベルは以下とする。
 
-``` yaml
+```yaml
 formatVersion: "1.0"
 updatedAt: "2026-08-25T23:00:00+09:00"
 domain: elements
 kind: types
 
-types:
-  ...
+types: ...
 ```
 
 Type の基本構造は以下とする。
@@ -398,7 +397,7 @@ TYPE_KEY:
     literal: true
     expressions: []
 
-  validation:          # 必要な場合のみ
+  validation: # 必要な場合のみ
     regex: ...
 
   postgresql:
@@ -406,7 +405,7 @@ TYPE_KEY:
 
   openapi:
     type: ...
-    format: ...        # 必要な場合のみ
+    format: ... # 必要な場合のみ
 
   recommendations: []
 ```
@@ -425,7 +424,7 @@ TYPE_KEY:
 
 標準の推奨命名は以下とする。
 
-``` text
+```text
 PROVIDED_ID   → *Id, *No
 SEQUENCE_ID   → *Id, *No
 GENERATED_ID  → *Id, *No
@@ -447,19 +446,18 @@ Warning とする。
 
 トップレベルは以下とする。
 
-``` yaml
+```yaml
 formatVersion: "1.0"
 updatedAt: "2026-08-25T23:00:00+09:00"
 domain: elements
 kind: elements
 
-elements:
-  ...
+elements: ...
 ```
 
 Element の基本構造は以下とする。
 
-``` text
+```text
 ELEMENT_KEY
 ├─ name           必須
 ├─ type           必須
@@ -475,7 +473,7 @@ ELEMENT_KEY
 
 例：
 
-``` yaml
+```yaml
 customerId:
   name: 得意先ID
   type: PROVIDED_ID
@@ -505,7 +503,7 @@ Element 側には `recommendations` を持たせない。
 `example` は必須とし、文字列化して保持するのではなく、論理 Type
 に対応する値型で記述する。
 
-``` yaml
+```yaml
 # STRING
 example: "ABC"
 
@@ -529,7 +527,7 @@ constraint も満たさなければならない。
 
 ENUM は以下の構造とする。
 
-``` yaml
+```yaml
 status:
   name: 状態
   type: ENUM
@@ -551,7 +549,7 @@ status:
 
 EnumValue は以下を持つ。
 
-``` text
+```text
 ENUM_VALUE_KEY
 ├─ name           必須
 └─ description    任意
@@ -569,7 +567,7 @@ EnumValue キーは `UPPER_SNAKE_CASE`
 
 したがって両ファイルの `formatVersion` は必ず一致する。
 
-``` text
+```text
 Item Definition Format 1.0
 │
 ├─ types.yaml
@@ -595,18 +593,18 @@ ARIADNE が管理する正本 YAML は、ファイル名や配置場所だけに
 
 Phase 2 の項目定義では以下とする。
 
-| ファイル | `domain` | `kind` |
-| --- | --- | --- |
-| `types.yaml` | `elements` | `types` |
+| ファイル        | `domain`   | `kind`     |
+| --------------- | ---------- | ---------- |
+| `types.yaml`    | `elements` | `types`    |
 | `elements.yaml` | `elements` | `elements` |
 
 Phase 2 の正本 YAML の共通ヘッダーは以下の形となる。
 
-``` yaml
+```yaml
 formatVersion: "1.0"
 updatedAt: "2026-08-25T23:00:00+09:00"
 domain: elements
-kind: types     # types.yaml の場合
+kind: types # types.yaml の場合
 ```
 
 `elements.yaml` の場合は `kind: elements` とする。
@@ -621,40 +619,40 @@ OAS / DDL は別のモデルであり、将来それぞれ `formatVersion`
 
 Prototype では Validator を実装しないが、正しい状態を仕様として定義する。
 
-| ID | Validation Rule | 判定 |
-| --- | --- | --- |
-| `V-001` | `types.yaml.formatVersion` と `elements.yaml.formatVersion` が一致する | Error |
-| `V-002` | `formatVersion` が ARIADNE の対応する Item Definition Format である | Error |
-| `V-003` | Element の `type` が `types.yaml` に存在する | Error |
-| `V-004` | Type の `required` constraint を Element がすべて持つ | Error |
-| `V-005` | Element は Type の `required / optional` に存在しない constraint を持たない | Error |
-| `V-006` | constraint の値そのものが妥当である | Error |
-| `V-007` | `example` が論理 Type の型・形式、Type 固有の `validation`、Element の constraint を満たす | Error |
-| `V-008` | `type: ENUM` の Element は `values` を持つ | Error |
-| `V-009` | ENUM の `values` が1件以上存在する | Error |
-| `V-010` | ENUM 以外の Element は `values` を持たない | Error |
-| `V-011` | EnumValue キーが `UPPER_SNAKE_CASE` に適合する | Error |
-| `V-012` | ENUM の `example` が `values` に存在するキーである | Error |
-| `V-013` | Element キーが `camelCase` に適合する | Error |
-| `V-014` | Type キーが `UPPER_SNAKE_CASE` に適合する | Error |
-| `V-015` | Element キーが Type の `recommendations.naming` に適合する | Warning |
-| `V-016` | Element / EnumValue キーを同一概念のまま rename しない | 運用ルール |
-| `V-017` | `updatedAt` が各ファイルに存在する | Error |
-| `V-018` | `updatedAt` が ISO 8601 形式である | Error |
-| `V-019` | `domain` が存在し、値が `elements` である | Error |
-| `V-020` | `kind` が存在し、定義種別と一致する（`types` / `elements`） | Error |
-| `V-021` | Type の `validation` の定義内容が妥当である | Error |
-| `V-022` | Element の `identifier` は、指定する場合 true である | Error |
-| `V-023` | Type が `defaultAllowed` を持つ | Error |
-| `V-024` | `defaultAllowed.literal` が boolean である | Error |
-| `V-025` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ | Error |
-| `V-026` | Element は `defaultAllowed` を定義しない | Error |
+| ID      | Validation Rule                                                                            | 判定       |
+| ------- | ------------------------------------------------------------------------------------------ | ---------- |
+| `V-001` | `types.yaml.formatVersion` と `elements.yaml.formatVersion` が一致する                     | Error      |
+| `V-002` | `formatVersion` が ARIADNE の対応する Item Definition Format である                        | Error      |
+| `V-003` | Element の `type` が `types.yaml` に存在する                                               | Error      |
+| `V-004` | Type の `required` constraint を Element がすべて持つ                                      | Error      |
+| `V-005` | Element は Type の `required / optional` に存在しない constraint を持たない                | Error      |
+| `V-006` | constraint の値そのものが妥当である                                                        | Error      |
+| `V-007` | `example` が論理 Type の型・形式、Type 固有の `validation`、Element の constraint を満たす | Error      |
+| `V-008` | `type: ENUM` の Element は `values` を持つ                                                 | Error      |
+| `V-009` | ENUM の `values` が1件以上存在する                                                         | Error      |
+| `V-010` | ENUM 以外の Element は `values` を持たない                                                 | Error      |
+| `V-011` | EnumValue キーが `UPPER_SNAKE_CASE` に適合する                                             | Error      |
+| `V-012` | ENUM の `example` が `values` に存在するキーである                                         | Error      |
+| `V-013` | Element キーが `camelCase` に適合する                                                      | Error      |
+| `V-014` | Type キーが `UPPER_SNAKE_CASE` に適合する                                                  | Error      |
+| `V-015` | Element キーが Type の `recommendations.naming` に適合する                                 | Warning    |
+| `V-016` | Element / EnumValue キーを同一概念のまま rename しない                                     | 運用ルール |
+| `V-017` | `updatedAt` が各ファイルに存在する                                                         | Error      |
+| `V-018` | `updatedAt` が ISO 8601 形式である                                                         | Error      |
+| `V-019` | `domain` が存在し、値が `elements` である                                                  | Error      |
+| `V-020` | `kind` が存在し、定義種別と一致する（`types` / `elements`）                                | Error      |
+| `V-021` | Type の `validation` の定義内容が妥当である                                                | Error      |
+| `V-022` | Element の `identifier` は、指定する場合 true である                                       | Error      |
+| `V-023` | Type が `defaultAllowed` を持つ                                                            | Error      |
+| `V-024` | `defaultAllowed.literal` が boolean である                                                 | Error      |
+| `V-025` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ    | Error      |
+| `V-026` | Element は `defaultAllowed` を定義しない                                                   | Error      |
 
 ### 11.1 Constraint Validation
 
 `V-006` では少なくとも以下を確認する。
 
-``` text
+```text
 length > 0
 
 minLength >= 0
@@ -676,7 +674,7 @@ Type に `validation` が定義されている場合、その内容自体を Val
 
 Prototype では以下を確認する。
 
-``` text
+```text
 validation.regex = 有効な正規表現
 ```
 
@@ -688,7 +686,7 @@ Element の実効 identifier は、Type.identifier または Element.identifier 
 
 `defaultAllowed` は、DDL Column の Default として利用可能な値の種類を Type ごとに定義する。
 
-``` text
+```text
 defaultAllowed.literal
   true  → Literal Default を利用可能
   false → Literal Default を利用不可
@@ -701,7 +699,7 @@ defaultAllowed.expressions
 
 Prototype では以下を定義する。
 
-``` text
+```text
 CURRENT_DATE
 CURRENT_TIME
 CURRENT_DATETIME
@@ -716,7 +714,7 @@ DDL Column に指定された Default が実際に利用可能かどうかの Va
 
 型の基本対応は以下とする。
 
-``` text
+```text
 PROVIDED_ID / GENERATED_ID / FIXED_STRING / STRING / TEXT / CODE
   → string
 
@@ -748,7 +746,7 @@ DATETIME
 
 ### 11.5 Error / Warning / Operation Rule
 
-``` text
+```text
 ERROR
   正本として成立しない。
   将来の生成処理では OAS / DDL 生成を停止する。
@@ -767,7 +765,7 @@ OPERATION RULE
 Validation は特定画面の機能ではなく、ARIADNE
 の共通能力として実装することを想定する。
 
-``` text
+```text
 validator package
     │
     ├─ アプリ内部
@@ -783,7 +781,7 @@ validator package
 Validator 本体はファイル I/O から分離し、Domain Model を入力として
 Validation する。
 
-``` text
+```text
 YAML Loader
     ↓
 Domain Model
@@ -803,7 +801,7 @@ Validator
 Go で実装する場合、Validator は共通 package とし、CLI は薄い入口とする。
 CLI フレームワークとして Cobra 等を利用することを想定できる。
 
-``` text
+```text
 Cobra CLI
     ↓
 Loader
@@ -815,7 +813,7 @@ Validator Package
 
 CLI は将来的に以下のような構成へ拡張可能とする。
 
-``` text
+```text
 ariadne validate
 ariadne generate openapi
 ariadne generate ddl
@@ -829,7 +827,7 @@ Prototype Phase 2 ではこれらを実装しない。
 Prototype では Task を題材に、複数 Type と constraint
 を実際に使用してモデルを検証した。
 
-``` text
+```text
 taskId          → GENERATED_ID
 title           → STRING
 description     → TEXT
@@ -855,7 +853,7 @@ Phase 4 では同一 Element を DDL 上で `created_at` / `updated_at`
 
 Prototype の手作業 Validation 結果は以下。
 
-``` text
+```text
 ERROR   : 0
 WARNING : 1
 
@@ -960,7 +958,7 @@ BuiltIn Default Expression の PostgreSQL / SQLite 等への具体的な変換�
 > Phase 2 は共通意味を定義する。\
 > Phase 3 / Phase 4 は、その意味を利用文脈に合わせて拡張する。
 
-``` text
+```text
 types.yaml + elements.yaml
         │
         ├──→ OAS 正本

@@ -23,6 +23,7 @@
   "homepage": "https://github.com/teru-0529/project-ariadne-prototype#readme",
   "devDependencies": {
     "@redocly/cli": "2.51.2",
-    "marked": "18.0.13"
+    "marked": "18.0.13",
+    "prettier": "3.9.8"
   }
 }
