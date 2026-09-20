@@ -1,7 +1,10 @@
 formatVersion: "1.0"
 
+service:
+  id: order-management
+
 schema:
-  id: order
+  id: received_order
 
 tables:
   orders: #TODO: TBD

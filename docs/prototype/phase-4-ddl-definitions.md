@@ -130,11 +130,13 @@ SQLite対応のためにPostgreSQL側の表現力を制限することはしな�
 
 ---
 
-## 3. Schema
+## 3. Service / Schema
 
-DDL SourceはSchema単位で管理する。
+DDL SourceはServiceに属するDatabase Schema定義として管理する。
 
-1つのDDL Source YAMLには1つのSchemaのみを定義し、以下に配置する。
+ServiceはAPI / DDL等の設計成果物を束ねるProject ARIADNE上の上位定義単位とする。
+
+1つのDDL Source YAMLには1つのServiceと1つのSchemaを定義し、以下に配置する。
 
 ```text
 src/
@@ -144,19 +146,32 @@ src/
       └─ task-management.yaml
 ```
 
-DDL Source YAMLでは、Schemaを以下の形式で定義する。
+DDL Source YAMLのファイル名はService IDと一致させる。
+
+DDL Source YAMLでは、ServiceとSchemaを以下の形式で定義する。
 
 ```yaml
-schema: order
+service:
+  id: order-management
+
+schema: received_order
 ```
+
+`service.id` はARIADNE上のService識別子とし、必須とする。
+
+Service IDは `kebab-case` とする。
 
 `schema` はARIADNE上のSchema識別子とし、必須とする。
 
 Schema識別子は `snake_case` とする。
 
+Service IDとSchema識別子は、それぞれ異なる責務を持ち、一致する必要はない。
+
+例えば `order-management` Serviceでは、Database Schemaとして `received_order` を利用する。
+
 DDL Source YAMLには物理Schema名を別途保持せず、Database上の物理Schema名はNaming Ruleに従って生成する。
 
-複数Schemaを一つのProject内で扱えるものとする。
+複数Service / Schemaを一つのProject内で扱えるものとする。
 
 SchemaをまたぐForeign KeyはPrototype Phase 4では許可しない。
 
@@ -171,7 +186,10 @@ DDL Source YAMLでは、Schema配下のTableをMapとして定義する。
 基本形式を以下とする。
 
 ```yaml
-schema: order
+service:
+  id: order-management
+
+schema: received_order
 
 tables:
   orders:
@@ -669,7 +687,7 @@ SQLiteでは必要に応じて代替方式を採用する。
 AuditはOptionalとし、以下の形式で定義する。
 
 ```yaml
-schema: order
+schema: received_order
 
 audit:
   element: traceId
@@ -1390,6 +1408,7 @@ Types / Elements ───────┤
 
 Resolved DDL Modelでは、以下を解決済みとする。
 
+- Service識別子
 - Schema識別子
 - Table / ColumnのPhysical Name
 - Element参照（`elementRef`）
@@ -1427,13 +1446,16 @@ Prototype Phase 4ではResolved DDL Modelの仕様およびSampleを定義し、
 
 ### 16.1 Resolved DDL Model形式
 
-Resolved DDL ModelはSchema単位で生成する。
+Resolved DDL ModelはDDL Source単位で生成し、Service IDとSchema IDを保持する。
 
 ```yaml
 formatVersion: "1.0"
 
+service:
+  id: order-management
+
 schema:
-  id: order
+  id: received_order
 
 tables:
   orders:
@@ -1452,6 +1474,12 @@ tables:
         override:
           name: 出荷担当者ID
 ```
+
+Source YAMLの `service.id` は、Resolved DDL ModelでもService IDとして保持する。
+
+Source YAMLの `schema` は、Resolved DDL Modelでは `schema.id` として保持する。
+
+Service IDとSchema IDは独立した識別子として扱い、一致する必要はない。
 
 Source YAML上のColumn `element` は、Resolved DDL Modelでは `elementRef` として保持する。
 
@@ -1742,9 +1770,28 @@ Phase 4では、設計したDDLが実Database上で成立することを検証�
 
 PostgreSQLをDDL設計の基準Databaseとして利用する。
 
-DockerベースでPostgreSQLを起動する。
+Development EnvironmentとしてDocker Composeを使用し、PostgreSQLとpgwebを起動する。
 
-Database参照用としてpgwebを併せて起動し、BrowserからDatabaseの状態を確認可能とする。
+Docker Compose定義は以下に配置する。
+
+```text
+tools/postgresql/compose.yaml
+```
+
+Repository Rootの `.env` をDocker Composeから明示的に読み込む。
+
+Repository Rootから以下のWrapper Scriptにより起動・停止する。
+
+```text
+./tools/db-up.sh
+./tools/db-down.sh
+```
+
+Database参照用としてpgwebを利用し、BrowserからDatabaseの状態を確認可能とする。
+
+生成したPostgreSQL DDLは `dist/ddl/postgresql/` に配置し、PostgreSQL Containerの初期化SQLとして適用可能な構成とする。
+
+PostgreSQL Databaseは生成DDLの実行検証を目的とした使い捨て環境とし、永続Volumeは使用しない。
 
 Order ManagementをPostgreSQLでの主要検証Modelとして利用する。
 
@@ -1839,6 +1886,9 @@ Phase 2 Element / Typeの参照解決や、Constraint間の意味的な整合性
 | V-118 | 各Index Columnが `column` を持つ | Error |
 | V-119 | Index Columnの `order` を指定する場合は `ASC` / `DESC` のいずれかである | Error |
 | V-120 | Index Columnの `nulls` を指定する場合は `FIRST` / `LAST` のいずれかである | Error |
+| V-121 | `service` が存在し、`id` を持つ | Error |
+| V-122 | Service IDが `kebab-case` の命名規約を満たす | Error |
+| V-123 | DDL Source YAMLのファイル名がService IDと一致する | Error |
 
 ### 23.2 Element / Column Validation
 
@@ -1846,10 +1896,10 @@ Element / Column Validationでは、DDL ColumnとPhase 2 Element / Typeとの意
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-121 | Columnの `element` がPhase 2で定義されたElementとして存在する | Error |
-| V-122 | ColumnからElement / Type由来の `type` / `length` / `minLength` / `maxLength` / `regex` / `minimum` / `maximum` / `precision` / `scale` / `enum` / `format` を再定義またはOverrideしない | Error |
-| V-123 | `sequence: true` を指定したColumnの参照Element Typeが `SEQUENCE_ID` である | Error |
-| V-124 | `createdAt` / `updatedAt` / `createdBy` / `updatedBy` をユーザー定義Columnとして定義しない | Error |
+| V-124 | Columnの `element` がPhase 2で定義されたElementとして存在する | Error |
+| V-125 | ColumnからElement / Type由来の `type` / `length` / `minLength` / `maxLength` / `regex` / `minimum` / `maximum` / `precision` / `scale` / `enum` / `format` を再定義またはOverrideしない | Error |
+| V-126 | `sequence: true` を指定したColumnの参照Element Typeが `SEQUENCE_ID` である | Error |
+| V-127 | `createdAt` / `updatedAt` / `createdBy` / `updatedBy` をユーザー定義Columnとして定義しない | Error |
 
 `SEQUENCE_ID` Elementを参照するColumnであっても、 `sequence: true` の指定は必須ではない。
 
@@ -1859,9 +1909,9 @@ Default Validationでは、Column Defaultと参照Element / Typeとの整合性�
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-125 | Literal Defaultを指定した場合、参照Element Typeの `defaultAllowed.literal` が `true` である | Error |
-| V-126 | Literal Defaultが参照Elementの論理Type / Format / Type固有Validation / Element Constraintを満たす | Error |
-| V-127 | Expression Defaultを指定した場合、そのExpressionが参照Element Typeの `defaultAllowed.expressions` に含まれる | Error |
+| V-128 | Literal Defaultを指定した場合、参照Element Typeの `defaultAllowed.literal` が `true` である | Error |
+| V-129 | Literal Defaultが参照Elementの論理Type / Format / Type固有Validation / Element Constraintを満たす | Error |
+| V-130 | Expression Defaultを指定した場合、そのExpressionが参照Element Typeの `defaultAllowed.expressions` に含まれる | Error |
 
 Literal Defaultでは暗黙の型変換を行わない。
 
@@ -1876,10 +1926,10 @@ Literal Defaultでは暗黙の型変換を行わない。
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-128 | すべてのTableがPrimary Keyをちょうど1つ持つ | Error |
-| V-129 | `primaryKey.columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-130 | 同一Primary Key内で同じColumnを重複指定しない | Error |
-| V-131 | Primary Keyを構成するすべてのColumnに明示的な `notNull: true` が指定されている | Error |
+| V-131 | すべてのTableがPrimary Keyをちょうど1つ持つ | Error |
+| V-132 | `primaryKey.columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-133 | 同一Primary Key内で同じColumnを重複指定しない | Error |
+| V-134 | Primary Keyを構成するすべてのColumnに明示的な `notNull: true` が指定されている | Error |
 
 Primary KeyのColumn順序はSourceのArray記載順を保持する。
 
@@ -1887,9 +1937,9 @@ Primary KeyのColumn順序はSourceのArray記載順を保持する。
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-132 | `uniqueConstraints[].columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-133 | 同一Unique Constraint内で同じColumnを重複指定しない | Error |
-| V-134 | 同一Table内に同じColumn集合を持つUnique Constraintを複数定義しない | Error |
+| V-135 | `uniqueConstraints[].columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-136 | 同一Unique Constraint内で同じColumnを重複指定しない | Error |
+| V-137 | 同一Table内に同じColumn集合を持つUnique Constraintを複数定義しない | Error |
 
 Unique ConstraintのColumn順序はDDL生成時に保持する。
 
@@ -1903,15 +1953,15 @@ Foreign Key Validationでは、Foreign Keyの参照関係およびReferential Ac
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-135 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-136 | `reference.table` に指定されたTableが同一Schema内に存在する | Error |
-| V-137 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する | Error |
-| V-138 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する | Error |
-| V-139 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である | Error |
-| V-140 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
-| V-141 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない | Error |
-| V-142 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない | Error |
-| V-143 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない | Error |
+| V-138 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-139 | `reference.table` に指定されたTableが同一Schema内に存在する | Error |
+| V-140 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する | Error |
+| V-141 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する | Error |
+| V-142 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である | Error |
+| V-143 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
+| V-144 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない | Error |
+| V-145 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない | Error |
+| V-146 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない | Error |
 
 Foreign KeyのIdentityは以下により決定する。
 
@@ -1934,7 +1984,7 @@ Self Referenceは許可する。
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-144 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
+| V-147 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
 
 Database上の型が互換であっても、異なるElement間にForeign Keyを定義することは許可しない。
 
@@ -1945,7 +1995,7 @@ Database型の一致ではなく、同一の業務上の値を参照している
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-145 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
+| V-148 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
 
 複合Foreign KeyのColumn対応はArrayの記載順とする。
 
@@ -1957,11 +2007,11 @@ Database型の一致ではなく、同一の業務上の値を参照している
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| V-146 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する | Error |
-| V-147 | 同一Index内で同じColumnを複数回指定しない | Error |
-| V-148 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない | Error |
-| V-149 | `notNull: true` のColumnに `nulls` を指定しない | Error |
-| V-150 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
+| V-149 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する | Error |
+| V-150 | 同一Index内で同じColumnを複数回指定しない | Error |
+| V-151 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない | Error |
+| V-152 | `notNull: true` のColumnに `nulls` を指定しない | Error |
+| V-153 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
 
 IndexのCanonical Identityは以下により決定する。
 
@@ -2195,13 +2245,13 @@ Phase 4では、以下を確定する。
 
 ### Step 11：PostgreSQL Runtime
 
-- [ ] PostgreSQL Docker環境を作成する
-- [ ] pgwebを追加する
+- [x] PostgreSQL Docker環境を作成する
+- [x] pgwebを追加する
 - [ ] Order Management Sample DDLを適用する
 - [ ] Table / Constraint / Indexを確認する
 - [ ] BuiltIn Triggerを確認する
 - [ ] Custom SQLを確認する
-- [ ] pgwebからDatabaseを確認する
+- [x] pgwebからDatabaseを確認する
 
 ### Step 12：SQLite Runtime
 

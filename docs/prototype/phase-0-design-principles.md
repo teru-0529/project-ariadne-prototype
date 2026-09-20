@@ -137,7 +137,27 @@ Core 利用時に ARIADNE が設計対象とする PostgreSQL 等の実 DB は�
 
 ---
 
-## 7. Prototype 開発時の概念構成
+## 7. Service
+
+Project ARIADNEでは、API / DDL等の設計成果物を束ねる上位の定義単位を `Service` とする。
+
+Serviceは特定の技術表現そのものではなく、ARIADNE上で同一の業務・機能領域に属する設計情報を関連付けるための単位である。
+
+例えば `order-management` Serviceでは、APIとDDLで以下の異なる識別子を利用できる。
+
+```text
+Service: order-management
+├─ API
+│  └─ Resource: Order
+└─ DDL
+   └─ Schema: received_order
+```
+
+Service ID、API Resource識別子、Database Schema識別子は、それぞれ異なる責務を持ち、一致する必要はない。
+
+---
+
+## 8. Prototype 開発時の概念構成
 
 Phase 0 では詳細なファイル名や YAML の分割単位までは固定しない。役割として以下の構成を採用する。
 
@@ -149,15 +169,15 @@ src/
 │
 ├─ ddl/
 │   └─ schemas/
-│       └─ Schema 定義 YAML
+│       └─ {service-id}.yaml
 │
-└─ api/
-    └─ services/
-        └─ {service-id}/
-            └─ API 定義 YAML
-
-templates/
-└─ Task 管理アプリ等の Prototype 用データ
+├─ api/
+│   └─ services/
+│       └─ {service-id}/
+│           └─ API 定義 YAML
+│
+└─ templates/
+    └─ Task 管理アプリ等の Prototype 用データ
 
         ↓ 生成・変換
 
@@ -182,13 +202,17 @@ runtime/
 └─ task.db
 ```
 
+API定義とDDL定義は物理的には異なる領域で管理するが、同一のService IDによってARIADNE上の同一Serviceに関連付ける。
+
+Serviceは物理ディレクトリ階層そのものを表す概念ではない。
+
 項目定義、DB 設計情報、OAS の具体的な構造は、Core の要件および現行 DXSI テンプレートの設計を踏まえて後続 Phase で決定する。
 
 ---
 
-## 8. Prototype アプリの最小機能
+## 9. Prototype アプリの最小機能
 
-### 8.1 Task Template
+### 9.1 Task Template
 
 Task Template は **YAML 正本**とする。
 
@@ -214,7 +238,7 @@ updatedAt
 - `createdAt / updatedAt` はアプリが管理し、UI から編集させない
 - 削除は Prototype の必須機能としない
 
-### 8.2 Task
+### 9.2 Task
 
 Task は **SQLite 正本**とする。
 
@@ -240,7 +264,7 @@ updatedAt
 - `createdAt / updatedAt` はアプリが管理し、UI から編集させない
 - `CreateUser / UpdateUser` は持たない
 
-### 8.3 Template → Task
+### 9.3 Template → Task
 
 Task 新規作成時には Template 選択を必須とする。
 
@@ -255,35 +279,36 @@ defaultDescription
 
 ---
 
-## 9. Core の試金石として必須の検証
+## 10. Core の試金石として必須の検証
 
-### 9.1 YAML
+### 10.1 YAML
 
 アプリケーションから YAML の Read / Edit / Write を一巡する。
 
 Prototype では Task Template を題材とする。
 
-### 9.2 DDL / DB
+### 10.2 DDL / DB
 
-以下の流れを Prototype 開発時に一度通す。
+DDL定義はARIADNE SourceからResolved DDL Modelを生成し、対象Database向けDDLへ変換する。
 
-``` text
-src/ddl/
+```text
+ARIADNE DDL Source
       ↓
-DDL 生成
+Resolved DDL Model
       ↓
-dist/database/*.sql
-      ↓
-DB 初期化
-      ↓
-runtime/task.db
+Database DDL
+      ├─ PostgreSQL DDL
+      └─ SQLite Compatibility DDL
 ```
 
-Prototype では SQLite を利用する。
+PostgreSQLをDDL設計の基準Databaseとする。
 
-Core 利用時の設計対象 DB は PostgreSQL 等になり得るが、その実 DB は ARIADNE の外部に存在する。
+SQLiteはPostgreSQLと同列の対応Databaseとはせず、ARIADNE Prototype自身のRuntime Databaseとして必要な範囲で互換対応する。
 
-### 9.3 API / OAS
+Core利用時にARIADNEが設計対象とするPostgreSQL等の実DatabaseはARIADNEの外側に存在する。
+ARIADNEが管理するのは、そのDatabaseを構築するための設計情報と生成DDLである。
+
+### 10.3 API / OAS
 
 API 定義の Source of Truth は `src/api/services/` 配下の ARIADNE YAML とする。
 
@@ -318,7 +343,7 @@ Raw Model / Resolved Model は Source of Truth ではなく、ARIADNE Source か
 
 ---
 
-## 10. OAS の出口検証
+## 11. OAS の出口検証
 
 OAS のフォルダ構成・内容が後工程で利用可能であることを証明するため、Backend 側の出口検証を Prototype の必須範囲とする。
 
@@ -340,7 +365,7 @@ API 公開
 
 ---
 
-## 11. Build / Git
+## 12. Build / Git
 
 Prototype は Git / GitHub で管理する。
 
@@ -360,7 +385,7 @@ GitHub Actions は Prototype の必須範囲外とする。
 
 ---
 
-## 12. Prototype でやらないこと
+## 13. Prototype でやらないこと
 
 以下は Prototype の完成条件に含めない。
 
@@ -381,7 +406,7 @@ GitHub Actions は Prototype の必須範囲外とする。
 
 ---
 
-## 13. Prototype Definition of Done
+## 14. Prototype Definition of Done
 
 Prototype は、以下の2つを満たした時点で Done とする。
 
@@ -406,7 +431,7 @@ Prototype は、以下の2つを満たした時点で Done とする。
 
 ---
 
-## 14. Phase 0 完了判定
+## 15. Phase 0 完了判定
 
 Phase 0 では以下を確定した。
 

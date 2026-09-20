@@ -3,6 +3,9 @@ updatedAt: "2026-09-14T21:50:00+09:00"
 domain: ddl
 kind: database
 
+service:
+  id: task-management
+
 schema: task
 
 tables:

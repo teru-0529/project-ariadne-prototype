@@ -1,5 +1,8 @@
 formatVersion: "1.0"
 
+service:
+  id: task-management
+
 schema:
   id: task
 

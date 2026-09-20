@@ -41,8 +41,11 @@ Prototype では設計を先に確定し、正本 YAML
 
 ## 2. Source of Truth と配置
 
-Phase 3 の Source of Truth は `src/api/services/` 配下の ARIADNE YAML
-とする。
+Phase 3 の Source of Truth は `src/api/services/` 配下の ARIADNE YAML とする。
+
+ここでいうServiceはAPI固有の概念ではなく、Project ARIADNE上でAPI / DDL等の設計成果物を束ねる上位定義単位である。
+
+`src/api/services/` 配下では、そのServiceに属するAPI定義を管理する。
 
 Service ごとにディレクトリを分け、Service 固有の Parameter
 Definition、Resource、Action、Custom、補足ドキュメントをその配下で管理する。
@@ -93,16 +96,20 @@ OpenAPI / API Document 生成時に HTML へ変換し、 Service 単位の OAS �
 
 ### 3.1 Service
 
-Service は API の管理単位を表す。
+Serviceは、API / DDL等の設計成果物を束ねるProject ARIADNE上の上位定義単位を表す。
 
-Service は以下を管理する。
+Phase 3では、そのServiceに属するAPI定義を管理する。
+
+Service IDはARIADNE上の共通識別子であり、API Resource等のAPI固有識別子や、Database Schema等のDDL固有識別子とは分離して扱う。
+
+Phase 3のService定義では、APIに関する以下の情報を管理する。
 
 - Service ID
 - 表示名
 - 説明
-- Service 共通 Request Header
+- Service共通Request Header
 
-Service ID は kebab-case とする。
+Service IDは kebab-case とする。
 
 例:
 
