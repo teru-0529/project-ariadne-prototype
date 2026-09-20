@@ -6,8 +6,10 @@ service:
 schema:
   id: task
 
+enums: []
+
 tables:
-  tasks: #TODO: TBD
+  tasks:
     name: タスク
     physicalName: tasks
 
@@ -29,14 +31,19 @@ tables:
       createUser:
         elementRef: $userId
         physicalName: create_user
+        override:
+          name: 登録ユーザー
 
       taskPic:
         elementRef: $userId
         physicalName: task_pic
+        override:
+          name: 担当者
 
       priority:
         elementRef: $priority
         physicalName: priority
+        default: 3
         notNull: true
 
       statusCode:
@@ -101,7 +108,7 @@ tables:
         hash: e0739e6d7ee5bbcf17c61be9b8d7b18e21302ffe7f46a0ed8ee0c6c48ea8cef6
         #INFO: index|tasks|create_user:ASC:DEFAULT,task_id:ASC:DEFAULT
 
-  statuses: #TODO: TBD
+  statuses:
     name: ステータス
     physicalName: statuses
 

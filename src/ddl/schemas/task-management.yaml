@@ -26,13 +26,17 @@ tables:
 
       createUser:
         element: userId
+        name: 登録ユーザー
+
 
       taskPic:
         element: userId
+        name: 担当者
 
       priority:
         element: priority
         notNull: true
+        default: 3
 
       statusCode:
         element: taskStatus

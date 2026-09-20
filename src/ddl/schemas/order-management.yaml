@@ -85,6 +85,8 @@ tables:
       orderQuantity:
         element: quantity
         notNull: true
+        constraints: #INFO: 受注数は必ず1以上
+          minimum: 1
         name: 受注数
 
       shippingQuantity: #TODO: 自動変更（shipping_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
@@ -112,6 +114,8 @@ tables:
       sellingPrice: #TODO: 制約（sellingPrice > costPrice）
         element: price
         notNull: true
+        constraints: #INFO: 販売価格は必ず1（円）以上
+          minimum: 1
         name: 販売価格
 
       costPrice:
@@ -187,6 +191,8 @@ tables:
       quantity:
         element: quantity
         notNull: true
+        constraints: #INFO: 出荷数は必ず1以上
+          minimum: 1
         name: 出荷数
 
       note:
@@ -244,13 +250,15 @@ tables:
 
       personInCharge:
         element: userId
-        name: キャンセル担当者ID
         notNull: true
+        name: キャンセル担当者ID
 
       quantity:
         element: quantity
-        name: キャンセル数
         notNull: true
+        constraints: #INFO: キャンセル数は必ず1以上
+          minimum: 1
+        name: キャンセル数
 
       note:
         element: comment

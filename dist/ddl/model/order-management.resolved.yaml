@@ -6,8 +6,13 @@ service:
 schema:
   id: received_order
 
+enums:
+  orderStatus:
+    elementRef: $orderStatus
+    physicalName: order_status
+
 tables:
-  orders: #TODO: TBD
+  orders:
     name: 受注
     physicalName: orders
 
@@ -38,8 +43,8 @@ tables:
       status:
         elementRef: $orderStatus
         physicalName: status
-        default: PREPARING
         notNull: true
+        default: PREPARING
 
       urgent:
         elementRef: $urgent
@@ -116,7 +121,7 @@ tables:
         hash: d399f77422610fa27111bdadcd7312fc4a0288f78c0cfc0c37da6a820c301421
         #INFO: index|orders|urgent:ASC:DEFAULT,order_no:ASC:DEFAULT
 
-  order_details: #TODO: TBD
+  order_details:
     name: 受注明細
     physicalName: order_details
 
@@ -140,6 +145,8 @@ tables:
         elementRef: $quantity
         physicalName: order_quantity
         notNull: true
+        constraints:
+          minimum: 1
         override:
           name: 受注数
 
@@ -176,6 +183,8 @@ tables:
         elementRef: $price
         physicalName: selling_price
         notNull: true
+        constraints:
+          minimum: 1
         override:
           name: 販売価格
 
@@ -280,7 +289,7 @@ tables:
         hash: 2ff016e3b854cf56e4832fc331043ccf0e9ab100705be18b7050ed77aaf26702
         #INFO: index|order_details|profit_rate:DESC:DEFAULT,product_no:ASC:DEFAULT,order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT
 
-  shipping_instructions: #TODO: TBD
+  shipping_instructions:
     name: 出荷指示
     physicalName: shipping_instructions
 
@@ -320,6 +329,8 @@ tables:
         elementRef: $quantity
         physicalName: quantity
         notNull: true
+        constraints:
+          minimum: 1
         override:
           name: 出荷数
 
@@ -396,7 +407,7 @@ tables:
         hash: ab467bdc43c579c9182782117f49835f789b99659f68b56796bba88becd883d5
         #INFO: index|shipping_instructions|order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT,operation_date:DESC:DEFAULT
 
-  cancel_instructions: #TODO: TBD
+  cancel_instructions:
     name: キャンセル指示
     physicalName: cancel_instructions
 
@@ -436,6 +447,8 @@ tables:
         elementRef: $quantity
         physicalName: quantity
         notNull: true
+        constraints:
+          minimum: 1
         override:
           name: キャンセル数
 
