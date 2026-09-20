@@ -2,7 +2,6 @@
 DROP SCHEMA IF EXISTS task CASCADE;
 CREATE SCHEMA task;
 
--- TODO: FUNCTION/TRIGGER(BUILT IN)
 -- TODO: FUNCTION/TRIGGER(CUSTOM)
 -- TODO: CONSTRAINT(CUSTOM)
 
@@ -29,9 +28,9 @@ CREATE TABLE task.tasks (
 
   status_code varchar(15) NOT NULL,
 
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  created_at timestamp with time zone NOT NULL,
 
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp
+  updated_at timestamp with time zone NOT NULL
 );
 
 -- INFO: Create Table(statuses)
@@ -41,9 +40,9 @@ CREATE TABLE task.statuses (
   description text,
   CHECK (LENGTH(description) >= 10),
 
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  created_at timestamp with time zone NOT NULL,
 
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp
+  updated_at timestamp with time zone NOT NULL
 );
 
 -- INFO: Set PK Constraint
@@ -92,3 +91,46 @@ COMMENT ON COLUMN task.statuses.status_code IS 'ステータスコード [Elemen
 COMMENT ON COLUMN task.statuses.description IS '説明 [Element: description]';
 COMMENT ON COLUMN task.statuses.created_at IS '作成日時 [BuiltIn]';
 COMMENT ON COLUMN task.statuses.updated_at IS '更新日時 [BuiltIn]';
+
+-- INFO: BuiltIn Function
+CREATE FUNCTION task.ariadne_builtin_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.created_at := current_timestamp;
+  NEW.updated_at := current_timestamp;
+  RETURN NEW;
+END;
+$$;
+
+CREATE FUNCTION task.ariadne_builtin_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at := current_timestamp;
+  RETURN NEW;
+END;
+$$;
+
+-- INFO: BuiltIn Trigger
+CREATE TRIGGER trg_tasks_builtin_insert
+BEFORE INSERT ON task.tasks
+FOR EACH ROW
+EXECUTE FUNCTION task.ariadne_builtin_insert();
+
+CREATE TRIGGER trg_tasks_builtin_update
+BEFORE UPDATE ON task.tasks
+FOR EACH ROW
+EXECUTE FUNCTION task.ariadne_builtin_update();
+
+CREATE TRIGGER trg_statuses_builtin_insert
+BEFORE INSERT ON task.statuses
+FOR EACH ROW
+EXECUTE FUNCTION task.ariadne_builtin_insert();
+
+CREATE TRIGGER trg_statuses_builtin_update
+BEFORE UPDATE ON task.statuses
+FOR EACH ROW
+EXECUTE FUNCTION task.ariadne_builtin_update();

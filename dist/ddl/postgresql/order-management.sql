@@ -10,7 +10,6 @@ CREATE TYPE received_order.order_status AS enum (
   'COMPLETED'
 );
 
--- TODO: FUNCTION/TRIGGER(BUILT IN)
 -- TODO: FUNCTION/TRIGGER(CUSTOM)
 -- TODO: CONSTRAINT(CUSTOM)
 
@@ -38,9 +37,9 @@ CREATE TABLE received_order.orders (
 
   desired_delivery_time time,
 
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  created_at timestamp with time zone NOT NULL,
 
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  updated_at timestamp with time zone NOT NULL,
 
   created_by varchar(128) NOT NULL,
   CHECK (created_by ~* '^[0-9A-HJKMNP-TV-Z]{26}::.+$'),
@@ -86,9 +85,9 @@ CREATE TABLE received_order.order_details (
   CHECK (profit_rate >= 0.0),
   CHECK (profit_rate <= 100.0),
 
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  created_at timestamp with time zone NOT NULL,
 
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  updated_at timestamp with time zone NOT NULL,
 
   created_by varchar(128) NOT NULL,
   CHECK (created_by ~* '^[0-9A-HJKMNP-TV-Z]{26}::.+$'),
@@ -119,9 +118,9 @@ CREATE TABLE received_order.shipping_instructions (
 
   note text,
 
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  created_at timestamp with time zone NOT NULL,
 
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  updated_at timestamp with time zone NOT NULL,
 
   created_by varchar(128) NOT NULL,
   CHECK (created_by ~* '^[0-9A-HJKMNP-TV-Z]{26}::.+$'),
@@ -152,9 +151,9 @@ CREATE TABLE received_order.cancel_instructions (
 
   note text,
 
-  created_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  created_at timestamp with time zone NOT NULL,
 
-  updated_at timestamp with time zone NOT NULL DEFAULT current_timestamp,
+  updated_at timestamp with time zone NOT NULL,
 
   created_by varchar(128) NOT NULL,
   CHECK (created_by ~* '^[0-9A-HJKMNP-TV-Z]{26}::.+$'),
@@ -315,3 +314,87 @@ COMMENT ON COLUMN received_order.cancel_instructions.created_at IS '作成日時
 COMMENT ON COLUMN received_order.cancel_instructions.updated_at IS '更新日時 [BuiltIn]';
 COMMENT ON COLUMN received_order.cancel_instructions.created_by IS '作成者 [BuiltIn, Element: traceId]';
 COMMENT ON COLUMN received_order.cancel_instructions.updated_by IS '更新者 [BuiltIn, Element: traceId]';
+
+-- INFO: BuiltIn Function
+CREATE FUNCTION received_order.ariadne_builtin_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_audit text;
+BEGIN
+  v_audit := current_setting('ariadne.audit', true);
+
+  IF v_audit IS NULL OR v_audit = '' THEN
+    RAISE EXCEPTION 'ARIADNE audit context is not set';
+  END IF;
+
+  NEW.created_at := current_timestamp;
+  NEW.updated_at := current_timestamp;
+  NEW.created_by := v_audit;
+  NEW.updated_by := v_audit;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE FUNCTION received_order.ariadne_builtin_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_audit text;
+BEGIN
+  v_audit := current_setting('ariadne.audit', true);
+
+  IF v_audit IS NULL OR v_audit = '' THEN
+    RAISE EXCEPTION 'ARIADNE audit context is not set';
+  END IF;
+
+  NEW.updated_at := current_timestamp;
+  NEW.updated_by := v_audit;
+
+  RETURN NEW;
+END;
+$$;
+
+-- INFO: BuiltIn Trigger
+CREATE TRIGGER trg_orders_builtin_insert
+BEFORE INSERT ON received_order.orders
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+
+CREATE TRIGGER trg_orders_builtin_update
+BEFORE UPDATE ON received_order.orders
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_update();
+
+CREATE TRIGGER trg_order_details_builtin_insert
+BEFORE INSERT ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+
+CREATE TRIGGER trg_order_details_builtin_update
+BEFORE UPDATE ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_update();
+
+CREATE TRIGGER trg_shipping_instructions_builtin_insert
+BEFORE INSERT ON received_order.shipping_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+
+CREATE TRIGGER trg_shipping_instructions_builtin_update
+BEFORE UPDATE ON received_order.shipping_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_update();
+
+CREATE TRIGGER trg_cancel_instructions_builtin_insert
+BEFORE INSERT ON received_order.cancel_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+
+CREATE TRIGGER trg_cancel_instructions_builtin_update
+BEFORE UPDATE ON received_order.cancel_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_update();
