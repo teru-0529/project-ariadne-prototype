@@ -316,7 +316,7 @@ COMMENT ON COLUMN received_order.cancel_instructions.created_by IS '作成者 [B
 COMMENT ON COLUMN received_order.cancel_instructions.updated_by IS '更新者 [BuiltIn, Element: traceId]';
 
 -- INFO: BuiltIn Function
-CREATE FUNCTION received_order.ariadne_builtin_insert()
+CREATE FUNCTION received_order.ariadne_builtin_row_metadata_insert()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -338,7 +338,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION received_order.ariadne_builtin_update()
+CREATE FUNCTION received_order.ariadne_builtin_row_metadata_update()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -359,42 +359,101 @@ END;
 $$;
 
 -- INFO: BuiltIn Trigger
-CREATE TRIGGER trg_orders_builtin_insert
+CREATE TRIGGER ariadne_builtin_orders_before_insert
 BEFORE INSERT ON received_order.orders
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
 
-CREATE TRIGGER trg_orders_builtin_update
+CREATE TRIGGER ariadne_builtin_orders_before_update
 BEFORE UPDATE ON received_order.orders
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_update();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
 
-CREATE TRIGGER trg_order_details_builtin_insert
+CREATE TRIGGER ariadne_builtin_order_details_before_insert
 BEFORE INSERT ON received_order.order_details
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
 
-CREATE TRIGGER trg_order_details_builtin_update
+CREATE TRIGGER ariadne_builtin_order_details_before_update
 BEFORE UPDATE ON received_order.order_details
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_update();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
 
-CREATE TRIGGER trg_shipping_instructions_builtin_insert
+CREATE TRIGGER ariadne_builtin_shipping_instructions_before_insert
 BEFORE INSERT ON received_order.shipping_instructions
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
 
-CREATE TRIGGER trg_shipping_instructions_builtin_update
+CREATE TRIGGER ariadne_builtin_shipping_instructions_before_update
 BEFORE UPDATE ON received_order.shipping_instructions
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_update();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
 
-CREATE TRIGGER trg_cancel_instructions_builtin_insert
+CREATE TRIGGER ariadne_builtin_cancel_instructions_before_insert
 BEFORE INSERT ON received_order.cancel_instructions
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_insert();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
 
-CREATE TRIGGER trg_cancel_instructions_builtin_update
+CREATE TRIGGER ariadne_builtin_cancel_instructions_before_update
 BEFORE UPDATE ON received_order.cancel_instructions
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_update();
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
+
+-- INFO: Custom Function
+-- order_no の値を新たに採番する。
+-- 番号体系は、ORD-YYYYMMDD-999 （処理日付ごとに001からの連番で取得する）
+CREATE OR REPLACE FUNCTION received_order.generate_order_no(
+  p_row received_order.orders
+)
+RETURNS received_order.orders
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_process_date text;
+  v_max_no integer;
+BEGIN
+  -- 採番に使用する処理日付を取得する。
+  v_process_date := to_char(current_date, 'YYYYMMDD');
+
+  -- 同一処理日付の採番処理を直列化する。
+  -- Transaction終了時にLockは自動的に解放される。
+  PERFORM pg_advisory_xact_lock(
+    hashtext('received_order.order_no.' || v_process_date)
+  );
+
+  -- 同一処理日付ですでに採番されている最大番号を取得する。
+  SELECT COALESCE(MAX(RIGHT(order_no, 3)::integer), 0)
+    INTO v_max_no
+    FROM received_order.orders
+   WHERE order_no LIKE 'ORD-' || v_process_date || '-%';
+
+  -- 3桁で採番可能な上限を超えた場合はエラーとする。
+  IF v_max_no >= 999 THEN
+    RAISE EXCEPTION 'order_no sequence exceeded the daily limit (999): %', v_process_date;
+  END IF;
+
+  -- 最大番号に1を加算し、3桁ゼロ埋めしてorder_noへ設定する。
+  p_row.order_no :=
+    'ORD-' || v_process_date || '-' || lpad((v_max_no + 1)::text, 3, '0');
+
+  RETURN p_row;
+END;
+$$;
+
+-- INFO: ARIADNE generated Custom Trigger Function
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_orders_before_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW := received_order.generate_order_no(NEW);
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_custom_orders_before_insert
+BEFORE INSERT
+ON received_order.orders
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_custom_orders_before_insert();

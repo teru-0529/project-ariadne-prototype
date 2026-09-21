@@ -93,7 +93,7 @@ COMMENT ON COLUMN task.statuses.created_at IS '作成日時 [BuiltIn]';
 COMMENT ON COLUMN task.statuses.updated_at IS '更新日時 [BuiltIn]';
 
 -- INFO: BuiltIn Function
-CREATE FUNCTION task.ariadne_builtin_insert()
+CREATE FUNCTION task.ariadne_builtin_row_metadata_insert()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -104,7 +104,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION task.ariadne_builtin_update()
+CREATE FUNCTION task.ariadne_builtin_row_metadata_update()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -115,22 +115,22 @@ END;
 $$;
 
 -- INFO: BuiltIn Trigger
-CREATE TRIGGER trg_tasks_builtin_insert
+CREATE TRIGGER ariadne_builtin_tasks_before_insert
 BEFORE INSERT ON task.tasks
 FOR EACH ROW
-EXECUTE FUNCTION task.ariadne_builtin_insert();
+EXECUTE FUNCTION task.ariadne_builtin_row_metadata_insert();
 
-CREATE TRIGGER trg_tasks_builtin_update
+CREATE TRIGGER ariadne_builtin_tasks_before_update
 BEFORE UPDATE ON task.tasks
 FOR EACH ROW
-EXECUTE FUNCTION task.ariadne_builtin_update();
+EXECUTE FUNCTION task.ariadne_builtin_row_metadata_update();
 
-CREATE TRIGGER trg_statuses_builtin_insert
+CREATE TRIGGER ariadne_builtin_statuses_before_insert
 BEFORE INSERT ON task.statuses
 FOR EACH ROW
-EXECUTE FUNCTION task.ariadne_builtin_insert();
+EXECUTE FUNCTION task.ariadne_builtin_row_metadata_insert();
 
-CREATE TRIGGER trg_statuses_builtin_update
+CREATE TRIGGER ariadne_builtin_statuses_before_update
 BEFORE UPDATE ON task.statuses
 FOR EACH ROW
-EXECUTE FUNCTION task.ariadne_builtin_update();
+EXECUTE FUNCTION task.ariadne_builtin_row_metadata_update();

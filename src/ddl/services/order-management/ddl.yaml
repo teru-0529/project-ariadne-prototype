@@ -16,7 +16,7 @@ tables:
     name: 受注
 
     columns:
-      orderNo: #TODO: 自動採番（登録時にFunction：ORD-YYYYMMDD-999、登録日内連番）
+      orderNo:
         element: receivedOrderNo
         notNull: true
 
@@ -50,6 +50,14 @@ tables:
       desiredDeliveryTime:
         element: desiredDeliveryTime
 
+    customTriggers:
+      beforeInsert:
+        timing: BEFORE
+        events:
+          - INSERT
+        functions:
+          - generateOrderNo #INFO: 受注番号自動採番
+
     primaryKey:
       - orderNo
 
@@ -74,7 +82,7 @@ tables:
         element: receivedOrderNo
         notNull: true
 
-      detailNo: #TODO: 自動採番（登録時にFunction：orderNo単位で連番）
+      detailNo: #TODO: CustomTrigger：明細番号自動採番（orderNo単位で連番）
         element: orderDetailNo
         notNull: true
 
@@ -126,6 +134,14 @@ tables:
       profitRate: #TODO: 自動計算（登録/profitRate = （sellingPrice - costPrice) / sellingPrice * 100)
         element: profitRate
         notNull: true
+
+    # customTriggers:
+    #   beforeInsert:
+    #     timing: BEFORE
+    #     events:
+    #       - INSERT
+    #     functions:
+    #       - generateDetailNo #INFO: 明細番号自動採番
 
     primaryKey:
       - orderNo

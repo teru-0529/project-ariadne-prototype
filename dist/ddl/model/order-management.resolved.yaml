@@ -87,6 +87,14 @@ tables:
         physicalName: updated_by
         notNull: true
 
+    customTriggers:
+      beforeInsert:
+        timing: BEFORE
+        events:
+          - INSERT
+        functions:
+          - functionRef: $generateOrderNo #INFO: 受注番号自動採番
+
     primaryKey:
       physicalName: pk_orders
       columns:
@@ -225,6 +233,14 @@ tables:
         elementRef: $traceId
         physicalName: updated_by
         notNull: true
+
+    # customTriggers:
+    #   beforeInsert:
+    #     timing: BEFORE
+    #     events:
+    #       - INSERT
+    #     functions:
+    #       - functionRef: $generateDetailNo #INFO: 明細番号自動採番
 
     primaryKey:
       physicalName: pk_order_details
