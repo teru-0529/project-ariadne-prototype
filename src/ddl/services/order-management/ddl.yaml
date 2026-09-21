@@ -82,7 +82,7 @@ tables:
         element: receivedOrderNo
         notNull: true
 
-      detailNo: #TODO: CustomTrigger：明細番号自動採番（orderNo単位で連番）
+      detailNo:
         element: orderDetailNo
         notNull: true
 
@@ -97,13 +97,13 @@ tables:
           minimum: 1
         name: 受注数
 
-      shippingQuantity: #TODO: 自動変更（shipping_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
+      shippingQuantity: #TODO: 自動変更（shipping_instructions登録時にFunction：登録数加算）
         element: quantity
         notNull: true
         default: 0
         name: 出荷数
 
-      cancelQuantity: #TODO: 自動変更（cancel_instructions登録時にFunction：登録数加算）、制約（orderQuantity >= shippingQuantity + shippingQuantity）
+      cancelQuantity: #TODO: 自動変更（cancel_instructions登録時にFunction：登録数加算）
         element: quantity
         notNull: true
         default: 0
@@ -142,6 +142,16 @@ tables:
           - INSERT
         functions:
           - generateDetailNo #INFO: 明細番号自動採番
+          - calculateProfitRate #INFO: 利益率計算
+          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      beforeUpdate:
+        timing: BEFORE
+        events:
+          - UPDATE
+        functions:
+          - calculateProfitRate #INFO: 利益率計算
+          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
 
     primaryKey:
       - orderNo

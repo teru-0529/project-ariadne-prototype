@@ -241,6 +241,16 @@ tables:
           - INSERT
         functions:
           - functionRef: $generateDetailNo #INFO: 明細番号自動採番
+          - functionRef: $calculateProfitRate #INFO: 利益率計算
+          - functionRef: $calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      beforeUpdate:
+        timing: BEFORE
+        events:
+          - UPDATE
+        functions:
+          - functionRef: $calculateProfitRate #INFO: 利益率計算
+          - functionRef: $calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
 
     primaryKey:
       physicalName: pk_order_details

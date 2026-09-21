@@ -470,6 +470,49 @@ BEGIN
 END;
 $$;
 
+-- profit_rate の値を計算する。
+CREATE OR REPLACE FUNCTION received_order.calculate_profit_rate(
+  p_row received_order.order_details
+)
+RETURNS received_order.order_details
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- profit_rateを計算する。
+  p_row.profit_rate := (p_row.selling_price - p_row.cost_price) * 100.0 / p_row.selling_price;
+
+  RETURN p_row;
+END;
+$$;
+
+-- remaining_quantityを計算しstatusを判定する。
+CREATE OR REPLACE FUNCTION received_order.calculate_quantity_and_status(
+  p_row received_order.order_details
+)
+RETURNS received_order.order_details
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_max_no integer;
+BEGIN
+  -- remaining_quantityを計算する。
+  p_row.remaining_quantity := p_row.order_quantity - p_row.shipping_quantity - p_row.cancel_quantity;
+
+  -- statusを判定する。
+  IF p_row.order_quantity = p_row.remaining_quantity THEN
+    p_row.status := 'PREPARING';
+  ELSIF p_row.remaining_quantity = 0 AND p_row.shipping_quantity = 0 THEN
+    p_row.status := 'CANCELED';
+  ELSIF p_row.remaining_quantity = 0 THEN
+    p_row.status := 'COMPLETED';
+  ELSE
+    p_row.status := 'IN_PROGRESS';
+  END IF;
+
+  RETURN p_row;
+END;
+$$;
+
 -- INFO: ARIADNE generated Custom Trigger Function
 CREATE OR REPLACE FUNCTION received_order.ariadne_custom_orders_before_insert()
 RETURNS trigger
@@ -494,6 +537,8 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   NEW := received_order.generate_detail_no(NEW);
+  NEW := received_order.calculate_profit_rate(NEW);
+  NEW := received_order.calculate_quantity_and_status(NEW);
 
   RETURN NEW;
 END;
@@ -504,3 +549,21 @@ BEFORE INSERT
 ON received_order.order_details
 FOR EACH ROW
 EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_insert();
+
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_before_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW := received_order.calculate_profit_rate(NEW);
+  NEW := received_order.calculate_quantity_and_status(NEW);
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_custom_order_details_before_update
+BEFORE UPDATE
+ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_update();
