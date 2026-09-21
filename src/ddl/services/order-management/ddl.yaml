@@ -135,13 +135,13 @@ tables:
         element: profitRate
         notNull: true
 
-    # customTriggers:
-    #   beforeInsert:
-    #     timing: BEFORE
-    #     events:
-    #       - INSERT
-    #     functions:
-    #       - generateDetailNo #INFO: 明細番号自動採番
+    customTriggers:
+      beforeInsert:
+        timing: BEFORE
+        events:
+          - INSERT
+        functions:
+          - generateDetailNo #INFO: 明細番号自動採番
 
     primaryKey:
       - orderNo

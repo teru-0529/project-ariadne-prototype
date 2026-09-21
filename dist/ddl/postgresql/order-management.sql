@@ -15,7 +15,7 @@ CREATE TYPE received_order.order_status AS enum (
 
 -- INFO: Create Table(orders)
 CREATE TABLE received_order.orders (
-  order_no varchar(16) NOT NULL, --TODO: CUSTOM FUNCTIO
+  order_no varchar(16) NOT NULL,
   CHECK (LENGTH(order_no) = 16),
   CHECK (order_no ~* '^ORD-[0-9]{8}-[0-9]{3}$'),
 
@@ -54,7 +54,7 @@ CREATE TABLE received_order.order_details (
   CHECK (LENGTH(order_no) = 16),
   CHECK (order_no ~* '^ORD-[0-9]{8}-[0-9]{3}$'),
 
-  detail_no bigint NOT NULL, --TODO: CUSTOM FUNCTIO
+  detail_no bigint NOT NULL,
   CHECK (detail_no >= 1),
 
   product_no varchar(7) NOT NULL,
@@ -440,6 +440,36 @@ BEGIN
 END;
 $$;
 
+-- detail_no の値を新たに採番する。
+-- 番号体系は、受注番号単位の連番。
+CREATE OR REPLACE FUNCTION received_order.generate_detail_no(
+  p_row received_order.order_details
+)
+RETURNS received_order.order_details
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_max_no integer;
+BEGIN
+  -- 同一受注番号の採番処理を直列化する。
+  -- Transaction終了時にLockは自動的に解放される。
+  PERFORM pg_advisory_xact_lock(
+    hashtext('received_order.detail_no.' || p_row.order_no)
+  );
+
+  -- 同一受注番号における明細番号の最大値を取得する。
+  SELECT COALESCE(MAX(detail_no), 0)
+    INTO v_max_no
+    FROM received_order.order_details
+   WHERE order_no = p_row.order_no;
+
+  -- 最大値に1を加算し、detail_noへ設定する。
+  p_row.detail_no := v_max_no + 1;
+
+  RETURN p_row;
+END;
+$$;
+
 -- INFO: ARIADNE generated Custom Trigger Function
 CREATE OR REPLACE FUNCTION received_order.ariadne_custom_orders_before_insert()
 RETURNS trigger
@@ -457,3 +487,20 @@ BEFORE INSERT
 ON received_order.orders
 FOR EACH ROW
 EXECUTE FUNCTION received_order.ariadne_custom_orders_before_insert();
+
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_before_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW := received_order.generate_detail_no(NEW);
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_custom_order_details_before_insert
+BEFORE INSERT
+ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_insert();
