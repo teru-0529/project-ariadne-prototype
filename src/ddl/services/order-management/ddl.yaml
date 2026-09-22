@@ -50,14 +50,6 @@ tables:
       desiredDeliveryTime:
         element: desiredDeliveryTime
 
-    customTriggers:
-      beforeInsert:
-        timing: BEFORE
-        events:
-          - INSERT
-        functions:
-          - generateOrderNo #INFO: 受注番号自動採番
-
     primaryKey:
       - orderNo
 
@@ -73,6 +65,14 @@ tables:
       - columns: #INFO: 緊急出荷
           - column: urgent
           - column: orderNo
+
+    customTriggers:
+      beforeInsert:
+        timing: BEFORE
+        events:
+          - INSERT
+        functions:
+          - generateOrderNo #INFO: 受注番号自動採番
 
   order_details:
     name: 受注明細
@@ -119,7 +119,7 @@ tables:
         notNull: true
         default: PREPARING
 
-      sellingPrice: #TODO: 制約（sellingPrice > costPrice）
+      sellingPrice:
         element: price
         notNull: true
         constraints: #INFO: 販売価格は必ず1（円）以上
@@ -135,35 +135,12 @@ tables:
         element: profitRate
         notNull: true
 
-    customTriggers:
-      beforeInsert:
-        timing: BEFORE
-        events:
-          - INSERT
-        functions:
-          - generateDetailNo #INFO: 明細番号自動採番
-          - calculateProfitRate #INFO: 利益率計算
-          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
-
-      beforeUpdate:
-        timing: BEFORE
-        events:
-          - UPDATE
-        functions:
-          - calculateProfitRate #INFO: 利益率計算
-          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
-
-      afterInsertUpdate:
-        timing: AFTER
-        events:
-          - INSERT
-          - UPDATE
-        functions:
-          - judgeStatus #INFO: 受注ステータス判定
-
     primaryKey:
       - orderNo
       - detailNo
+
+    rowConstraints:
+      - expression: sellingPrice > costPrice
 
     foreignKeys:
       - columns:
@@ -193,6 +170,32 @@ tables:
           - column: productNo
           - column: orderNo
           - column: detailNo
+
+    customTriggers:
+      beforeInsert:
+        timing: BEFORE
+        events:
+          - INSERT
+        functions:
+          - generateDetailNo #INFO: 明細番号自動採番
+          - calculateProfitRate #INFO: 利益率計算
+          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      beforeUpdate:
+        timing: BEFORE
+        events:
+          - UPDATE
+        functions:
+          - calculateProfitRate #INFO: 利益率計算
+          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      afterInsertUpdate:
+        timing: AFTER
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - judgeStatus #INFO: 受注ステータス判定
 
   shipping_instructions:
     name: 出荷指示
@@ -233,14 +236,6 @@ tables:
         element: comment
         name: 備考
 
-    customTriggers:
-      afterInsert:
-        timing: AFTER
-        events:
-          - INSERT
-        functions:
-          - setShippingQuantity #INFO: 出荷数登録
-
     primaryKey:
       - orderShipmentId
 
@@ -266,6 +261,14 @@ tables:
           - column: detailNo
           - column: operationDate
             order: DESC
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - setShippingQuantity #INFO: 出荷数登録
 
   cancel_instructions:
     name: キャンセル指示
@@ -306,14 +309,6 @@ tables:
         element: comment
         name: 備考
 
-    customTriggers:
-      afterInsert:
-        timing: AFTER
-        events:
-          - INSERT
-        functions:
-          - setCancelQuantity #INFO: キャンセル数登録
-
     primaryKey:
       - orderCancelId
 
@@ -333,3 +328,11 @@ tables:
           - column: detailNo
           - column: operationDate
             order: DESC
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - setCancelQuantity #INFO: キャンセル数登録

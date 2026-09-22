@@ -10,8 +10,6 @@ CREATE TYPE received_order.order_status AS enum (
   'COMPLETED'
 );
 
--- TODO: CONSTRAINT(CUSTOM)
-
 -- INFO: Create Table(orders)
 CREATE TABLE received_order.orders (
   order_no varchar(16) NOT NULL,
@@ -77,7 +75,7 @@ CREATE TABLE received_order.order_details (
   selling_price bigint NOT NULL,
   CHECK (selling_price >= 1),
 
-  cost_price bigint NOT NULL, --TODO: CUSTOM CONSTRAINT
+  cost_price bigint NOT NULL,
   CHECK (cost_price >= 0),
 
   profit_rate numeric(5,2) NOT NULL,
@@ -182,6 +180,11 @@ ALTER TABLE received_order.cancel_instructions
 ALTER TABLE received_order.shipping_instructions
   ADD CONSTRAINT uq_shipping_instructions_ba368286
   UNIQUE (operation_date, order_no, detail_no);
+
+-- INFO: Set Row Check Constraint
+ALTER TABLE received_order.order_details
+  ADD CONSTRAINT ck_order_details_bcddbe76a
+  CHECK (selling_price > cost_price);
 
 -- INFO: Set FK constraint
 ALTER TABLE received_order.order_details
