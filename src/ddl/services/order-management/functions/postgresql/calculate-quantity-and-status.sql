@@ -6,7 +6,6 @@ RETURNS received_order.order_details
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_max_no integer;
 BEGIN
   -- remaining_quantityを計算する。
   p_row.remaining_quantity := p_row.order_quantity - p_row.shipping_quantity - p_row.cancel_quantity;

@@ -252,6 +252,14 @@ tables:
           - functionRef: $calculateProfitRate #INFO: 利益率計算
           - functionRef: $calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
 
+      afterInsertUpdate:
+        timing: AFTER
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - functionRef: $judgeStatus #INFO: 受注ステータス判定
+
     primaryKey:
       physicalName: pk_order_details
       columns:
@@ -392,6 +400,14 @@ tables:
         physicalName: updated_by
         notNull: true
 
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - functionRef: $setShippingQuantity #INFO: 出荷数登録
+
     primaryKey:
       physicalName: pk_shipping_instructions
       columns:
@@ -509,6 +525,14 @@ tables:
         elementRef: $traceId
         physicalName: updated_by
         notNull: true
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - functionRef: $setCancelQuantity #INFO: キャンセル数登録
 
     primaryKey:
       physicalName: pk_cancel_instructions

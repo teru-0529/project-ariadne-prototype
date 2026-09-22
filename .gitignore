@@ -19,4 +19,4 @@ node_modules/
 .env
 
 # test
-test.sql
+test-sql.sql

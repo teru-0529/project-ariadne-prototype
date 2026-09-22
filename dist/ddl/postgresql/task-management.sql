@@ -2,12 +2,9 @@
 DROP SCHEMA IF EXISTS task CASCADE;
 CREATE SCHEMA task;
 
--- TODO: FUNCTION/TRIGGER(CUSTOM)
--- TODO: CONSTRAINT(CUSTOM)
-
 -- INFO: Create Table(tasks)
 CREATE TABLE task.tasks (
-  task_id varchar(26) NOT NULL, --TODO: CUSTOM FUNCTIO
+  task_id varchar(26) NOT NULL, --TODO: BUILTIN FUNCTIO
   CHECK (LENGTH(task_id) = 26),
   CHECK (task_id ~* '^[0-9A-HJKMNP-TV-Z]{26}$'),
 

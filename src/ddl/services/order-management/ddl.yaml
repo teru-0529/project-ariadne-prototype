@@ -34,7 +34,7 @@ tables:
         element: customerId
         notNull: true
 
-      status: #TODO: 自動変更（order_details登録/変更時にFunction：、受注明細すべてが1/2/3であれば1/2/3、それ以外は4）
+      status:
         element: orderStatus
         notNull: true
         default: PREPARING
@@ -97,24 +97,24 @@ tables:
           minimum: 1
         name: 受注数
 
-      shippingQuantity: #TODO: 自動変更（shipping_instructions登録時にFunction：登録数加算）
+      shippingQuantity:
         element: quantity
         notNull: true
         default: 0
         name: 出荷数
 
-      cancelQuantity: #TODO: 自動変更（cancel_instructions登録時にFunction：登録数加算）
+      cancelQuantity:
         element: quantity
         notNull: true
         default: 0
         name: キャンセル数
 
-      remainingQuantity: #TODO: 自動変更（登録/変更時にFunction：remainingQuantity = orderQuantity - shippingQuantity - cancelQuantity）
+      remainingQuantity:
         element: quantity
         notNull: true
         name: 受注残
 
-      status: #TODO: 自動変更（登録/変更時にFunction：1:受注数=受注残→準備中、2:受注残0/出荷0→キャンセル、3:受注残0/出荷≠0→完了、4:その他→対応中）
+      status:
         element: orderStatus
         notNull: true
         default: PREPARING
@@ -131,7 +131,7 @@ tables:
         notNull: true
         name: 想定原価
 
-      profitRate: #TODO: 自動計算（登録/profitRate = （sellingPrice - costPrice) / sellingPrice * 100)
+      profitRate:
         element: profitRate
         notNull: true
 
@@ -152,6 +152,14 @@ tables:
         functions:
           - calculateProfitRate #INFO: 利益率計算
           - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      afterInsertUpdate:
+        timing: AFTER
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - judgeStatus #INFO: 受注ステータス判定
 
     primaryKey:
       - orderNo
@@ -225,6 +233,14 @@ tables:
         element: comment
         name: 備考
 
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - setShippingQuantity #INFO: 出荷数登録
+
     primaryKey:
       - orderShipmentId
 
@@ -289,6 +305,14 @@ tables:
       note:
         element: comment
         name: 備考
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - setCancelQuantity #INFO: キャンセル数登録
 
     primaryKey:
       - orderCancelId

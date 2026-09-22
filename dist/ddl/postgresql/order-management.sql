@@ -10,7 +10,6 @@ CREATE TYPE received_order.order_status AS enum (
   'COMPLETED'
 );
 
--- TODO: FUNCTION/TRIGGER(CUSTOM)
 -- TODO: CONSTRAINT(CUSTOM)
 
 -- INFO: Create Table(orders)
@@ -29,7 +28,7 @@ CREATE TABLE received_order.orders (
   CHECK (LENGTH(customer_id) = 8),
   CHECK (customer_id ~* 'C[0-9]{7}$'),
 
-  status received_order.order_status NOT NULL DEFAULT 'PREPARING', --TODO: CUSTOM FUNCTIO
+  status received_order.order_status NOT NULL DEFAULT 'PREPARING',
 
   urgent boolean NOT NULL,
 
@@ -64,16 +63,16 @@ CREATE TABLE received_order.order_details (
   order_quantity bigint NOT NULL,
   CHECK (order_quantity >= 1),
 
-  shipping_quantity bigint NOT NULL DEFAULT 0, --TODO: CUSTOM FUNCTIO
+  shipping_quantity bigint NOT NULL DEFAULT 0,
   CHECK (shipping_quantity >= 0),
 
-  cancel_quantity bigint NOT NULL DEFAULT 0, --TODO: CUSTOM FUNCTIO
+  cancel_quantity bigint NOT NULL DEFAULT 0,
   CHECK (cancel_quantity >= 0),
 
-  remaining_quantity bigint NOT NULL, --TODO: CUSTOM FUNCTIO
+  remaining_quantity bigint NOT NULL,
   CHECK (remaining_quantity >= 0),
 
-  status received_order.order_status NOT NULL DEFAULT 'PREPARING', --TODO: CUSTOM FUNCTIO
+  status received_order.order_status NOT NULL DEFAULT 'PREPARING',
 
   selling_price bigint NOT NULL,
   CHECK (selling_price >= 1),
@@ -81,7 +80,7 @@ CREATE TABLE received_order.order_details (
   cost_price bigint NOT NULL, --TODO: CUSTOM CONSTRAINT
   CHECK (cost_price >= 0),
 
-  profit_rate numeric(5,2) NOT NULL, --TODO: CUSTOM FUNCTIO
+  profit_rate numeric(5,2) NOT NULL,
   CHECK (profit_rate >= 0.0),
   CHECK (profit_rate <= 100.0),
 
@@ -513,6 +512,93 @@ BEGIN
 END;
 $$;
 
+-- 受注明細に出荷数を登録する。
+CREATE OR REPLACE FUNCTION received_order.set_shipping_quantity(
+  p_row received_order.shipping_instructions
+)
+RETURNS received_order.shipping_instructions
+LANGUAGE plpgsql
+AS $$
+DECLARE
+BEGIN
+  -- 出荷数を登録する。
+  UPDATE received_order.order_details
+  SET shipping_quantity = shipping_quantity + p_row.quantity
+  WHERE order_no = p_row.order_no AND detail_no = p_row.detail_no;
+
+  RETURN p_row;
+END;
+$$;
+
+-- 受注明細にキャンセル数を登録する。
+CREATE OR REPLACE FUNCTION received_order.set_cancel_quantity(
+  p_row received_order.cancel_instructions
+)
+RETURNS received_order.cancel_instructions
+LANGUAGE plpgsql
+AS $$
+DECLARE
+BEGIN
+  -- キャンセル数を登録する。
+  UPDATE received_order.order_details
+  SET cancel_quantity = cancel_quantity + p_row.quantity
+  WHERE order_no = p_row.order_no AND detail_no = p_row.detail_no;
+
+  RETURN p_row;
+END;
+$$;
+
+-- 受注ステータスを判定・登録する。
+CREATE OR REPLACE FUNCTION received_order.judge_status(
+  p_row received_order.order_details
+)
+RETURNS received_order.order_details
+LANGUAGE plpgsql
+AS $$
+DECLARE
+v_preparing_count INT;
+v_canceled_count INT;
+v_finished_count INT;
+v_total_count INT;
+v_status received_order.order_status;
+BEGIN
+  -- 受注明細のステータス別件数を取得する
+    SELECT
+    COUNT(*) FILTER (WHERE status = 'PREPARING'),
+    COUNT(*) FILTER (WHERE status = 'CANCELED'),
+    COUNT(*) FILTER (WHERE status IN ('COMPLETED', 'CANCELED')),
+    COUNT(*)
+  INTO
+    v_preparing_count,
+    v_canceled_count,
+    v_finished_count,
+    v_total_count
+  FROM received_order.order_details
+  WHERE order_no = p_row.order_no;
+
+  -- ステータスを判定する
+  IF v_preparing_count = v_total_count THEN
+    v_status := 'PREPARING';
+
+  ELSIF v_canceled_count = v_total_count THEN
+    v_status := 'CANCELED';
+
+  ELSIF v_finished_count = v_total_count THEN
+    v_status := 'COMPLETED';
+
+  ELSE
+    v_status := 'IN_PROGRESS';
+  END IF;
+
+  -- 受注ステータスを登録する。
+  UPDATE received_order.orders
+  SET status = v_status
+  WHERE order_no = p_row.order_no;
+
+  RETURN p_row;
+END;
+$$;
+
 -- INFO: ARIADNE generated Custom Trigger Function
 CREATE OR REPLACE FUNCTION received_order.ariadne_custom_orders_before_insert()
 RETURNS trigger
@@ -567,3 +653,54 @@ BEFORE UPDATE
 ON received_order.order_details
 FOR EACH ROW
 EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_update();
+
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_after_insert_update()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW := received_order.judge_status(NEW);
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_custom_order_details_after_insert_update
+AFTER INSERT OR UPDATE
+ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_custom_order_details_after_insert_update();
+
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_shipping_instructions_after_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW := received_order.set_shipping_quantity(NEW);
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_custom_shipping_instructions_after_insert
+AFTER INSERT
+ON received_order.shipping_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_custom_shipping_instructions_after_insert();
+
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_cancel_instructions_after_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW := received_order.set_cancel_quantity(NEW);
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_custom_cancel_instructions_after_insert
+AFTER INSERT
+ON received_order.cancel_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_custom_cancel_instructions_after_insert();
