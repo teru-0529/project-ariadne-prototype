@@ -19,6 +19,8 @@ tables:
       orderNo:
         element: receivedOrderNo
         notNull: true
+        generation:
+          custom: generateOrderNo
 
       orderDate:
         element: orderDate
@@ -66,14 +68,6 @@ tables:
           - column: urgent
           - column: orderNo
 
-    customTriggers:
-      beforeInsert:
-        timing: BEFORE
-        events:
-          - INSERT
-        functions:
-          - generateOrderNo #INFO: 受注番号自動採番
-
   order_details:
     name: 受注明細
 
@@ -85,6 +79,8 @@ tables:
       detailNo:
         element: orderDetailNo
         notNull: true
+        generation:
+          custom: generateDetailNo
 
       productNo:
         element: productNo
@@ -172,18 +168,10 @@ tables:
           - column: detailNo
 
     customTriggers:
-      beforeInsert:
+      beforeInsertUpdate:
         timing: BEFORE
         events:
           - INSERT
-        functions:
-          - generateDetailNo #INFO: 明細番号自動採番
-          - calculateProfitRate #INFO: 利益率計算
-          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
-
-      beforeUpdate:
-        timing: BEFORE
-        events:
           - UPDATE
         functions:
           - calculateProfitRate #INFO: 利益率計算
@@ -204,7 +192,7 @@ tables:
       orderShipmentId:
         element: orderShipmentId
         notNull: true
-        sequence: true
+        generation: DATABASE
 
       orderNo:
         element: receivedOrderNo
@@ -277,7 +265,7 @@ tables:
       orderCancelId:
         element: orderCancelId
         notNull: true
-        sequence: true
+        generation: DATABASE
 
       orderNo:
         element: receivedOrderNo

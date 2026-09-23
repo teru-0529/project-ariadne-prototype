@@ -407,7 +407,7 @@ EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
 CREATE OR REPLACE FUNCTION received_order.generate_order_no(
   p_row received_order.orders
 )
-RETURNS received_order.orders
+RETURNS varchar
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -434,24 +434,20 @@ BEGIN
     RAISE EXCEPTION 'order_no sequence exceeded the daily limit (999): %', v_process_date;
   END IF;
 
-  -- 最大番号に1を加算し、3桁ゼロ埋めしてorder_noへ設定する。
-  p_row.order_no :=
-    'ORD-' || v_process_date || '-' || lpad((v_max_no + 1)::text, 3, '0');
-
-  RETURN p_row;
+  -- 最大番号に1を加算し、3桁ゼロ埋めして返却する。
+  RETURN 'ORD-' || v_process_date || '-' || lpad((v_max_no + 1)::text, 3, '0');
 END;
 $$;
 
--- detail_no の値を新たに採番する。
--- 番号体系は、受注番号単位の連番。
+-- detail_no の値を新たに採番する。番号体系は、受注番号単位の連番。
 CREATE OR REPLACE FUNCTION received_order.generate_detail_no(
   p_row received_order.order_details
 )
-RETURNS received_order.order_details
+RETURNS bigint
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_max_no integer;
+  v_max_no bigint;
 BEGIN
   -- 同一受注番号の採番処理を直列化する。
   -- Transaction終了時にLockは自動的に解放される。
@@ -465,10 +461,7 @@ BEGIN
     FROM received_order.order_details
    WHERE order_no = p_row.order_no;
 
-  -- 最大値に1を加算し、detail_noへ設定する。
-  p_row.detail_no := v_max_no + 1;
-
-  RETURN p_row;
+  RETURN v_max_no + 1;
 END;
 $$;
 
@@ -602,44 +595,43 @@ BEGIN
 END;
 $$;
 
--- INFO: ARIADNE generated Custom Trigger Function
-CREATE OR REPLACE FUNCTION received_order.ariadne_custom_orders_before_insert()
+-- INFO: ARIADNE generated Generation Trigger Function
+CREATE OR REPLACE FUNCTION received_order.ariadne_generation_orders()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  NEW := received_order.generate_order_no(NEW);
+  NEW.order_no := received_order.generate_order_no(NEW);
 
   RETURN NEW;
 END;
 $$;
 
-CREATE TRIGGER ariadne_custom_orders_before_insert
+CREATE TRIGGER ariadne_generation_orders
 BEFORE INSERT
 ON received_order.orders
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_custom_orders_before_insert();
+EXECUTE FUNCTION received_order.ariadne_generation_orders();
 
-CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_before_insert()
+CREATE OR REPLACE FUNCTION received_order.ariadne_generation_order_details()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  NEW := received_order.generate_detail_no(NEW);
-  NEW := received_order.calculate_profit_rate(NEW);
-  NEW := received_order.calculate_quantity_and_status(NEW);
+  NEW.detail_no := received_order.generate_detail_no(NEW);
 
   RETURN NEW;
 END;
 $$;
 
-CREATE TRIGGER ariadne_custom_order_details_before_insert
+CREATE TRIGGER ariadne_generation_order_details
 BEFORE INSERT
 ON received_order.order_details
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_insert();
+EXECUTE FUNCTION received_order.ariadne_generation_order_details();
 
-CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_before_update()
+-- INFO: ARIADNE generated Custom Trigger Function
+CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_before_insert_update()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -651,11 +643,11 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER ariadne_custom_order_details_before_update
-BEFORE UPDATE
+CREATE TRIGGER ariadne_custom_order_details_before_insert_update
+BEFORE INSERT OR UPDATE
 ON received_order.order_details
 FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_update();
+EXECUTE FUNCTION received_order.ariadne_custom_order_details_before_insert_update();
 
 CREATE OR REPLACE FUNCTION received_order.ariadne_custom_order_details_after_insert_update()
 RETURNS trigger

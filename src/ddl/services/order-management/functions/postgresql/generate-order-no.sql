@@ -3,7 +3,7 @@
 CREATE OR REPLACE FUNCTION received_order.generate_order_no(
   p_row received_order.orders
 )
-RETURNS received_order.orders
+RETURNS varchar
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -30,10 +30,7 @@ BEGIN
     RAISE EXCEPTION 'order_no sequence exceeded the daily limit (999): %', v_process_date;
   END IF;
 
-  -- 最大番号に1を加算し、3桁ゼロ埋めしてorder_noへ設定する。
-  p_row.order_no :=
-    'ORD-' || v_process_date || '-' || lpad((v_max_no + 1)::text, 3, '0');
-
-  RETURN p_row;
+  -- 最大番号に1を加算し、3桁ゼロ埋めして返却する。
+  RETURN 'ORD-' || v_process_date || '-' || lpad((v_max_no + 1)::text, 3, '0');
 END;
 $$;

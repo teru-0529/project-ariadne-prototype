@@ -21,6 +21,9 @@ tables:
         elementRef: $receivedOrderNo
         physicalName: order_no
         notNull: true
+        generation:
+          kind: CUSTOM
+          functionRef: $generateOrderNo
 
       orderDate:
         elementRef: $orderDate
@@ -87,14 +90,6 @@ tables:
         physicalName: updated_by
         notNull: true
 
-    customTriggers:
-      beforeInsert:
-        timing: BEFORE
-        events:
-          - INSERT
-        functions:
-          - functionRef: $generateOrderNo #INFO: 受注番号自動採番
-
     primaryKey:
       physicalName: pk_orders
       columns:
@@ -143,6 +138,9 @@ tables:
         elementRef: $orderDetailNo
         physicalName: detail_no
         notNull: true
+        generation:
+          kind: CUSTOM
+          functionRef: $generateDetailNo
 
       productNo:
         elementRef: $productNo
@@ -235,18 +233,10 @@ tables:
         notNull: true
 
     customTriggers:
-      beforeInsert:
+      beforeInsertUpdate:
         timing: BEFORE
         events:
           - INSERT
-        functions:
-          - functionRef: $generateDetailNo #INFO: 明細番号自動採番
-          - functionRef: $calculateProfitRate #INFO: 利益率計算
-          - functionRef: $calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
-
-      beforeUpdate:
-        timing: BEFORE
-        events:
           - UPDATE
         functions:
           - functionRef: $calculateProfitRate #INFO: 利益率計算
@@ -339,7 +329,7 @@ tables:
         physicalName: order_shipment_id
         notNull: true
         generation:
-          strategy: SEQUENCE
+          kind: DATABASE
 
       orderNo:
         elementRef: $receivedOrderNo
@@ -465,7 +455,7 @@ tables:
         physicalName: order_cancel_id
         notNull: true
         generation:
-          strategy: SEQUENCE
+          kind: DATABASE
 
       orderNo:
         elementRef: $receivedOrderNo

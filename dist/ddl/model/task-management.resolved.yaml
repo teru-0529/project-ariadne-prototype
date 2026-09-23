@@ -18,6 +18,9 @@ tables:
         elementRef: $taskId
         physicalName: task_id
         notNull: true
+        generation:
+          kind: BUILTIN
+          strategy: ULID
 
       title:
         elementRef: $title

@@ -69,7 +69,7 @@ src/elements/elements.yaml
 Type は以下を管理する。
 
 - 論理型の名称・説明
-- API 上の識別子として利用可能か
+- API / DDL の利用文脈に対する Capability
 - 利用可能な constraint
 - Type 固有の validation
 - DDL Default として利用可能な値の種類
@@ -93,7 +93,6 @@ Element は以下を管理する。
 - Type
 - 説明
 - example
-- API 上の識別子として利用可能か（必要な場合のみ）
 - Element 固有の constraint 値
 - ENUM の値集合
 
@@ -134,13 +133,12 @@ EnumValue も同じ原則とする。
 
 ## 5. 標準 Type
 
-ARIADNE の標準 Type は以下の14種類とする。
+ARIADNE の標準 Type は以下の13種類とする。
 
 ```text
-識別子系
-├─ PROVIDED_ID
-├─ SEQUENCE_ID
-└─ GENERATED_ID
+識別・連番系
+├─ ID
+└─ SEQUENCE
 
 文字列系
 ├─ FIXED_STRING
@@ -153,8 +151,8 @@ ARIADNE の標準 Type は以下の14種類とする。
 
 真偽・選択系
 ├─ BOOLEAN
-├─ ENUM
-└─ CODE
+├─ CODE
+└─ ENUM
 
 日時系
 ├─ DATE
@@ -162,28 +160,60 @@ ARIADNE の標準 Type は以下の14種類とする。
 └─ DATETIME
 ```
 
-14種類をアプリケーションにハードコードすることを前提とはしない。 Type は
+13種類をアプリケーションにハードコードすることを前提とはしない。 Type は
 `types.yaml` の Map として定義し、将来的な追加を可能とする。
 
-### 5.1 識別子系
+### 5.1 ID / SEQUENCE と Type Capability
 
-- `PROVIDED_ID`：外部または人が指定する文字列識別子
-- `SEQUENCE_ID`：システム／DB により自動採番される数値識別子
-- `GENERATED_ID`：システムが生成する文字列識別子
+`ID` と `SEQUENCE` は、値の提供元や生成方法ではなく、その値自体の意味を表す。
 
-Type の `identifier: true` は、その Type を使用する Element が
-API 上の識別子（例：Path Parameter）として利用可能であることを示す。
+- `ID`：個体やリソースを識別するための、値集合を列挙しない文字列値
+- `SEQUENCE`：順序を表す連番の整数値
 
-また、Type の `identifier` が `false` の場合でも、
-個別の Element に `identifier: true` を指定することで、その Element を API 上の識別子として利用可能にできる。
+値を呼び出し側が提供するか、Database が生成するか、ARIADNE BuiltIn または Custom Function により生成するかは Type の意味には含めない。
 
-実効的な identifier は以下とする。
+同一の Element であっても、利用する DDL Column によって生成の有無は異なり得る。
 
-effective identifier = Type.identifier OR Element.identifier
+Type が特定の利用文脈で使用可能かどうかは `capability` により定義する。
 
-Element 側の `identifier` は必要な場合のみ `true` を指定する。 `false` は記述しない。
+```yaml
+capability:
+  pathParameter: true
+  generation: true
+```
 
-単独主キー・単独一意キーであることは意味しない。複合識別子の一要素として利用してもよい。
+Prototype では以下の Capability を定義する。
+
+- `pathParameter`：その Type を使用する Element を API Path Parameter として利用可能か
+- `generation`：その Type を使用する Element を DDL Column の値生成対象として利用可能か
+
+`capability` および各 Capability はすべての Type で必須とする。
+
+標準 Type の Capability は以下とする。
+
+| Type           | pathParameter | generation |
+| -------------- | ------------- | ---------- |
+| `ID`           | `true`        | `true`     |
+| `SEQUENCE`     | `true`        | `true`     |
+| `FIXED_STRING` | `false`       | `false`    |
+| `STRING`       | `false`       | `false`    |
+| `TEXT`         | `false`       | `false`    |
+| `INTEGER`      | `false`       | `false`    |
+| `DECIMAL`      | `false`       | `false`    |
+| `BOOLEAN`      | `false`       | `false`    |
+| `CODE`         | `true`        | `false`    |
+| `ENUM`         | `false`       | `false`    |
+| `DATE`         | `false`       | `false`    |
+| `TIME`         | `false`       | `false`    |
+| `DATETIME`     | `false`       | `false`    |
+
+Capability は利用可能性を表すものであり、その利用を必須とするものではない。
+
+例えば `ID` の `generation: true` は、その Type の値が常に生成されることを意味しない。
+値生成を行うかどうか、および生成方法は DDL 側の利用文脈で定義する。
+
+同様に `pathParameter: true` は、その Type を使用するすべての Element が Path Parameter として利用されることを意味しない。
+実際に Path Parameter として利用するかどうかは API 側で定義する。
 
 PK / UNIQUE / 複合キー等のデータベース上の制約は DDL 側で扱う。
 
@@ -209,22 +239,21 @@ defaultAllowed:
 
 | Type           | literal | expressions        |
 | -------------- | ------- | ------------------ |
-| `PROVIDED_ID`  | `false` | `[]`               |
-| `SEQUENCE_ID`  | `false` | `[]`               |
-| `GENERATED_ID` | `false` | `[]`               |
+| `ID`           | `false` | `[]`               |
+| `SEQUENCE`     | `false` | `[]`               |
 | `FIXED_STRING` | `true`  | `[]`               |
 | `STRING`       | `true`  | `[]`               |
 | `TEXT`         | `true`  | `[]`               |
 | `INTEGER`      | `true`  | `[]`               |
 | `DECIMAL`      | `true`  | `[]`               |
 | `BOOLEAN`      | `true`  | `[]`               |
-| `ENUM`         | `true`  | `[]`               |
 | `CODE`         | `false` | `[]`               |
+| `ENUM`         | `true`  | `[]`               |
 | `DATE`         | `true`  | `CURRENT_DATE`     |
 | `TIME`         | `true`  | `CURRENT_TIME`     |
 | `DATETIME`     | `true`  | `CURRENT_DATETIME` |
 
-識別子系 Type は値の提供・生成主体を別に持つため、Literal Default を許可しない。
+`ID` / `SEQUENCE` は Literal Default を許可しない。
 
 `CODE` は値集合を項目定義の外部で管理するため、Literal Default を許可しない。
 
@@ -298,17 +327,16 @@ Type ごとの constraint は以下とする。
 
 | Type           | Required             | Optional             |
 | -------------- | -------------------- | -------------------- |
-| `PROVIDED_ID`  | `maxLength`          | `minLength`, `regex` |
-| `SEQUENCE_ID`  | なし                 | なし                 |
-| `GENERATED_ID` | `maxLength`          | `minLength`, `regex` |
+| `ID`           | `maxLength`          | `minLength`, `regex` |
+| `SEQUENCE`     | なし                 | なし                 |
 | `FIXED_STRING` | `length`             | `regex`              |
 | `STRING`       | `maxLength`          | `minLength`, `regex` |
 | `TEXT`         | なし                 | `minLength`, `regex` |
 | `INTEGER`      | なし                 | `minimum`, `maximum` |
 | `DECIMAL`      | `precision`, `scale` | `minimum`, `maximum` |
 | `BOOLEAN`      | なし                 | なし                 |
-| `ENUM`         | なし                 | なし                 |
 | `CODE`         | `maxLength`          | `minLength`, `regex` |
+| `ENUM`         | なし                 | なし                 |
 | `DATE`         | なし                 | なし                 |
 | `TIME`         | なし                 | なし                 |
 | `DATETIME`     | なし                 | なし                 |
@@ -317,8 +345,9 @@ Type ごとの constraint は以下とする。
 
 `minimum / maximum` は業務上許容する値域を表す。
 
-`SEQUENCE_ID` は自動採番を前提とするため、Element 側の採番方法等の
-constraint は持たせない。
+`SEQUENCE` は正の連番を表す Type であり、Type 固有の `validation.minimum: 1` を持つ。
+
+この制約はすべての `SEQUENCE` Element に共通して適用されるため、Element 側の `constraints` には定義しない。
 
 ## 7. PostgreSQL / OpenAPI マッピング
 
@@ -329,28 +358,27 @@ Java / Go / TypeScript / Python 等の言語型は `types.yaml`
 
 | Type           | PostgreSQL                                  | OpenAPI              |
 | -------------- | ------------------------------------------- | -------------------- |
-| `PROVIDED_ID`  | `varchar(n)`                                | `string`             |
-| `SEQUENCE_ID`  | `bigint`                                    | `integer / int64`    |
-| `GENERATED_ID` | `varchar(n)`                                | `string`             |
+| `ID`           | `varchar(n)`                                | `string`             |
+| `SEQUENCE`     | `bigint`                                    | `integer / int64`    |
 | `FIXED_STRING` | `varchar(n)` + `CHECK (LENGTH(column) = n)` | `string`             |
 | `STRING`       | `varchar(n)`                                | `string`             |
 | `TEXT`         | `text`                                      | `string`             |
 | `INTEGER`      | `bigint`                                    | `integer / int64`    |
 | `DECIMAL`      | `numeric(p,s)`                              | `number`             |
 | `BOOLEAN`      | `boolean`                                   | `boolean`            |
-| `ENUM`         | `enum`                                      | `string + enum`      |
 | `CODE`         | `varchar(n)`                                | `string`             |
+| `ENUM`         | `enum`                                      | `string + enum`      |
 | `DATE`         | `date`                                      | `string / date`      |
 | `TIME`         | `time`                                      | `string`             |
 | `DATETIME`     | `timestamp with time zone`                  | `string / date-time` |
 
-`SEQUENCE_ID` は値としてのDatabase型を `bigint` とする。
+`SEQUENCE` は値としての Database 型を `bigint` とする。
 
-`SEQUENCE_ID` 自体は、そのElementを参照するすべてのColumnが採番主体であることを意味しない。
+`ID` / `SEQUENCE` 自体は、その Element を参照する Column が値を生成することを意味しない。
 
-Database上でそのColumn自身が連番を生成するかどうかはDDL側の責務とし、DDL Columnの `sequence` により定義する。
+Database 上でその Column 自身が値を生成するかどうか、およびその生成方法は DDL 側の責務とする。
 
-これにより、同一の `SEQUENCE_ID` Elementを採番元ColumnとForeign Key等の従属Columnの双方で利用可能とする。
+これにより、同一の Element を生成元 Column と Foreign Key 等の生成を行わない Column の双方で利用可能とする。
 
 `FIXED_STRING` は PostgreSQL の `char(n)` へ直接マッピングせず、
 `varchar(n)` と固定長を保証する `CHECK Constraint` の組合せとして生成する。
@@ -387,7 +415,10 @@ Type の基本構造は以下とする。
 TYPE_KEY:
   name: ...
   description: ...
-  identifier: false
+
+  capability:
+    pathParameter: false
+    generation: false
 
   constraints:
     required: []
@@ -410,6 +441,8 @@ TYPE_KEY:
   recommendations: []
 ```
 
+`capability` はすべての Type で必須とし、`pathParameter` / `generation` を明示的な boolean として定義する。
+
 `constraints.required / optional`、`defaultAllowed.expressions` および `recommendations` は0件の場合も空リストを明示する。
 
 `defaultAllowed` はすべての Type で必須とする。
@@ -418,23 +451,22 @@ TYPE_KEY:
 
 `defaultAllowed.expressions` は、その Type で利用可能な ARIADNE BuiltIn Default Expression の一覧とする。
 
-`validation` は Type 固有の形式制約が存在する場合のみ記述する。Prototype では `regex` を使用する。
+`validation` は Type 固有の形式制約が存在する場合のみ記述する。Prototype では `regex` / `minimum` を使用する。
 
 ### 8.1 Naming Recommendations
 
 標準の推奨命名は以下とする。
 
 ```text
-PROVIDED_ID   → *Id, *No
-SEQUENCE_ID   → *Id, *No
-GENERATED_ID  → *Id, *No
+ID        → *Id, *No
+SEQUENCE  → *Id, *No
 
-BOOLEAN      → is*, has*, can*, should*
-ENUM         → *Type
-CODE         → *Code
-DATE         → *Date
-TIME         → *Time
-DATETIME     → *DateTime
+BOOLEAN   → is*, has*, can*, should*
+ENUM      → *Type
+CODE      → *Code
+DATE      → *Date
+TIME      → *Time
+DATETIME  → *DateTime
 ```
 
 その他は `recommendations: []` とする。
@@ -463,34 +495,31 @@ ELEMENT_KEY
 ├─ type           必須
 ├─ description    必須
 ├─ example        必須
-├─ identifier     必要な場合のみ（true のみ）
 ├─ constraints    必要な場合のみ
 └─ values         ENUM のみ
 ```
 
-`identifier: true` は、Type 側の `identifier` が `false` であっても、
-その Element を API 上の識別子として利用可能にする場合に指定する。
+Element は API / DDL の利用文脈に対する Capability を独自には定義しない。
+
+Element を特定の利用文脈で使用可能かどうかは、参照する Type の `capability` に従う。
 
 例：
 
 ```yaml
 customerId:
-  name: 得意先ID
-  type: PROVIDED_ID
-  description: 得意先を一意に識別するID
+  name: 顧客ID
+  type: CODE
+  description: 顧客を特定するID
   constraints:
-    maxLength: 10
-    minLength: 1
-    regex: "^[A-Z0-9]+$"
-  example: "C001"
+    maxLength: 8
+    minLength: 8
+    regex: "^C[0-9]{7}$"
+  example: "C1234567"
 
 orderDetailNo:
   name: 明細番号
-  type: INTEGER
-  identifier: true
+  type: SEQUENCE
   description: 受注内で明細を識別する番号
-  constraints:
-    minimum: 1
   example: 1
 ```
 
@@ -642,11 +671,13 @@ Prototype では Validator を実装しないが、正しい状態を仕様と�
 | `V-019` | `domain` が存在し、値が `elements` である                                                  | Error      |
 | `V-020` | `kind` が存在し、定義種別と一致する（`types` / `elements`）                                | Error      |
 | `V-021` | Type の `validation` の定義内容が妥当である                                                | Error      |
-| `V-022` | Element の `identifier` は、指定する場合 true である                                       | Error      |
-| `V-023` | Type が `defaultAllowed` を持つ                                                            | Error      |
-| `V-024` | `defaultAllowed.literal` が boolean である                                                 | Error      |
-| `V-025` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ    | Error      |
-| `V-026` | Element は `defaultAllowed` を定義しない                                                   | Error      |
+| `V-022` | Type が `capability` を持つ                                                                | Error      |
+| `V-023` | `capability.pathParameter` が boolean である                                               | Error      |
+| `V-024` | `capability.generation` が boolean である                                                  | Error      |
+| `V-025` | Type が `defaultAllowed` を持つ                                                            | Error      |
+| `V-026` | `defaultAllowed.literal` が boolean である                                                 | Error      |
+| `V-027` | `defaultAllowed.expressions` が定義済みの ARIADNE BuiltIn Default Expression のみを持つ    | Error      |
+| `V-028` | Element は `defaultAllowed` を定義しない                                                   | Error      |
 
 ### 11.1 Constraint Validation
 
@@ -672,15 +703,21 @@ regex = 有効な正規表現
 
 Type に `validation` が定義されている場合、その内容自体を Validation する。
 
-Prototype では以下を確認する。
+Prototype では少なくとも以下を確認する。
 
 ```text
-validation.regex = 有効な正規表現
+validation.regex
+  → 有効な正規表現
+
+validation.minimum
+  → Type の値型に適合する値
 ```
 
 Type 固有の `validation` は、その Type を使用するすべての Element の Example Validation に適用する。
 
-Element の実効 identifier は、Type.identifier または Element.identifier のいずれかが true の場合に true とする。
+Type が特定の利用文脈で使用可能かどうかは `capability` により判定する。
+
+API / DDL 側の Validation は Type 名そのものを判定せず、参照 Element から Type を解決し、対象となる Capability を参照する。
 
 ### 11.3 Default Allowed Validation
 
@@ -715,10 +752,10 @@ DDL Column に指定された Default が実際に利用可能かどうかの Va
 型の基本対応は以下とする。
 
 ```text
-PROVIDED_ID / GENERATED_ID / FIXED_STRING / STRING / TEXT / CODE
+ID / FIXED_STRING / STRING / TEXT / CODE
   → string
 
-SEQUENCE_ID / INTEGER
+SEQUENCE / INTEGER
   → integer
 
 DECIMAL
@@ -738,10 +775,9 @@ TIME
 
 DATETIME
   → string + date-time 形式
-
 ```
 
-さらに Element 固有の
+さらに Type 固有の `validation` および Element 固有の
 `minimum / maximum / minLength / maxLength / regex` 等も満たすこと。
 
 ### 11.5 Error / Warning / Operation Rule
@@ -828,19 +864,20 @@ Prototype では Task を題材に、複数 Type と constraint
 を実際に使用してモデルを検証した。
 
 ```text
-taskId          → GENERATED_ID
+taskId          → ID
 title           → STRING
 description     → TEXT
-status          → ENUM
+taskStatus      → CODE
 priority        → INTEGER
 recordDateTime  → DATETIME
 ```
 
 主な検証内容は以下。
 
+- ID の `maxLength / minLength / regex`
 - STRING の `maxLength`
 - TEXT の `minLength`
-- ENUM の Map / example / values
+- CODE の `maxLength`
 - INTEGER の `minimum / maximum`
 - DATETIME の offset 付き date-time
 - `example` と constraint の整合性
@@ -855,16 +892,10 @@ Prototype の手作業 Validation 結果は以下。
 
 ```text
 ERROR   : 0
-WARNING : 1
-
-WARNING:
-status → ENUM naming recommendation "*Type"
+WARNING : 0
 
 RESULT  : VALID
 ```
-
-`status` は業務上自然な名称であり、Naming Recommendation
-は制約ではないため変更しない。
 
 ## 14. OAS / DDL への受け渡し
 
@@ -880,12 +911,14 @@ Phase 3 の API Definition は、Element Definition から共通意味を継承�
 - `description`
 - `example`
 - constraints
-- identifier
+- Type の `capability.pathParameter`
 - Type 固有 validation
 - ENUM values
 - OpenAPI mapping
 
 Type 固有の `validation` は、OpenAPI で表現可能な場合、OpenAPI Schema の対応する制約へ変換する。
+
+Path Parameter として Element を利用可能かどうかは、参照 Element の Type に定義された `capability.pathParameter` に従う。
 
 Phase 3 では Element を参照し、
 Resource / Parameter / Request / Response / Operation 等のAPI 利用文脈を定義する。
@@ -928,6 +961,7 @@ DDL 側も項目定義から共通意味を継承する。
 - `description`
 - constraints
 - ENUM values
+- Type の `capability.generation`
 - `defaultAllowed`
 - PostgreSQL mapping
 
@@ -937,6 +971,7 @@ DDL 固有の以下の情報は DDL 側で管理する。
 - column 名
 - NOT NULL
 - DEFAULT
+- Generation
 - PK
 - FK
 - UNIQUE
@@ -948,10 +983,14 @@ DDL Column の `default` は DDL 側で定義する。
 
 ただし、その Column で利用可能な Default の種類は、参照 Element の Type に定義された `defaultAllowed` に従う。
 
+DDL Column で値生成を定義可能かどうかは、参照 Element の Type に定義された `capability.generation` に従う。
+
+値生成を行うかどうか、および具体的な生成方法は DDL 側で定義する。
+
 Literal Default を指定する場合は `defaultAllowed.literal`、
 BuiltIn Default Expression を指定する場合は `defaultAllowed.expressions` を参照する。
 
-BuiltIn Default Expression の PostgreSQL / SQLite 等への具体的な変換は DDL 生成側の責務とする。
+BuiltIn Default Expression および Generation の PostgreSQL / SQLite 等への具体的な変換は DDL 生成側の責務とする。
 
 基本原則は以下とする。
 

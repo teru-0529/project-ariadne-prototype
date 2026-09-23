@@ -539,11 +539,15 @@ pathParameters:
 
 `pathParameters` は Operation ではなく **API logical entry** に属する。
 
-Path Parameter は HTTP 上必須であり、参照する Element は API Identifier
-として利用可能でなければならない。
+Path Parameter は HTTP 上必須であり、参照する Element の Type が
+Path Parameter として利用可能でなければならない。
 
-Element の `identifier: true` は、その Element が API
-の識別子として利用可能であることを示す。単独主キー・単独一意キーであることは意味せず、複合識別子の一要素として利用してよい。
+利用可否は、Element が参照する Type の
+`capability.pathParameter` によって判定する。
+
+`capability.pathParameter: true` は、その Type の値を API の Path Parameter
+として利用可能であることを示す。
+これは Database の Primary Key / Unique Key 等を意味しない。
 
 ### 7.2 Query Parameter
 
@@ -1238,7 +1242,7 @@ Phase 2 と Phase 3 を接続して検証する。
 主な対象:
 
 - Element 参照の存在
-- Path Parameter の Element が `identifier: true` か
+- Path Parameter が参照する Element の Type で `capability.pathParameter: true` が許可されているか
 - example と Element Type / Constraint の整合性
 
 ### 10.4 OpenAPI Validation
@@ -1250,70 +1254,70 @@ Phase 2 と Phase 3 を接続して検証する。
 ## 11. Validation Rules
 
 Validation Rule ID は ARIADNE 全体で通番とする。
-Phase 2 の Validation ID `V-001` ～ `V-026` に続き、Phase 3 では `V-027` 以降を使用する。
+Phase 2 の Validation ID `V-001` ～ `V-028` に続き、Phase 3 では `V-029` 以降を使用する。
 
 ### 11.1 File Validation
 
 | ID    | Validation Rule                                                                                                       | 判定  |
 | ----- | --------------------------------------------------------------------------------------------------------------------- | ----- |
-| V-027 | 共通 Header の必須項目が存在する                                                                                      | Error |
-| V-028 | `formatVersion` が ARIADNE の対応する Phase 3 Format である                                                           | Error |
-| V-029 | `updatedAt` が ISO 8601 として妥当である                                                                              | Error |
-| V-030 | `domain` が `api` である                                                                                              | Error |
-| V-031 | `kind` が Phase 3 で許可された値である                                                                                | Error |
-| V-032 | 各名称が対象ごとの命名規約を満たす                                                                                    | Error |
-| V-033 | `kind` ごとの必須 / 許可属性を満たす                                                                                  | Error |
-| V-034 | 未定義属性を持たない                                                                                                  | Error |
-| V-035 | YAML Map に重複 Key が存在しない                                                                                      | Error |
-| V-036 | Resource Property は `element` / `resource` / `array` のいずれか一つだけを持つ                                        | Error |
-| V-037 | `readOnly: true` と `writeOnly: true` を同時指定しない                                                                | Error |
-| V-038 | Phase 3 で Scalar Constraint を再定義しない                                                                           | Error |
-| V-039 | Array は `element` / `resource` のいずれか一つだけを持つ                                                              | Error |
-| V-040 | `minItems` / `maxItems` は 0 以上の整数であり、両方指定時は `minItems <= maxItems`                                    | Error |
-| V-041 | 空 Map / 空 Array を明示的に記述しない                                                                                | Error |
-| V-042 | 必須文字列属性に空文字 / 空白のみを指定しない                                                                         | Error |
-| V-043 | `/health` / `/version` をユーザー API として定義しない                                                                | Error |
-| V-044 | 同一 Path 内で同じ Path Token を複数回使用しない                                                                      | Error |
-| V-045 | Path Token が snake_case の命名規約を満たす                                                                           | Error |
-| V-046 | HTTP Method が `get/post/put/patch/delete` のいずれかである                                                           | Error |
-| V-047 | GET に Request Body を定義しない                                                                                      | Error |
-| V-048 | DELETE に Request / Response Body を定義しない                                                                        | Error |
-| V-049 | `pagination` は GET にのみ指定する                                                                                    | Error |
-| V-050 | `externalDocs` を指定する場合 `url` が存在する                                                                        | Error |
-| V-051 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない                                 | Error |
-| V-052 | `limit` / `offset` を Source の Parameter Definition 名として定義しない                                               | Error |
-| V-053 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
-| V-054 | `location` は POST にのみ指定する                                                                                     | Error |
-| V-055 | `location` を指定する場合 `example` が存在する                                                                        | Error |
+| V-029 | 共通 Header の必須項目が存在する                                                                                      | Error |
+| V-030 | `formatVersion` が ARIADNE の対応する Phase 3 Format である                                                           | Error |
+| V-031 | `updatedAt` が ISO 8601 として妥当である                                                                              | Error |
+| V-032 | `domain` が `api` である                                                                                              | Error |
+| V-033 | `kind` が Phase 3 で許可された値である                                                                                | Error |
+| V-034 | 各名称が対象ごとの命名規約を満たす                                                                                    | Error |
+| V-035 | `kind` ごとの必須 / 許可属性を満たす                                                                                  | Error |
+| V-036 | 未定義属性を持たない                                                                                                  | Error |
+| V-037 | YAML Map に重複 Key が存在しない                                                                                      | Error |
+| V-038 | Resource Property は `element` / `resource` / `array` のいずれか一つだけを持つ                                        | Error |
+| V-039 | `readOnly: true` と `writeOnly: true` を同時指定しない                                                                | Error |
+| V-040 | Phase 3 で Scalar Constraint を再定義しない                                                                           | Error |
+| V-041 | Array は `element` / `resource` のいずれか一つだけを持つ                                                              | Error |
+| V-042 | `minItems` / `maxItems` は 0 以上の整数であり、両方指定時は `minItems <= maxItems`                                    | Error |
+| V-043 | 空 Map / 空 Array を明示的に記述しない                                                                                | Error |
+| V-044 | 必須文字列属性に空文字 / 空白のみを指定しない                                                                         | Error |
+| V-045 | `/health` / `/version` をユーザー API として定義しない                                                                | Error |
+| V-046 | 同一 Path 内で同じ Path Token を複数回使用しない                                                                      | Error |
+| V-047 | Path Token が snake_case の命名規約を満たす                                                                           | Error |
+| V-048 | HTTP Method が `get/post/put/patch/delete` のいずれかである                                                           | Error |
+| V-049 | GET に Request Body を定義しない                                                                                      | Error |
+| V-050 | DELETE に Request / Response Body を定義しない                                                                        | Error |
+| V-051 | `pagination` は GET にのみ指定する                                                                                    | Error |
+| V-052 | `externalDocs` を指定する場合 `url` が存在する                                                                        | Error |
+| V-053 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない                                 | Error |
+| V-054 | `limit` / `offset` を Source の Parameter Definition 名として定義しない                                               | Error |
+| V-055 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
+| V-056 | `location` は POST にのみ指定する                                                                                     | Error |
+| V-057 | `location` を指定する場合 `example` が存在する                                                                        | Error |
 
 ### 11.2 API Validation
 
 | ID    | Validation Rule                                                               | 判定  |
 | ----- | ----------------------------------------------------------------------------- | ----- |
-| V-056 | Resource 参照先が存在する                                                     | Error |
-| V-057 | Variant 参照先が存在する                                                      | Error |
-| V-058 | Parameter Definition 参照先が存在する                                         | Error |
-| V-059 | Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である   | Error |
-| V-060 | Variant の `add` が既存 Property と衝突しない                                 | Error |
-| V-061 | 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない     | Error |
-| V-062 | SubResource の `parent` が存在し、Main Resource である                        | Error |
-| V-063 | SubResource を親とする多段 SubResource を定義しない                           | Error |
-| V-064 | `parentVariants` の対象と統合内容が妥当である                                 | Error |
-| V-065 | Resource Reference Cycle が存在しない                                         | Error |
-| V-066 | Local Resource の参照 Scope が妥当である                                      | Error |
-| V-067 | Service 内で Resource / Local Resource の名前が衝突しない                     | Error |
-| V-068 | `(path, method)` が Service 内で一意である                                    | Error |
-| V-069 | Phase 3 の全 Source が同一 `formatVersion` を使用する                         | Error |
-| V-070 | Service と Operation で同一 Request Header を重複指定しない                   | Error |
-| V-071 | Service YAML が Service 内に1つだけ存在する                                   | Error |
-| V-072 | `parameters.yaml` は Service 内に0または1つとする                             | Error |
-| V-073 | ユーザー定義 Operation が1件以上存在する                                      | Error |
-| V-074 | Resolve 後に生成される Schema 名が衝突しない                                  | Error |
-| V-075 | Custom の同一 Operation 内で `response.errors[].status` が重複しない          | Error |
-| V-076 | Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である | Error |
-| V-077 | 生成される `operationId` が Service 内で一意である                            | Error |
-| V-078 | Path Token から正規化した semantic key が Parameter Definition に存在する     | Error |
-| V-079 | Service ディレクトリ名が `service.yaml` の Service ID と一致する              | Error |
+| V-058 | Resource 参照先が存在する                                                     | Error |
+| V-059 | Variant 参照先が存在する                                                      | Error |
+| V-060 | Parameter Definition 参照先が存在する                                         | Error |
+| V-061 | Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である   | Error |
+| V-062 | Variant の `add` が既存 Property と衝突しない                                 | Error |
+| V-063 | 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない     | Error |
+| V-064 | SubResource の `parent` が存在し、Main Resource である                        | Error |
+| V-065 | SubResource を親とする多段 SubResource を定義しない                           | Error |
+| V-066 | `parentVariants` の対象と統合内容が妥当である                                 | Error |
+| V-067 | Resource Reference Cycle が存在しない                                         | Error |
+| V-068 | Local Resource の参照 Scope が妥当である                                      | Error |
+| V-069 | Service 内で Resource / Local Resource の名前が衝突しない                     | Error |
+| V-070 | `(path, method)` が Service 内で一意である                                    | Error |
+| V-071 | Phase 3 の全 Source が同一 `formatVersion` を使用する                         | Error |
+| V-072 | Service と Operation で同一 Request Header を重複指定しない                   | Error |
+| V-073 | Service YAML が Service 内に1つだけ存在する                                   | Error |
+| V-074 | `parameters.yaml` は Service 内に0または1つとする                             | Error |
+| V-075 | ユーザー定義 Operation が1件以上存在する                                      | Error |
+| V-076 | Resolve 後に生成される Schema 名が衝突しない                                  | Error |
+| V-077 | Custom の同一 Operation 内で `response.errors[].status` が重複しない          | Error |
+| V-078 | Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である | Error |
+| V-079 | 生成される `operationId` が Service 内で一意である                            | Error |
+| V-080 | Path Token から正規化した semantic key が Parameter Definition に存在する     | Error |
+| V-081 | Service ディレクトリ名が `service.yaml` の Service ID と一致する              | Error |
 
 ### 11.3 Service Validation
 
@@ -1321,9 +1325,9 @@ Phase 2 / Phase 3 の接続を検証する。
 
 | ID    | Validation Rule                                                                                    | 判定  |
 | ----- | -------------------------------------------------------------------------------------------------- | ----- |
-| V-080 | すべての `element` 参照先が Phase 2 に存在する                                                     | Error |
-| V-081 | Path Parameter が参照する Element の effective `identifier` が `true` である                       | Error |
-| V-082 | `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する | Error |
+| V-082 | すべての `element` 参照先が Phase 2 に存在する                                                     | Error |
+| V-083 | Path Parameter が参照する Element の Type で `capability.pathParameter` が `true` である           | Error |
+| V-084 | `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する | Error |
 
 ---
 
@@ -2205,8 +2209,58 @@ Phase 2 Element を参照する
 elementRef: $customerId
 ```
 
-については、Phase 2 Element Definition から対応する OpenAPI Schema を生成し、
-`components/schemas` に配置したうえで `$ref` へ変換する。
+については、Phase 2 Element Definition および参照先 Type Definition から
+対応する OpenAPI Schema を生成し、`components/schemas` に配置したうえで `$ref` へ変換する。
+
+Element Schema の生成では、Element が参照する Type Definition を解決し、
+Type と Element の定義を組み合わせて OpenAPI Schema を構成する。
+
+主な変換対象は以下とする。
+
+```text
+Type.openapi
+  → OpenAPI の type / format
+
+Type.validation
+  → OpenAPI で表現可能な Schema Constraint
+
+Element.constraints
+  → OpenAPI で表現可能な Schema Constraint
+
+Element.values
+  → enum
+
+Element.description
+  → description
+
+Element.example
+  → example
+```
+
+Type 固有の `validation` は Resolved Model へ展開しない。
+OpenAPI Generation 時に Type Definition を参照し、 OpenAPI で表現可能な制約へ変換する。
+
+例えば `SEQUENCE` Type が以下を持つ場合、
+
+```yaml
+validation:
+  minimum: 1
+
+openapi:
+  type: integer
+  format: int64
+```
+
+`SEQUENCE` を参照する Element は、OpenAPI Generation 時に以下のような Schema Component へ変換される。
+
+```yaml
+orderDetailNo:
+  type: integer
+  format: int64
+  minimum: 1
+  description: 受注内で明細を識別する番号
+  example: 1
+```
 
 同一 Element は Service 内で一度だけ Schema Component を生成する。
 
@@ -2796,20 +2850,17 @@ Phase 2 は「値は何者か」を定義する。
 - Pattern
 - Precision / Scale
 - Enum
-- API Identifier として利用可能か
+- Path Parameter として利用可能か
 
-Phase 3 は Element を参照し、「その値を API
-のどこで、どの意味で利用するか」を定義する。
+Phase 3 は Element を参照し、「その値を APIのどこで、どの意味で利用するか」を定義する。
 
 ### 15.2 Phase 3 → Phase 4
 
-Phase 3 は API 契約を管理し、Database の PK / Index / Null Constraint
-等を定義しない。
+Phase 3 は API 契約を管理し、Database の PK / Index / Null Constraint 等を定義しない。
 
-Phase 4 は Phase 2 Element を利用して Database Definition
-を構成する予定とする。
+Phase 4 は Phase 2 Element を利用して Database Definition を構成する予定とする。
 
-API Identifier と Database Primary Key は同義ではない。
+Path Parameter として利用可能であることと、Database Primary Key / Unique Key であることは同義ではない。
 
 ---
 

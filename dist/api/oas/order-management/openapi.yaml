@@ -586,6 +586,7 @@ components:
 
     orderDetailNo:
       type: integer
+      format: int64
       minimum: 1
       description: 受注内で明細を識別する番号
       example: 1

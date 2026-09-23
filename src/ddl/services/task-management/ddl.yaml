@@ -13,9 +13,10 @@ tables:
     name: タスク
 
     columns:
-      taskId: #TODO: 自動登録（Function？　ULIDだから無理？）
+      taskId:
         element: taskId
         notNull: true
+        generation: ULID
 
       title:
         element: title
@@ -27,7 +28,6 @@ tables:
       createUser:
         element: userId
         name: 登録ユーザー
-
 
       taskPic:
         element: userId

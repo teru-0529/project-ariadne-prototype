@@ -6,7 +6,7 @@ kind: elements
 elements:
   taskId:
     name: タスクID
-    type: GENERATED_ID
+    type: ID
     description: タスクを特定するID
     constraints:
       maxLength: 26
@@ -55,7 +55,7 @@ elements:
 
   receivedOrderNo:
     name: 受注番号
-    type: GENERATED_ID
+    type: ID
     description: 受注を特定する番号
     constraints:
       maxLength: 16
@@ -71,7 +71,7 @@ elements:
 
   userId:
     name: ユーザーID
-    type: PROVIDED_ID
+    type: ID
     description: システムのユーザーを特定するID
     constraints:
       maxLength: 5
@@ -81,7 +81,7 @@ elements:
 
   customerId:
     name: 顧客ID
-    type: PROVIDED_ID
+    type: CODE
     description: 顧客を特定するID
     constraints:
       maxLength: 8
@@ -97,16 +97,13 @@ elements:
 
   orderDetailNo:
     name: 明細番号
-    type: INTEGER
-    identifier: true
+    type: SEQUENCE
     description: 受注内で明細を識別する番号
-    constraints:
-      minimum: 1
     example: 1
 
   productNo:
     name: 商品番号
-    type: PROVIDED_ID
+    type: CODE
     description: 商品を特定する番号
     constraints:
       maxLength: 7
@@ -143,7 +140,7 @@ elements:
 
   traceId:
     name: トレースID
-    type: GENERATED_ID
+    type: ID
     description: |
       分散トレーシングに使用されるID。
       形式は　ULID + "::" + 任意の非空文字列
@@ -165,7 +162,7 @@ elements:
 
   orderShipmentId:
     name: 受注出荷番号
-    type: SEQUENCE_ID
+    type: SEQUENCE
     description: 出荷情報の受注反映時に受注領域で採番する連番
     example: 32
 
@@ -204,6 +201,6 @@ elements:
 
   orderCancelId:
     name: 受注キャンセル番号
-    type: SEQUENCE_ID
+    type: SEQUENCE
     description: 出荷情報のキャンセル時に採番する連番
     example: 32

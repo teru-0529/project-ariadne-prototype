@@ -4,7 +4,7 @@ CREATE SCHEMA task;
 
 -- INFO: Create Table(tasks)
 CREATE TABLE task.tasks (
-  task_id varchar(26) NOT NULL, --TODO: BUILTIN FUNCTIO
+  task_id varchar(26) NOT NULL,
   CHECK (LENGTH(task_id) = 26),
   CHECK (task_id ~* '^[0-9A-HJKMNP-TV-Z]{26}$'),
 
@@ -111,6 +111,42 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION task.ariadne_builtin_ulid()
+RETURNS varchar
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_alphabet CONSTANT varchar := '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  v_timestamp bigint;
+  v_timestamp_part varchar := '';
+  v_random_part varchar := '';
+  v_value bigint;
+  v_index integer;
+BEGIN
+  -- Unix time in milliseconds (48-bit timestamp component)
+  v_timestamp := floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint;
+  v_value := v_timestamp;
+
+  -- Encode timestamp as 10-character Crockford Base32.
+  -- Prepending each digit preserves the most-significant-digit-first order.
+  FOR i IN 1..10 LOOP
+    v_index := (v_value % 32)::integer;
+    v_timestamp_part :=
+      substr(v_alphabet, v_index + 1, 1) || v_timestamp_part;
+    v_value := v_value / 32;
+  END LOOP;
+
+  -- Generate 16-character / 80-bit randomness component.
+  FOR i IN 1..16 LOOP
+    v_index := floor(random() * 32)::integer;
+    v_random_part :=
+      v_random_part || substr(v_alphabet, v_index + 1, 1);
+  END LOOP;
+
+  RETURN v_timestamp_part || v_random_part;
+END;
+$$;
+
 -- INFO: BuiltIn Trigger
 CREATE TRIGGER ariadne_builtin_tasks_before_insert
 BEFORE INSERT ON task.tasks
@@ -131,3 +167,21 @@ CREATE TRIGGER ariadne_builtin_statuses_before_update
 BEFORE UPDATE ON task.statuses
 FOR EACH ROW
 EXECUTE FUNCTION task.ariadne_builtin_row_metadata_update();
+
+-- INFO: ARIADNE generated Generation Trigger Function
+CREATE OR REPLACE FUNCTION task.ariadne_generation_tasks()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.task_id := task.ariadne_builtin_ulid();
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER ariadne_generation_tasks
+BEFORE INSERT
+ON task.tasks
+FOR EACH ROW
+EXECUTE FUNCTION task.ariadne_generation_tasks();
