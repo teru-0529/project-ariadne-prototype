@@ -20,13 +20,16 @@ Phase 4 Prototypeでは、実Generator / Validatorそのものの実装は対象
 - Validation Ruleの定義
 - Resolved DDL Modelの仕様設計
 - PostgreSQL向けDDL生成規則の定義
-- SQLite向け互換DDL生成規則の定義
-- DDL Referenceの仕様設計
+- Custom SQLのモデル上の扱いの定義
+- DDL Outputの基本構造および論理的な実行順序の定義
 - Sample DDLの作成
-- PostgreSQL / SQLiteでの実行検証
-- ARIADNE Prototype自身が利用するSQLite Databaseの検証
+- PostgreSQLでの実行検証
 
 実際のDDL Generator / Validatorの実装はCoreで行う。
+
+SQLiteを含むARIADNE自身の内部DatabaseについてはPrototypeでは扱わず、必要性および採用方式をCoreで改めて判断する。
+
+DDL Referenceの生成およびBrowserからの参照機能についてもPrototypeでは実装せず、Coreで扱う。
 
 ---
 
@@ -105,7 +108,8 @@ Column名はDDL YAML側で新たに定義可能とする。
 
 ARIADNE DDLの基準DatabaseはPostgreSQLとする。
 
-DDL YAMLでは可能な限りDBMS固有表現を持たないが、機能および意味論の基準はPostgreSQLとする。
+DDL YAMLでは可能な限りDBMS固有表現を持たないが、
+機能および意味論の基準はPostgreSQLとする。
 
 ```text
 DDL YAML
@@ -113,20 +117,13 @@ DDL YAML
 Resolved DDL Model
    ↓
 PostgreSQL Semantics
-   ├─ PostgreSQL
-   └─ SQLite Compatibility
+   ↓
+PostgreSQL DDL
 ```
 
-SQLiteはPostgreSQLと同列の対応Databaseとはせず、ARIADNE Prototype自身のRuntime Databaseとして必要な範囲で互換対応する。
+Prototype Phase 4では、PostgreSQL向けDDLの設計および実行検証を対象とする。
 
-PostgreSQLとの機能差については、SQLite側で以下を許容する。
-
-- 代替実装
-- 簡略化
-- 制約付き対応
-- 非対応
-
-SQLite対応のためにPostgreSQL側の表現力を制限することはしない。
+他Databaseへの対応については、PostgreSQL向け仕様そのものを制限せず、必要性が生じた時点でCoreにおいて検討する。
 
 ---
 
@@ -174,8 +171,6 @@ DDL Source YAMLには物理Schema名を別途保持せず、Database上の物理
 複数Service / Schemaを一つのProject内で扱えるものとする。
 
 SchemaをまたぐForeign KeyはPrototype Phase 4では許可しない。
-
-SQLiteにはPostgreSQLと同等のSchema概念が存在しないため、SQLiteでの扱いは互換生成規則として別途定義する。
 
 ---
 
@@ -235,7 +230,7 @@ tables:
     name: 受注明細
 ```
 
-`name` はDDL Reference等での表示、およびDatabase Table Commentの生成元として利用する。
+`name` はTableの論理名・表示名、およびDatabase Table Commentの生成元として利用する。
 
 DDL Source YAMLには物理Table名を別途保持しない。
 
@@ -866,8 +861,6 @@ INSERT時に現在日時を設定する。
 UPDATE時にはARIADNEが生成するBuiltIn Function / Triggerにより現在日時へ自動更新する。
 
 PostgreSQLでは、Schema単位のBuiltIn FunctionとTable単位のTriggerによって実現する。
-
-SQLiteでは必要に応じて代替方式を採用する。
 
 ---
 
@@ -1501,8 +1494,6 @@ UPDATE時に`updatedAt`を現在日時へ変更する。
 
 PostgreSQLでは共通FunctionおよびTableごとのTriggerを自動生成する方式を候補とする。
 
-SQLiteでは必要に応じて代替方式を利用する。
-
 利用者がこれらのBuiltIn Function / TriggerをDDL YAMLへ直接記述する必要はない。
 
 ### 13.4 createdBy自動設定
@@ -1649,9 +1640,7 @@ DDL Source YAML
       ↓
 Resolved DDL Model ─────┐
                         ├─ PostgreSQL DDL
-Types / Elements ───────┤
-                        ├─ SQLite Compatibility DDL
-                        └─ DDL Reference
+Types / Elements ───────┘
 ```
 
 Resolved DDL Modelでは、以下を解決済みとする。
@@ -2293,34 +2282,13 @@ Sample DDLは使い捨てのPostgreSQL Runtimeへ先頭から再適用し、
 
 ---
 
-## 18. SQLite Compatibility DDL
-
-SQLiteはARIADNE Prototype自身が利用するRuntime Databaseとして必要な範囲で対応する。
-
-PostgreSQLを基準とし、SQLiteで表現できない機能については以下を許容する。
-
-- 代替
-- 簡略化
-- 制限
-- 非対応
-
-Phase 4では、少なくともTask ManagementをSQLite上で実行可能とするために必要な互換規則を整理する。
-
-SQLiteの制約に合わせて、ARIADNE DDLまたはPostgreSQL向け仕様そのものを弱めることはしない。
-
----
-
-## 19. DDL Output
+## 18. DDL Output
 
 生成DDLのファイル構成はARIADNEの論理モデルとは分離する。
 
-Phase 4では以下を検討する。
+Prototype Phase 4では、生成DDLの具体的なファイル分割方式を論理モデルには含めない。
 
-- 1ファイルへ集約する方式
-- Schema単位
-- Table単位
-- DDL種別単位
-- 上記の組合せ
+Generatorは、生成DDLの物理的なファイル構成とは独立して、依存関係を満たす論理的な実行順序を管理する。
 
 重要なのはファイル単位ではなく、依存関係を満たす実行順序である。
 
@@ -2344,42 +2312,11 @@ BuiltIn / Custom SQL
 
 ---
 
-## 20. DDL Reference
+## 19. Runtime
 
-作成されたDatabase定義をWeb Browserから参照可能とする。
+Phase 4では、設計したPostgreSQL DDLが実Database上で成立することを検証する。
 
-DDL Referenceでは、少なくとも以下を確認可能とする。
-
-- Schema
-- Table
-- Column
-- Element
-- Data Type
-- Default
-- NULL制約
-- Element由来Constraint
-- Primary Key
-- Unique Constraint
-- Foreign Key
-- Index
-- BuiltIn Column
-- Audit Trace Column
-- Comment
-- 生成想定SQL
-
-Phase 3におけるRedocと同様に、生成成果物を人間が容易に確認できることを目的とする。
-
-適切な既存Viewerが存在する場合は利用を検討する。
-
-適切なものがない場合、MarkdownからHTMLを生成する方式を採用する。
-
----
-
-## 21. Runtime
-
-Phase 4では、設計したDDLが実Database上で成立することを検証する。
-
-### 21.1 PostgreSQL
+### 19.1 PostgreSQL
 
 PostgreSQLをDDL設計の基準Databaseとして利用する。
 
@@ -2408,31 +2345,18 @@ PostgreSQL Databaseは生成DDLの実行検証を目的とした使い捨て環�
 
 Order ManagementをPostgreSQLでの主要検証Modelとして利用する。
 
-### 21.2 SQLite
-
-ARIADNE Prototype自身が利用するDatabaseとしてSQLiteを使用する。
-
-Runtime上にSQLite Database Fileを配置し、ARIADNE Prototypeから利用可能な状態とする。
-
-Task ManagementをARIADNE Prototype自身が利用するDatabase Modelとして使用する。
-
-DockerはARIADNE Prototypeアプリケーション自体の実行要件とはしない。
-
 ---
 
-## 22. Sample / Verification
+## 20. Sample / Verification
 
-### 22.1 Task Management
+### 20.1 Task Management
 
 主用途：
 
-- ARIADNE Prototype自身が利用するSQLite Database
-- SQLite互換DDLの実証
-- Runtime SQLite Fileの検証
+- 小規模なDDL Modelによる基本仕様の確認
+- Element / Column / Constraint / BuiltIn等の基本変換規則の確認
 
-必要に応じて同一ModelからPostgreSQL向けDDLも作成し、互換性を確認する。
-
-### 22.2 Order Management
+### 20.2 Order Management
 
 主用途：
 
@@ -2442,7 +2366,7 @@ DockerはARIADNE Prototypeアプリケーション自体の実行要件とはし
 
 ---
 
-## 23. Validation Rule
+## 21. Validation Rule
 
 Prototype Phase 4ではValidatorそのものは実装しない。
 
@@ -2453,7 +2377,7 @@ File Validationと、DDL Modelとしての意味的な整合性を検証する�
 
 Phase 2 / Phase 3からValidation IDを継続し、Phase 4では `V-085` 以降を使用する。
 
-### 23.1 File Validation
+### 21.1 File Validation
 
 File Validationでは、DDL Source YAMLの構造・記述形式・Source上の命名規約を検証する。
 
@@ -2503,7 +2427,7 @@ Phase 2 Element / Typeの参照解決や、Constraint間の意味的な整合性
 | V-124 | Service IDが `kebab-case` の命名規約を満たす                                                                   | Error |
 | V-125 | DDL Source YAMLのファイル名がService IDと一致する                                                              | Error |
 
-### 23.2 Element / Column Validation
+### 21.2 Element / Column Validation
 
 Element / Column Validationでは、DDL ColumnとPhase 2 Element / Typeとの意味的な整合性を検証する。
 
@@ -2537,7 +2461,7 @@ Element由来Regexと完全に同一のRegexは、意味のない重複として
 Type Capabilityは、そのTypeを参照するColumnで値生成を定義可能であることを表す。
 実際にそのColumnで値生成を行うかどうかは、DDL Sourceの `generation` によって決定する。
 
-### 23.3 Default Validation
+### 21.3 Default Validation
 
 Default Validationでは、Column Defaultと参照Element / Typeとの整合性を検証する。
 
@@ -2555,7 +2479,7 @@ Literal Defaultでは暗黙の型変換を行わない。
 任意のDatabase SQLをExpressionとして指定することはできない。
 利用可能なExpressionは `defaultAllowed.expressions` により決定する。
 
-### 23.4 Generation Validation
+### 21.4 Generation Validation
 
 Generation Validationでは、Columnに指定されたGeneration方式と参照Element / Type、
 およびCustom Generation Functionとの意味的な整合性を検証する。
@@ -2602,7 +2526,7 @@ Custom Generation Functionは対象Columnへ値を設定せず、生成値のみ
 
 Generation Column間の実行順序は保証しない。
 
-### 23.5 Primary Key / Unique Constraint Validation
+### 21.5 Primary Key / Unique Constraint Validation
 
 #### Primary Key
 
@@ -2629,7 +2553,7 @@ Unique ConstraintのColumn順序はDDL生成時に保持する。
 
 例えば `[a, b]` と `[b, a]` は、同一Column集合を持つUnique Constraintとして重複Errorとする。
 
-### 23.6 Foreign Key Validation
+### 21.6 Foreign Key Validation
 
 Foreign Key Validationでは、Foreign Keyの参照関係およびReferential Actionの意味的整合性を検証する。
 
@@ -2662,7 +2586,7 @@ Foreign Keyは同一Schema内のみを参照可能とする。
 
 Self Referenceは許可する。
 
-### 23.7 Foreign Key Element一致 Validation
+### 21.7 Foreign Key Element一致 Validation
 
 | ID    | Rule                                                                                     | Level |
 | ----- | ---------------------------------------------------------------------------------------- | ----- |
@@ -2673,7 +2597,7 @@ Database上の型が互換であっても、異なるElement間にForeign Keyを
 Foreign KeyにおけるElement一致は、
 Database型の一致ではなく、同一の業務上の値を参照していることを保証するためのRuleとする。
 
-### 23.8 Composite Foreign Key Validation
+### 21.8 Composite Foreign Key Validation
 
 | ID    | Rule                                                                           | Level |
 | ----- | ------------------------------------------------------------------------------ | ----- |
@@ -2685,7 +2609,7 @@ Database型の一致ではなく、同一の業務上の値を参照している
 
 各対応Columnには Foreign Key Element一致Validationを適用する。
 
-### 23.9 Index Validation
+### 21.9 Index Validation
 
 | ID    | Rule                                                                            | Level |
 | ----- | ------------------------------------------------------------------------------- | ----- |
@@ -2744,7 +2668,7 @@ Index             : (a)
 
 上記Indexは重複とはみなさない。
 
-### 23.10 Naming Ruleとの関係
+### 21.10 Naming Ruleとの関係
 
 Constraint / Indexの物理名はARIADNEがNaming Ruleに従って自動生成するため、Naming自体を独立したValidation Ruleとはしない。
 
@@ -2788,7 +2712,7 @@ Source ValidationではなくGeneratorの生成不能Errorとして扱う。
 
 ---
 
-## 24. Phase 4で決定する事項
+## 22. Phase 4で決定する事項
 
 Phase 4では、以下を確定する。
 
@@ -2809,13 +2733,10 @@ Phase 4では、以下を確定する。
 - Audit Trace Column名
 - Audit Trace値のDatabaseへの伝搬方式
 - PostgreSQL型変換規則
-- SQLite互換型変換規則
-- SQLiteにおけるSchemaの扱い
 - BuiltIn SQLの仕様
 - Custom SQLの登録方法
 - Custom SQLと生成DDLの実行順序
 - DDL出力ファイル構成
-- DDL Reference生成方式
 - Validation Rule
 - Runtime構成
 
@@ -2896,39 +2817,20 @@ Phase 4では、以下を確定する。
 - [x] Sample PostgreSQL DDLを作成する
 - [x] Sample DDLをPostgreSQLで実行確認する
 
-### Step 7：SQLite互換仕様
-
-- [ ] SQLite型変換規則を確定する
-- [ ] Schemaの扱いを確定する
-- [ ] PostgreSQLとの差異を整理する
-- [ ] BuiltIn updatedAtの代替方式を確定する
-- [ ] Task Management用SQLite DDLを作成する
-- [ ] SQLiteで実行確認する
-
-### Step 8：Custom SQL
+### Step 7：Custom SQL
 
 - [ ] Custom SQLの登録方式を確定する
 - [ ] DBMS別Custom SQLの扱いを確定する
 - [ ] Custom SQLと生成DDLの実行順序を確定する
 
-### Step 9：DDL Output
+### Step 8：DDL Output
 
 - [ ] DDLのファイル分割方針を検討する
 - [ ] DDLの実行Phaseを確定する
 - [ ] ファイル名による順序制御を利用するか決定する
 - [ ] Sample出力構成を作成する
 
-### Step 10：DDL Reference
-
-- [ ] DDL Referenceの表示内容を確定する
-- [ ] Schema / Table / Columnの表示方式を確定する
-- [ ] Constraint / Indexの表示方式を確定する
-- [ ] Elementとの対応表示を確定する
-- [ ] SQLの参照方式を確定する
-- [ ] HTML生成方式を確定する
-- [ ] Browserから参照できるSampleを作成する
-
-### Step 11：PostgreSQL Runtime
+### Step 9：PostgreSQL Runtime
 
 - [x] PostgreSQL Docker環境を作成する
 - [x] pgwebを追加する
@@ -2938,21 +2840,12 @@ Phase 4では、以下を確定する。
 - [x] Custom SQLを確認する
 - [x] pgwebからDatabaseを確認する
 
-### Step 12：SQLite Runtime
-
-- [ ] SQLite Database Fileの配置方式を確定する
-- [ ] Task Management DDLを適用する
-- [ ] Runtime上にSQLite Fileを生成する
-- [ ] ARIADNE Prototypeから接続可能な状態を確認する
-- [ ] createdAt / updatedAt等のBuiltIn動作を確認する
-
-### Step 13：Phase 4 Completion
+### Step 10：Phase 4 Completion
 
 - [ ] Sample DDL YAMLを整理する
 - [ ] Resolved DDL Sampleを整理する
 - [ ] PostgreSQL Sample SQLを整理する
-- [ ] SQLite Sample SQLを整理する
-- [ ] Runtime検証を完了する
+- [x] PostgreSQL Runtime検証を完了する
 - [ ] Phase 4ドキュメントを実証結果に合わせて更新する
 - [ ] Coreへ引き継ぐGenerator / Validator仕様を整理する
 - [ ] 未決事項が残っていないことを確認する

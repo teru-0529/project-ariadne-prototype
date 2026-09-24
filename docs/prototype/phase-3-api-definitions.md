@@ -33,9 +33,11 @@ Phase 3 の主な目的は以下とする。
 Phase 3 では **値そのものの型・桁・範囲等を再定義しない**。\
 Scalar Value の定義は Phase 2 Element の責務とする。
 
-Prototype では設計を先に確定し、正本 YAML
-と中間モデルを手作業で作成して妥当性を確認する。Validator / Generator
-の実装は後続工程で行う。
+Prototype では設計を先に確定し、正本 YAML、
+Raw Model / Resolved Model、および OpenAPI 3.1 のサンプルを
+手作業で作成して妥当性を確認する。
+
+Validator / Resolver / Generator の実装は Core で行う。
 
 ---
 
@@ -2753,7 +2755,7 @@ OpenAPI Validation / API Document 生成のための開発ツールとして利�
 個別インストールは要求しない。
 
 Wails Application への API Document 表示機能の組み込み方式は、
-後続 Phase で決定する。
+Core で決定する。
 
 ### 14.6 Development Tools
 
@@ -2799,26 +2801,16 @@ Frontend Application
 Mock Server 固有のレスポンス定義等を ARIADNE Source に追加せず、
 OpenAPI 3.1 に定義された Schema / Example 等を Mock Server が利用する。
 
-将来的な ARIADNE Development Environment では、 Swagger UI / Mock Server に加えて、
-Phase 4 で生成する DDL を利用した PostgreSQL も Docker Compose から起動可能とする。
+ReDoc / Swagger UI / Mock Server 等の Development Tools は、
+生成された OpenAPI 3.1 の利用先として位置付ける。
 
-```text
-ARIADNE Development Environment
+これらの Development Tools を ARIADNE Application からどのように提供するか、
+また Docker / Docker Compose 等を利用した統合 Development Environment を提供するかは、
+Core で必要性および実現方式を決定する。
 
-OpenAPI 3.1
-  ├─ Swagger UI
-  └─ Mock Server
-
-DDL
-  └─ PostgreSQL
-```
-
-PostgreSQL の初期化方法および DDL 適用方式は Phase 4 で設計する。
-Database Migration は Prototype Phase 4 の必須要件とはしない。
-
-Prototype Phase 3 では Development Tools の利用方針までを定義対象とし、
-Docker Compose を用いた Swagger UI / Mock Server の実動検証は、
-Phase 4 の DDL 定義後に Task Application を用いた End-to-End 検証として行う。
+Prototype Phase 3 では、
+OpenAPI 3.1 が API Document および Development Tools の入力として
+利用可能であることまでを設計・検証対象とする。
 
 ---
 
@@ -2858,7 +2850,7 @@ Phase 3 は Element を参照し、「その値を APIのどこで、どの意�
 
 Phase 3 は API 契約を管理し、Database の PK / Index / Null Constraint 等を定義しない。
 
-Phase 4 は Phase 2 Element を利用して Database Definition を構成する予定とする。
+Phase 4 は Phase 2 Element を利用して Database Definition を構成する。
 
 Path Parameter として利用可能であることと、Database Primary Key / Unique Key であることは同義ではない。
 
@@ -2866,7 +2858,10 @@ Path Parameter として利用可能であることと、Database Primary Key / 
 
 ## 16. Phase 3 Completion
 
-Prototype Phase 3 は現在進行中である。
+Prototype Phase 3 では、API Definition Model、
+Raw Model / Resolved Model、Validation Architecture、
+OpenAPI 3.1 Generation、および API Document / Development Tools の
+設計・手作業検証を完了した。
 
 ### 現時点の進捗
 

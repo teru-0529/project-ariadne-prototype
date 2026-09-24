@@ -34,7 +34,7 @@ src/
 ├─ api/
 └─ ddl/
 
-templates/
+prototype-data/
 dist/
 runtime/
 ```
@@ -48,14 +48,14 @@ src/elements/elements.yaml
 
 各領域の責務は以下のとおり。
 
-| 領域            | 責務                                                                       |
-| --------------- | -------------------------------------------------------------------------- |
-| `src/elements/` | Type / Element による共通項目定義の正本                                    |
-| `src/api/`      | API 定義の ARIADNE Source および API 生成処理で使用する正本資材            |
-| `src/ddl/`      | Database / DDL 定義の ARIADNE Source および DDL 生成処理で使用する正本資材 |
-| `templates/`    | Task 管理アプリ等、Prototype で利用するテンプレート／アプリデータ側の資材  |
-| `dist/`         | ARIADNE が生成した成果物                                                   |
-| `runtime/`      | SQLite 等の実行時データ                                                    |
+| 領域              | 責務                                                                       |
+| ----------------- | -------------------------------------------------------------------------- |
+| `src/elements/`   | Type / Element による共通項目定義の正本                                    |
+| `src/api/`        | API 定義の ARIADNE Source および API 生成処理で使用する正本資材            |
+| `src/ddl/`        | Database / DDL 定義の ARIADNE Source および DDL 生成処理で使用する正本資材 |
+| `prototype-data/` | Prototype Applicationの技術検証で使用するデータ                            |
+| `dist/`           | ARIADNE が生成した成果物                                                   |
+| `runtime/`        | ARIADNEの実行時データ領域                                                  |
 
 `types.yaml` と `elements.yaml`
 は独立した仕様ではなく、**1つの項目定義モデルを2ファイルに分割したもの**として扱う。
@@ -262,7 +262,9 @@ defaultAllowed:
 `CURRENT_DATE` / `CURRENT_TIME` / `CURRENT_DATETIME` は ARIADNE が定義する BuiltIn Default Expression を設定可能とする。
 
 BuiltIn Default Expression の Database 固有表現は `types.yaml` では定義しない。
-PostgreSQL / SQLite 等への変換は DDL 生成側の責務とする。
+
+Prototypeで必須とする PostgreSQL への変換は DDL 生成側の責務とする。
+その他の Database への変換は Core で必要に応じて検討する。
 
 ### 5.3 ENUM と CODE
 
@@ -990,7 +992,10 @@ DDL Column で値生成を定義可能かどうかは、参照 Element の Type 
 Literal Default を指定する場合は `defaultAllowed.literal`、
 BuiltIn Default Expression を指定する場合は `defaultAllowed.expressions` を参照する。
 
-BuiltIn Default Expression および Generation の PostgreSQL / SQLite 等への具体的な変換は DDL 生成側の責務とする。
+BuiltIn Default Expression および Generation の PostgreSQL への具体的な変換は
+DDL 生成側の責務とする。
+
+その他の Database への変換は Core で必要に応じて検討する。
 
 基本原則は以下とする。
 
