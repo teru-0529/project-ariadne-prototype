@@ -8,6 +8,18 @@ action: Cancellation
 resources:
   Cancellation:
     properties:
+      personInCharge:
+        element: userId
+        required: true
+        name: キャンセル担当者
+        description: キャンセル担当者
+
+      notes:
+        element: comment
+        name: 摘要
+        description: 補足情報
+        example: 緊急キャンセル
+
       details:
         array:
           resource: CancellationDetail

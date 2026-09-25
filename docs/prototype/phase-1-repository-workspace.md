@@ -85,51 +85,52 @@ project-ariadne-prototype/
 │  └─ Taskfile.yml
 │
 ├─ src/
-│  ├─ definitions/
+│  ├─ elements/
 │  ├─ api/
-│  └─ database/
+│  └─ ddl/
 │
-├─ templates/
+├─ prototype-data/
 ├─ dist/
 ├─ runtime/
 ├─ docs/
 └─ tools/
-   ├─ dev.sh
-   └─ build.sh
 ```
 
 ### Responsibilities
 
-| Directory | Responsibility |
-| --- | --- |
-| `app/` | Project ARIADNE PrototypeのWindowsアプリケーション |
-| `app/backend/` | Go backend |
-| `app/backend/services/` | Wailsから公開するBackend Service |
-| `app/frontend/` | Svelte frontend |
-| `app/frontend/bindings/` | Wails generated bindings |
-| `app/build/` | Wails build configuration |
-| `app/bin/` | Application build output |
-| `src/definitions/` | 項目定義等、ARIADNE設計情報の正本 |
-| `src/api/` | API 定義の ARIADNE Source および API 生成処理で使用する正本資材 |
-| `src/database/` | DDL関連の正本・生成処理で使用する資材 |
-| `templates/` | Task管理アプリ等、Prototypeで使用するテンプレート／アプリデータ側の資材 |
-| `dist/` | Project ARIADNEが生成した成果物 |
-| `runtime/` | SQLite等の実行時データ |
-| `docs/` | 設計原則・Phaseごとの決定事項等 |
-| `tools/` | Repository rootから利用する開発・build用utility script |
+| Directory                | Responsibility                                                        |
+| ------------------------ | --------------------------------------------------------------------- |
+| `app/`                   | Project ARIADNE PrototypeのWindowsアプリケーション                    |
+| `app/backend/`           | Go backend                                                            |
+| `app/backend/services/`  | Wailsから公開するBackend Service                                      |
+| `app/frontend/`          | Svelte frontend                                                       |
+| `app/frontend/bindings/` | Wails generated bindings                                              |
+| `app/build/`             | Wails build configuration                                             |
+| `app/bin/`               | Application build output                                              |
+| `src/elements/`          | Type / Element による共通項目定義の正本                               |
+| `src/api/`               | API 定義の ARIADNE Source および API 生成処理で使用する正本資材       |
+| `src/ddl/`               | Database / DDL定義のARIADNE SourceおよびDDL生成処理で使用する正本資材 |
+| `prototype-data/`        | Prototype Applicationの技術検証で使用するデータ                       |
+| `dist/`                  | Project ARIADNEが生成した成果物                                       |
+| `runtime/`               | ARIADNEの実行時データ領域                                             |
+| `docs/`                  | 設計原則・Phaseごとの決定事項等                                       |
+| `tools/`                 | Repository rootから利用する開発・build用utility script                |
 
 ### Source of Truth
 
 Phase 0で決定した以下の原則を維持する。
 
 - ARIADNE設計情報の正本は `src/` 配下で管理する
-- 項目定義は `src/definitions/` に配置する
+- 項目定義は `src/elements/` に配置する
 - API定義は `src/api/` に配置する
-- DDL関連は `src/database/` に配置する
-- Task管理アプリ等のテンプレート／アプリデータ側の資材は `templates/` として分離する
+- Database / DDL定義は `src/ddl/` に配置する
+- Prototype Applicationの技術検証で使用するデータは `prototype-data/` として分離する
+- Prototype Applicationの技術検証データとARIADNE設計情報を混在させない
 - 成果物と実行時データを分離する
 - `dist/` は生成成果物
-- `runtime/` はSQLite等の実行時データ
+- `runtime/` はARIADNEの実行時データ領域とし、具体的な利用方法はCoreで決定する
+
+API定義とDatabase / DDL定義は物理的には別領域で管理するが、Service IDにより同一の業務・機能領域に属する設計情報として関連付ける。
 
 Phase 1ではこれらの責務を変更しない。
 
@@ -166,13 +167,13 @@ Prototypeでは生成結果を確認可能とするためGit管理対象とす�
 
 Prototypeでは以下を使用する。
 
-| Layer | Technology |
-| --- | --- |
-| Desktop Application | Wails v3 |
-| Frontend | Svelte 5 |
-| Frontend Language | TypeScript |
-| Backend | Go |
-| Node.js Management | Volta |
+| Layer               | Technology |
+| ------------------- | ---------- |
+| Desktop Application | Wails v3   |
+| Frontend            | Svelte 5   |
+| Frontend Language   | TypeScript |
+| Backend             | Go         |
+| Node.js Management  | Volta      |
 
 Phase 1完了時点のtoolchainは以下。
 
@@ -384,10 +385,10 @@ Phase 1完了時点で以下を確認した。
 ## 14. Phase 1 Result
 
 Phase 0で決定したProject ARIADNEの設計原則および責務分離を維持したまま、
-Prototypeの機能開発を開始するためのRepository / Workspace / Application基盤を構築した。
+Prototypeを進めるためのRepository / Workspace / Application基盤を構築した。
 
 Phase 1以降はこの基盤を使用し、
-Project ARIADNE固有の機能開発へ進む。
+ARIADNE Modelの設計検証およびWindows Applicationの技術検証へ進む。
 
 ---
 

@@ -7,7 +7,7 @@
 > Validation Architecture、OpenAPI 3.1 Generation、
 > API Document / Development Tools の設計方針を確定した。
 
-------------------------------------------------------------------------
+---
 
 ## 1. Phase 3 の目的
 
@@ -22,27 +22,32 @@ Phase 3 の主な目的は以下とする。
 
 - API 定義の Source of Truth となる ARIADNE YAML 表記を確定する
 - Service / Parameter / Resource / SubResource / Variant / Action /
-    Custom の責務を整理する
+  Custom の責務を整理する
 - Phase 2 Element を参照して API Schema を構成する
 - OpenAPI 3.1 を生成するために必要な情報を定義する
 - File Validation / API Validation / Service Validation / OpenAPI
-    Validation の責務を分離する
+  Validation の責務を分離する
 - ARIADNE Source から Raw Model / Resolved Model
-    を生成するモデル変換を定義する
+  を生成するモデル変換を定義する
 
 Phase 3 では **値そのものの型・桁・範囲等を再定義しない**。\
 Scalar Value の定義は Phase 2 Element の責務とする。
 
-Prototype では設計を先に確定し、正本 YAML
-と中間モデルを手作業で作成して妥当性を確認する。Validator / Generator
-の実装は後続工程で行う。
+Prototype では設計を先に確定し、正本 YAML、
+Raw Model / Resolved Model、および OpenAPI 3.1 のサンプルを
+手作業で作成して妥当性を確認する。
 
-------------------------------------------------------------------------
+Validator / Resolver / Generator の実装は Core で行う。
+
+---
 
 ## 2. Source of Truth と配置
 
-Phase 3 の Source of Truth は `src/api/services/` 配下の ARIADNE YAML
-とする。
+Phase 3 の Source of Truth は `src/api/services/` 配下の ARIADNE YAML とする。
+
+ここでいうServiceはAPI固有の概念ではなく、Project ARIADNE上でAPI / DDL等の設計成果物を束ねる上位定義単位である。
+
+`src/api/services/` 配下では、そのServiceに属するAPI定義を管理する。
 
 Service ごとにディレクトリを分け、Service 固有の Parameter
 Definition、Resource、Action、Custom、補足ドキュメントをその配下で管理する。
@@ -76,37 +81,41 @@ src/
 - Service ディレクトリ名は `service.yaml` の Service ID と一致させる
 - `service.yaml` は Service 自身を定義する
 - `parameters.yaml` は **Service 単位**の Parameter Definition
-    を定義する
+  を定義する
 - Main Resource は Resource 用ディレクトリの `main.yaml` に定義する
 - SubResource / Action は Main Resource 配下で管理する
 - Custom は特定 Main Resource の子ではなく **Service 配下**で管理する
 - `docs/` は Service 固有の `externalDocs` 用補足文書の配置先とする
 - `externalDocs.url` の相対パスは **Service Root**
-    を基準として解決する
+  を基準として解決する
 
 `externalDocs` の Markdown は Service Root 配下の `docs/` を正本とする。
 OpenAPI / API Document 生成時に HTML へ変換し、 Service 単位の OAS 成果物ディレクトリへ生成する。
 
-------------------------------------------------------------------------
+---
 
 ## 3. 基本モデルと責務
 
 ### 3.1 Service
 
-Service は API の管理単位を表す。
+Serviceは、API / DDL等の設計成果物を束ねるProject ARIADNE上の上位定義単位を表す。
 
-Service は以下を管理する。
+Phase 3では、そのServiceに属するAPI定義を管理する。
+
+Service IDはARIADNE上の共通識別子であり、API Resource等のAPI固有識別子や、Database Schema等のDDL固有識別子とは分離して扱う。
+
+Phase 3のService定義では、APIに関する以下の情報を管理する。
 
 - Service ID
 - 表示名
 - 説明
-- Service 共通 Request Header
+- Service共通Request Header
 
-Service ID は kebab-case とする。
+Service IDは kebab-case とする。
 
 例:
 
-``` yaml
+```yaml
 service: order-management
 name: 受注サービス
 description: |
@@ -154,7 +163,7 @@ Source では `kind: subresource` と `parent` によって明示する。
 
 例:
 
-``` yaml
+```yaml
 kind: subresource
 resource: OrderDetail
 parent: Order
@@ -186,7 +195,7 @@ ARIADNE YAML では `parentVariants` として記述する。
 
 典型例として、`OrderDetail` から親 `Order` に `WithDetails` Variantを追加する。
 
-``` yaml
+```yaml
 parentVariants:
   WithDetails:
     add:
@@ -242,7 +251,7 @@ API は logical entry、Path、HTTP Method の階層で記述する。
 
 例:
 
-``` yaml
+```yaml
 api:
   member:
     path: /orders/{received_order_no}
@@ -273,31 +282,31 @@ Operation は OpenAPI 上の分類を示す `tag` を1件持つ。
 
 ARIADNE では 1 Operation に対して複数 Tag を許可しない。OpenAPI 生成時は `tag` を `tags` 配列へ変換する。
 
-------------------------------------------------------------------------
+---
 
 ## 4. 命名規約
 
 命名規約を以下とする。
 
-| 対象 | 規約 | 例 |
-| --- | --- | --- |
-| Service | kebab-case | `order-management` |
-| Resource | PascalCase | `Order` |
-| SubResource | PascalCase | `OrderDetail` |
-| Variant | PascalCase | `Summary` |
-| Action | PascalCase | `OrderShipment` |
-| Custom | PascalCase | `ExportOrders` |
-| Local Resource | PascalCase | `ExportCondition` |
-| Property | camelCase | `customerId` |
-| Parameter Definition | camelCase | `receivedOrderNo` |
-| API logical entry | camelCase | `createOrder` |
-| HTTP Path Parameter | snake_case | `received_order_no` |
-| HTTP Query Parameter | snake_case | `customer_id` |
+| 対象                 | 規約       | 例                  |
+| -------------------- | ---------- | ------------------- |
+| Service              | kebab-case | `order-management`  |
+| Resource             | PascalCase | `Order`             |
+| SubResource          | PascalCase | `OrderDetail`       |
+| Variant              | PascalCase | `Summary`           |
+| Action               | PascalCase | `OrderShipment`     |
+| Custom               | PascalCase | `ExportOrders`      |
+| Local Resource       | PascalCase | `ExportCondition`   |
+| Property             | camelCase  | `customerId`        |
+| Parameter Definition | camelCase  | `receivedOrderNo`   |
+| API logical entry    | camelCase  | `createOrder`       |
+| HTTP Path Parameter  | snake_case | `received_order_no` |
+| HTTP Query Parameter | snake_case | `customer_id`       |
 
 Path Token は semantic key の snake_case 表現とし、Raw Model 生成時に
 camelCase の Parameter Definition key へ正規化する。
 
-------------------------------------------------------------------------
+---
 
 ## 5. 継承・Override の原則
 
@@ -305,7 +314,7 @@ Phase 3 では、Phase 2 Element を値定義の最下層として利用する�
 
 概念的な階層は以下とする。
 
-``` text
+```text
 Phase 2 Element
     │
     ├─ Resource Property
@@ -352,7 +361,7 @@ Phase 2 Element が管理する Scalar Constraint は Phase 3 で再定義しな
 Phase 3 は **値を定義する場所ではなく、値を組み合わせて API
 を構成する場所**とする。
 
-------------------------------------------------------------------------
+---
 
 ## 6. Constraint
 
@@ -363,16 +372,16 @@ Resource Property は `element` / `resource` / `array` の
 
 Resource Property ではコンテキストに応じて以下を指定できる。
 
-| 属性 | 型 | 用途 |
-| --- | --- | --- |
-| `required` | Boolean | Resource 上で必須か |
-| `readOnly` | Boolean | Response 側を基本とする Property か |
-| `writeOnly` | Boolean | Request 側を基本とする Property か |
-| `minItems` | Integer | Array Property の最小要素数 |
-| `maxItems` | Integer | Array Property の最大要素数 |
-| `name` | String | コンテキスト上の表示名 |
-| `description` | String | コンテキスト上の説明 |
-| `example` | Scalar / Object / Array | コンテキスト上の例 |
+| 属性          | 型                      | 用途                                |
+| ------------- | ----------------------- | ----------------------------------- |
+| `required`    | Boolean                 | Resource 上で必須か                 |
+| `readOnly`    | Boolean                 | Response 側を基本とする Property か |
+| `writeOnly`   | Boolean                 | Request 側を基本とする Property か  |
+| `minItems`    | Integer                 | Array Property の最小要素数         |
+| `maxItems`    | Integer                 | Array Property の最大要素数         |
+| `name`        | String                  | コンテキスト上の表示名              |
+| `description` | String                  | コンテキスト上の説明                |
+| `example`     | Scalar / Object / Array | コンテキスト上の例                  |
 
 `minItems` / `maxItems` は `array` を持つ Property にのみ指定できる。 `array` 配下ではなく、`array` と同階層に指定する。
 
@@ -507,7 +516,7 @@ Array Property に対する `minItems` / `maxItems` の Override は、Property 
 
 Scalar Constraint の Override は禁止する。
 
-------------------------------------------------------------------------
+---
 
 ## 7. API 表現ルール
 
@@ -517,13 +526,13 @@ Path Parameter は Path の `{token}` から導出する。
 
 Source:
 
-``` yaml
+```yaml
 path: /orders/{received_order_no}/details/{detail_no}
 ```
 
 Raw Model:
 
-``` yaml
+```yaml
 path: /orders/{received_order_no}/details/{detail_no}
 pathParameters:
   - parameterRef: $receivedOrderNo
@@ -532,11 +541,15 @@ pathParameters:
 
 `pathParameters` は Operation ではなく **API logical entry** に属する。
 
-Path Parameter は HTTP 上必須であり、参照する Element は API Identifier
-として利用可能でなければならない。
+Path Parameter は HTTP 上必須であり、参照する Element の Type が
+Path Parameter として利用可能でなければならない。
 
-Element の `identifier: true` は、その Element が API
-の識別子として利用可能であることを示す。単独主キー・単独一意キーであることは意味せず、複合識別子の一要素として利用してよい。
+利用可否は、Element が参照する Type の
+`capability.pathParameter` によって判定する。
+
+`capability.pathParameter: true` は、その Type の値を API の Path Parameter
+として利用可能であることを示す。
+これは Database の Primary Key / Unique Key 等を意味しない。
 
 ### 7.2 Query Parameter
 
@@ -671,13 +684,13 @@ Prototype で利用する HTTP Method は以下とする。
 
 標準 API の基本的な Success Status は以下とする。
 
-| Method | 基本 Status | 備考 |
-| --- | ---: | --- |
-| GET | 200 | Response Body あり |
-| POST | 201 | Response Body は API 定義に応じる |
-| PUT | 200 | 全体更新 / upsert を許容 |
-| PATCH | 200 | 部分更新 |
-| DELETE | 204 | Response Body なし |
+| Method | 基本 Status | 備考                              |
+| ------ | ----------: | --------------------------------- |
+| GET    |         200 | Response Body あり                |
+| POST   |         201 | Response Body は API 定義に応じる |
+| PUT    |         200 | 全体更新 / upsert を許容          |
+| PATCH  |         200 | 部分更新                          |
+| DELETE |         204 | Response Body なし                |
 
 標準 API では Success Status を HTTP Method から Resolve 時に補完する。
 
@@ -808,7 +821,7 @@ OpenAPI Schema だけでは表現しにくい業務ルールや処理上の補�
 
 例:
 
-``` yaml
+```yaml
 externalDocs:
   url: ./docs/order-create.md
   description: 受注登録の詳細仕様
@@ -819,7 +832,7 @@ externalDocs:
 補足文書は ARIADNE YAML の代替正本ではない。Schema / Constraint
 として表現可能な情報の正本は ARIADNE YAML 側とする。
 
-------------------------------------------------------------------------
+---
 
 ## 8. YAML ファイル仕様
 
@@ -827,7 +840,7 @@ externalDocs:
 
 Phase 3 Source YAML は共通 Header を持つ。
 
-``` yaml
+```yaml
 formatVersion: "1.0"
 updatedAt: "..."
 domain: api
@@ -855,35 +868,35 @@ Service 自身を定義する。
 
 主な属性:
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `service` | 必須 | String | Service ID |
-| `name` | 必須 | String | 表示名 |
-| `description` | 任意 | String | 説明 |
-| `requestHeaders` | 任意 | Array | Service 共通 Request Header |
+| 属性             | 必須 | 型     | 意味                        |
+| ---------------- | ---- | ------ | --------------------------- |
+| `service`        | 必須 | String | Service ID                  |
+| `name`           | 必須 | String | 表示名                      |
+| `description`    | 任意 | String | 説明                        |
+| `requestHeaders` | 任意 | Array  | Service 共通 Request Header |
 
 ### 8.3 Parameter YAML
 
 Service 内で利用する Parameter Definition を定義する。
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
+| 属性         | 必須 | 型  | 意味                        |
+| ------------ | ---- | --- | --------------------------- |
 | `parameters` | 必須 | Map | Parameter Definition の集合 |
 
 #### Parameter Definition
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `element` | 必須 | String | 参照する Phase 2 Element |
-| `description` | 任意 | String | Parameter の説明 |
-| `example` | 任意 | Scalar | Parameter の例 |
-| `headerName` | 任意 | String | Header利用時の物理Header名 |
+| 属性          | 必須 | 型     | 意味                       |
+| ------------- | ---- | ------ | -------------------------- |
+| `element`     | 必須 | String | 参照する Phase 2 Element   |
+| `description` | 任意 | String | Parameter の説明           |
+| `example`     | 任意 | Scalar | Parameter の例             |
+| `headerName`  | 任意 | String | Header利用時の物理Header名 |
 
 `example` の Override 規則は「6.4 Parameter Definition」に従う。
 
 例:
 
-``` yaml
+```yaml
 parameters:
   receivedOrderNo:
     element: receivedOrderNo
@@ -908,14 +921,14 @@ Main Resource を定義する。
 
 主に以下を管理する。
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `resource` | 必須 | String | Resource 名 |
-| `name` | 必須 | String | 表示名 |
-| `description` | 任意 | String | 説明 |
-| `properties` | 必須 | Map | Property 定義 |
-| `variants` | 任意 | Map | Variant 定義 |
-| `api` | 任意 | Map | API 定義 |
+| 属性          | 必須 | 型     | 意味          |
+| ------------- | ---- | ------ | ------------- |
+| `resource`    | 必須 | String | Resource 名   |
+| `name`        | 必須 | String | 表示名        |
+| `description` | 任意 | String | 説明          |
+| `properties`  | 必須 | Map    | Property 定義 |
+| `variants`    | 任意 | Map    | Variant 定義  |
+| `api`         | 任意 | Map    | API 定義      |
 
 Main Resource は `parent` を持たない。
 
@@ -925,26 +938,26 @@ SubResource を定義する。
 
 Main Resource と同様に以下を管理できる。
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `resource` | 必須 | String | Resource 名 |
-| `parent` | 必須 | String | 親 Main Resource |
-| `name` | 必須 | String | 表示名 |
-| `description` | 任意 | String | 説明 |
-| `properties` | 必須 | Map | Property 定義 |
-| `variants` | 任意 | Map | Variant 定義 |
-| `parentVariants` | 任意 | Map | 親 Resource に追加する Variant 定義 |
-| `api` | 任意 | Map | API 定義 |
+| 属性             | 必須 | 型     | 意味                                |
+| ---------------- | ---- | ------ | ----------------------------------- |
+| `resource`       | 必須 | String | Resource 名                         |
+| `parent`         | 必須 | String | 親 Main Resource                    |
+| `name`           | 必須 | String | 表示名                              |
+| `description`    | 任意 | String | 説明                                |
+| `properties`     | 必須 | Map    | Property 定義                       |
+| `variants`       | 任意 | Map    | Variant 定義                        |
+| `parentVariants` | 任意 | Map    | 親 Resource に追加する Variant 定義 |
+| `api`            | 任意 | Map    | API 定義                            |
 
 ### 8.6 Action YAML
 
 Action を定義する。
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `action` | 必須 | String | Action 名 |
-| `resources` | 必須 | Map | Action-local Resource 定義 |
-| `api` | 必須 | Map | API 定義 |
+| 属性        | 必須 | 型     | 意味                       |
+| ----------- | ---- | ------ | -------------------------- |
+| `action`    | 必須 | String | Action 名                  |
+| `resources` | 必須 | Map    | Action-local Resource 定義 |
+| `api`       | 必須 | Map    | API 定義                   |
 
 Action 自身は表示名・説明を持たない。API の表示名・説明は Operation の `summary` / `description` に定義する。
 
@@ -955,11 +968,11 @@ Local Resource は Source / Raw Model 上では Action-local 定義として参�
 
 Custom API を定義する。
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `custom` | 必須 | String | Custom 名 |
-| `resources` | 任意 | Map | Custom-local Resource 定義 |
-| `api` | 必須 | Map | API 定義 |
+| 属性        | 必須 | 型     | 意味                       |
+| ----------- | ---- | ------ | -------------------------- |
+| `custom`    | 必須 | String | Custom 名                  |
+| `resources` | 任意 | Map    | Custom-local Resource 定義 |
+| `api`       | 必須 | Map    | API 定義                   |
 
 Custom 自身は表示名・説明を持たない。API の表示名・説明は Operation の `summary` / `description` に定義する。
 
@@ -975,18 +988,18 @@ Custom の Response は、`success` と `errors` により定義する。
 - `resource` / `array` のいずれも指定しない場合は Body なしとする
 - `resource` と `array` は同時指定できない
 
-| 属性 | 必須 | 型 | 意味 |
-| --- | --- | --- | --- |
-| `response.success` | 必須 | Map | Success Response |
-| `response.success.status` | 必須 | Integer | HTTP Status |
-| `response.success.description` | 任意 | String | Response説明 |
-| `response.success.resource` | 任意 | Resource Reference | 単一Resource Body |
-| `response.success.array` | 任意 | Array | Resource Array Body |
-| `response.errors` | 任意 | Array | 明示Error Response群 |
-| `response.errors[].status` | 必須 | Integer | HTTP Status |
-| `response.errors[].description` | 任意 | String | Response説明 |
-| `response.errors[].resource` | 任意 | Resource Reference | 単一Resource Body |
-| `response.errors[].array` | 任意 | Array | Resource Array Body |
+| 属性                            | 必須 | 型                 | 意味                 |
+| ------------------------------- | ---- | ------------------ | -------------------- |
+| `response.success`              | 必須 | Map                | Success Response     |
+| `response.success.status`       | 必須 | Integer            | HTTP Status          |
+| `response.success.description`  | 任意 | String             | Response説明         |
+| `response.success.resource`     | 任意 | Resource Reference | 単一Resource Body    |
+| `response.success.array`        | 任意 | Array              | Resource Array Body  |
+| `response.errors`               | 任意 | Array              | 明示Error Response群 |
+| `response.errors[].status`      | 必須 | Integer            | HTTP Status          |
+| `response.errors[].description` | 任意 | String             | Response説明         |
+| `response.errors[].resource`    | 任意 | Resource Reference | 単一Resource Body    |
+| `response.errors[].array`       | 任意 | Array              | Resource Array Body  |
 
 例:
 
@@ -1010,7 +1023,7 @@ response:
 Custom-local Resource も Source / Raw Model 上では Custom-local 定義として管理する。
 ただし Local Resource 名は Service 内で一意とする。
 
-------------------------------------------------------------------------
+---
 
 ## 9. Raw Model
 
@@ -1024,13 +1037,13 @@ Raw Model は YAML として出力し、デバッグや Golden Test に利用で
 
 生成先:
 
-``` text
+```text
 dist/api/model/order-management.raw.yaml
 ```
 
 ### 9.2 基本構造
 
-``` yaml
+```yaml
 formatVersion: "1.0"
 
 service:
@@ -1041,31 +1054,27 @@ service:
   requestHeaders:
     - parameterRef: $traceId
 
-parameters:
-  ...
+parameters: ...
 
-resources:
-  ...
+resources: ...
 
-actions:
-  ...
+actions: ...
 
-customs:
-  ...
+customs: ...
 ```
 
 Raw Model には `updatedAt` を持たせない。生成物の Timestamp による不要な差分を避けるためである。
 
 ### 9.3 Source kind の正規化
 
-| Source | Raw Model |
-| --- | --- |
-| `kind: service` | `service` |
-| `kind: parameters` | `parameters` |
-| `kind: resource` | `resources` |
+| Source              | Raw Model                 |
+| ------------------- | ------------------------- |
+| `kind: service`     | `service`                 |
+| `kind: parameters`  | `parameters`              |
+| `kind: resource`    | `resources`               |
 | `kind: subresource` | `resources` + `parentRef` |
-| `kind: action` | `actions` |
-| `kind: custom` | `customs` |
+| `kind: action`      | `actions`                 |
+| `kind: custom`      | `customs`                 |
 
 Source の `kind` および `resource` / `action` / `custom` といった識別フィールドは、Raw Model では構造そのものへ吸収する。
 
@@ -1073,7 +1082,7 @@ Source の `kind` および `resource` / `action` / `custom` といった識別�
 
 Raw Model に SubResource 専用型は設けない。
 
-``` yaml
+```yaml
 resources:
   Order:
     ...
@@ -1115,13 +1124,13 @@ Query Parameter の `required` は Raw Model では省略可能とする。
 
 Raw Model では、ARIADNE が管理する別定義への参照を `xxxRef` 属性と `$` Prefix によって明示する。
 
-| 参照対象 | Raw Model 表記 | 例 |
-| --- | --- | --- |
-| Phase 2 Element | `elementRef` | `elementRef: $receivedOrderNo` |
-| Resource / Local Resource | `resourceRef` | `resourceRef: $Order` |
-| Variant | `variantRef` | `variantRef: $Summary` |
-| Parent Resource | `parentRef` | `parentRef: $Order` |
-| Parameter Definition | `parameterRef` | `parameterRef: $receivedOrderNo` |
+| 参照対象                  | Raw Model 表記 | 例                               |
+| ------------------------- | -------------- | -------------------------------- |
+| Phase 2 Element           | `elementRef`   | `elementRef: $receivedOrderNo`   |
+| Resource / Local Resource | `resourceRef`  | `resourceRef: $Order`            |
+| Variant                   | `variantRef`   | `variantRef: $Summary`           |
+| Parent Resource           | `parentRef`    | `parentRef: $Order`              |
+| Parameter Definition      | `parameterRef` | `parameterRef: $receivedOrderNo` |
 
 `$` は Raw / Resolved Model において、ARIADNE が管理する別定義への参照値であることを示す。
 
@@ -1136,16 +1145,14 @@ File Validation の範囲で一意に導出できる情報のみ補完する。
 
 Path Token から `pathParameters` を生成する。
 
-``` yaml
+```yaml
 member:
   path: /orders/{received_order_no}
   pathParameters:
     - parameterRef: $receivedOrderNo
 
-  get:
-    ...
-  put:
-    ...
+  get: ...
+  put: ...
 ```
 
 Path Token は semantic key に正規化したうえで、対応する Parameter Definition への `parameterRef` として表現する。
@@ -1177,13 +1184,13 @@ Raw Model の境界は、
 
 とする。
 
-------------------------------------------------------------------------
+---
 
 ## 10. Validation Architecture
 
 Phase 3 以降の Validation は以下の4段階に分離する。
 
-``` text
+```text
 Phase 2 / Phase 3 YAML
         ↓
 ① File Validation
@@ -1237,94 +1244,94 @@ Phase 2 と Phase 3 を接続して検証する。
 主な対象:
 
 - Element 参照の存在
-- Path Parameter の Element が `identifier: true` か
+- Path Parameter が参照する Element の Type で `capability.pathParameter: true` が許可されているか
 - example と Element Type / Constraint の整合性
 
 ### 10.4 OpenAPI Validation
 
 生成した OpenAPI 3.1 を標準 OpenAPI Validator で検証する。
 
-------------------------------------------------------------------------
+---
 
 ## 11. Validation Rules
 
 Validation Rule ID は ARIADNE 全体で通番とする。
-Phase 2 の Validation ID `V-01` ～ `V-22` に続き、Phase 3 では `V-23` 以降を使用する。
+Phase 2 の Validation ID `V-001` ～ `V-028` に続き、Phase 3 では `V-029` 以降を使用する。
 
 ### 11.1 File Validation
 
-| ID | Validation Rule | 判定 |
-| --- | --- | --- |
-| V-23 | 共通 Header の必須項目が存在する | Error |
-| V-24 | `formatVersion` が ARIADNE の対応する Phase 3 Format である | Error |
-| V-25 | `updatedAt` が ISO 8601 として妥当である | Error |
-| V-26 | `domain` が `api` である | Error |
-| V-27 | `kind` が Phase 3 で許可された値である | Error |
-| V-28 | 各名称が対象ごとの命名規約を満たす | Error |
-| V-29 | `kind` ごとの必須 / 許可属性を満たす | Error |
-| V-30 | 未定義属性を持たない | Error |
-| V-31 | YAML Map に重複 Key が存在しない | Error |
-| V-32 | Resource Property は `element` / `resource` / `array` のいずれか一つだけを持つ | Error |
-| V-33 | `readOnly: true` と `writeOnly: true` を同時指定しない | Error |
-| V-34 | Phase 3 で Scalar Constraint を再定義しない | Error |
-| V-35 | Array は `element` / `resource` のいずれか一つだけを持つ | Error |
-| V-36 | `minItems` / `maxItems` は 0 以上の整数であり、両方指定時は `minItems <= maxItems` | Error |
-| V-37 | 空 Map / 空 Array を明示的に記述しない | Error |
-| V-38 | 必須文字列属性に空文字 / 空白のみを指定しない | Error |
-| V-39 | `/health` / `/version` をユーザー API として定義しない | Error |
-| V-40 | 同一 Path 内で同じ Path Token を複数回使用しない | Error |
-| V-41 | Path Token が snake_case の命名規約を満たす | Error |
-| V-42 | HTTP Method が `get/post/put/patch/delete` のいずれかである | Error |
-| V-43 | GET に Request Body を定義しない | Error |
-| V-44 | DELETE に Request / Response Body を定義しない | Error |
-| V-45 | `pagination` は GET にのみ指定する | Error |
-| V-46 | `externalDocs` を指定する場合 `url` が存在する | Error |
-| V-47 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない | Error |
-| V-48 | `limit` / `offset` を Source の Parameter Definition 名として定義しない | Error |
-| V-49 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
-| V-50 | `location` は POST にのみ指定する | Error |
-| V-51 | `location` を指定する場合 `example` が存在する | Error |
+| ID    | Validation Rule                                                                                                       | 判定  |
+| ----- | --------------------------------------------------------------------------------------------------------------------- | ----- |
+| V-029 | 共通 Header の必須項目が存在する                                                                                      | Error |
+| V-030 | `formatVersion` が ARIADNE の対応する Phase 3 Format である                                                           | Error |
+| V-031 | `updatedAt` が ISO 8601 として妥当である                                                                              | Error |
+| V-032 | `domain` が `api` である                                                                                              | Error |
+| V-033 | `kind` が Phase 3 で許可された値である                                                                                | Error |
+| V-034 | 各名称が対象ごとの命名規約を満たす                                                                                    | Error |
+| V-035 | `kind` ごとの必須 / 許可属性を満たす                                                                                  | Error |
+| V-036 | 未定義属性を持たない                                                                                                  | Error |
+| V-037 | YAML Map に重複 Key が存在しない                                                                                      | Error |
+| V-038 | Resource Property は `element` / `resource` / `array` のいずれか一つだけを持つ                                        | Error |
+| V-039 | `readOnly: true` と `writeOnly: true` を同時指定しない                                                                | Error |
+| V-040 | Phase 3 で Scalar Constraint を再定義しない                                                                           | Error |
+| V-041 | Array は `element` / `resource` のいずれか一つだけを持つ                                                              | Error |
+| V-042 | `minItems` / `maxItems` は 0 以上の整数であり、両方指定時は `minItems <= maxItems`                                    | Error |
+| V-043 | 空 Map / 空 Array を明示的に記述しない                                                                                | Error |
+| V-044 | 必須文字列属性に空文字 / 空白のみを指定しない                                                                         | Error |
+| V-045 | `/health` / `/version` をユーザー API として定義しない                                                                | Error |
+| V-046 | 同一 Path 内で同じ Path Token を複数回使用しない                                                                      | Error |
+| V-047 | Path Token が snake_case の命名規約を満たす                                                                           | Error |
+| V-048 | HTTP Method が `get/post/put/patch/delete` のいずれかである                                                           | Error |
+| V-049 | GET に Request Body を定義しない                                                                                      | Error |
+| V-050 | DELETE に Request / Response Body を定義しない                                                                        | Error |
+| V-051 | `pagination` は GET にのみ指定する                                                                                    | Error |
+| V-052 | `externalDocs` を指定する場合 `url` が存在する                                                                        | Error |
+| V-053 | Operation の `tag` は Custom では必須、Resource / SubResource / Action では指定しない                                 | Error |
+| V-054 | `limit` / `offset` を Source の Parameter Definition 名として定義しない                                               | Error |
+| V-055 | `minItems` / `maxItems` は Array Property、または Array Property に対する Variant / API Usage Override にのみ指定する | Error |
+| V-056 | `location` は POST にのみ指定する                                                                                     | Error |
+| V-057 | `location` を指定する場合 `example` が存在する                                                                        | Error |
 
 ### 11.2 API Validation
 
-| ID | Validation Rule | 判定 |
-| --- | --- | --- |
-| V-52 | Resource 参照先が存在する | Error |
-| V-53 | Variant 参照先が存在する | Error |
-| V-54 | Parameter Definition 参照先が存在する | Error |
-| V-55 | Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である | Error |
-| V-56 | Variant の `add` が既存 Property と衝突しない | Error |
-| V-57 | 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない | Error |
-| V-58 | SubResource の `parent` が存在し、Main Resource である | Error |
-| V-59 | SubResource を親とする多段 SubResource を定義しない | Error |
-| V-60 | `parentVariants` の対象と統合内容が妥当である | Error |
-| V-61 | Resource Reference Cycle が存在しない | Error |
-| V-62 | Local Resource の参照 Scope が妥当である | Error |
-| V-63 | Service 内で Resource / Local Resource の名前が衝突しない | Error |
-| V-64 | `(path, method)` が Service 内で一意である | Error |
-| V-65 | Phase 3 の全 Source が同一 `formatVersion` を使用する | Error |
-| V-66 | Service と Operation で同一 Request Header を重複指定しない | Error |
-| V-67 | Service YAML が Service 内に1つだけ存在する | Error |
-| V-68 | `parameters.yaml` は Service 内に0または1つとする | Error |
-| V-69 | ユーザー定義 Operation が1件以上存在する | Error |
-| V-70 | Resolve 後に生成される Schema 名が衝突しない | Error |
-| V-71 | Custom の同一 Operation 内で `response.errors[].status` が重複しない | Error |
-| V-72 | Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である | Error |
-| V-73 | 生成される `operationId` が Service 内で一意である | Error |
-| V-74 | Path Token から正規化した semantic key が Parameter Definition に存在する | Error |
-| V-75 | Service ディレクトリ名が `service.yaml` の Service ID と一致する | Error |
+| ID    | Validation Rule                                                               | 判定  |
+| ----- | ----------------------------------------------------------------------------- | ----- |
+| V-058 | Resource 参照先が存在する                                                     | Error |
+| V-059 | Variant 参照先が存在する                                                      | Error |
+| V-060 | Parameter Definition 参照先が存在する                                         | Error |
+| V-061 | Variant の `include` / `exclude` / `overrides` の対象 Property が妥当である   | Error |
+| V-062 | Variant の `add` が既存 Property と衝突しない                                 | Error |
+| V-063 | 同一 Variant の `add` Property を同じ Variant の `overrides` で指定しない     | Error |
+| V-064 | SubResource の `parent` が存在し、Main Resource である                        | Error |
+| V-065 | SubResource を親とする多段 SubResource を定義しない                           | Error |
+| V-066 | `parentVariants` の対象と統合内容が妥当である                                 | Error |
+| V-067 | Resource Reference Cycle が存在しない                                         | Error |
+| V-068 | Local Resource の参照 Scope が妥当である                                      | Error |
+| V-069 | Service 内で Resource / Local Resource の名前が衝突しない                     | Error |
+| V-070 | `(path, method)` が Service 内で一意である                                    | Error |
+| V-071 | Phase 3 の全 Source が同一 `formatVersion` を使用する                         | Error |
+| V-072 | Service と Operation で同一 Request Header を重複指定しない                   | Error |
+| V-073 | Service YAML が Service 内に1つだけ存在する                                   | Error |
+| V-074 | `parameters.yaml` は Service 内に0または1つとする                             | Error |
+| V-075 | ユーザー定義 Operation が1件以上存在する                                      | Error |
+| V-076 | Resolve 後に生成される Schema 名が衝突しない                                  | Error |
+| V-077 | Custom の同一 Operation 内で `response.errors[].status` が重複しない          | Error |
+| V-078 | Variant / API Usage の `minItems` / `maxItems` の対象が Array Property である | Error |
+| V-079 | 生成される `operationId` が Service 内で一意である                            | Error |
+| V-080 | Path Token から正規化した semantic key が Parameter Definition に存在する     | Error |
+| V-081 | Service ディレクトリ名が `service.yaml` の Service ID と一致する              | Error |
 
 ### 11.3 Service Validation
 
 Phase 2 / Phase 3 の接続を検証する。
 
-| ID | Validation Rule | 判定 |
-| --- | --- | --- |
-| V-76 | すべての `element` 参照先が Phase 2 に存在する | Error |
-| V-77 | Path Parameter が参照する Element の effective `identifier` が `true` である | Error |
-| V-78 | `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する | Error |
+| ID    | Validation Rule                                                                                    | 判定  |
+| ----- | -------------------------------------------------------------------------------------------------- | ----- |
+| V-082 | すべての `element` 参照先が Phase 2 に存在する                                                     | Error |
+| V-083 | Path Parameter が参照する Element の Type で `capability.pathParameter` が `true` である           | Error |
+| V-084 | `example` に含まれる Element 由来の値が、対応する Element の Type / Format / Constraint に適合する | Error |
 
-------------------------------------------------------------------------
+---
 
 ## 12. Resolved Model
 
@@ -1360,17 +1367,13 @@ service:
   description: |
     受注および顧客情報を管理するサービス。
 
-parameters:
-  ...
+parameters: ...
 
-schemas:
-  ...
+schemas: ...
 
-apis:
-  ...
+apis: ...
 
-elementRefs:
-  ...
+elementRefs: ...
 ```
 
 Resolved Model では、Source / Raw Model の以下の Authoring 上の分類は最終的な API 意味モデルへ統合する。
@@ -1409,11 +1412,11 @@ OpenAPI Generation に必要な Service 自身の意味情報を保持する。
 
 Resolved Model では、参照対象に応じて以下の Reference を使用する。
 
-| 参照対象 | Resolved Model 表記 | 例 |
-| --- | --- | --- |
-| Phase 2 Element | `elementRef` | `elementRef: $receivedOrderNo` |
-| 解決済み Schema | `schemaRef` | `schemaRef: $Order` |
-| Parameter | `parameterRef` | `parameterRef: $receivedOrderNo` |
+| 参照対象        | Resolved Model 表記 | 例                               |
+| --------------- | ------------------- | -------------------------------- |
+| Phase 2 Element | `elementRef`        | `elementRef: $receivedOrderNo`   |
+| 解決済み Schema | `schemaRef`         | `schemaRef: $Order`              |
+| Parameter       | `parameterRef`      | `parameterRef: $receivedOrderNo` |
 
 Raw Model の `resourceRef` / `variantRef` は Resolve 時に解決し、 Resolved Model では `schemaRef` に統合する。
 
@@ -1444,43 +1447,35 @@ Resolved Model の `schemas` には、 Resolve 後の完成した Phase 3 Schema
 
 Schema 名は以下を基本とする。
 
-| Source | Resolved Schema 名 |
-| --- | --- |
-| Main Resource | `Resource` |
-| SubResource | `Resource` |
-| Variant | `Resource.Variant` |
-| Parent Variant | `Resource.Variant` |
-| Action-local Resource | Local Resource 名 |
-| Custom-local Resource | Local Resource 名 |
+| Source                            | Resolved Schema 名         |
+| --------------------------------- | -------------------------- |
+| Main Resource                     | `Resource`                 |
+| SubResource                       | `Resource`                 |
+| Variant                           | `Resource.Variant`         |
+| Parent Variant                    | `Resource.Variant`         |
+| Action-local Resource             | Local Resource 名          |
+| Custom-local Resource             | Local Resource 名          |
 | API Usage により生成された Schema | 生成された一意な Schema 名 |
 
 例:
 
 ```yaml
 schemas:
-  Order:
-    ...
+  Order: ...
 
-  Order.Summary:
-    ...
+  Order.Summary: ...
 
-  Order.WithDetails:
-    ...
+  Order.WithDetails: ...
 
-  OrderDetail:
-    ...
+  OrderDetail: ...
 
-  OrderDetail.Summary:
-    ...
+  OrderDetail.Summary: ...
 
-  OrderShipment:
-    ...
+  OrderShipment: ...
 
-  ExportCondition:
-    ...
+  ExportCondition: ...
 
-  PostOrdersRequest:
-    ...
+  PostOrdersRequest: ...
 ```
 
 Main Resource / SubResource の名前は Service 内で一意とする。
@@ -1766,21 +1761,17 @@ Source / Raw Model の API logical entry は Resolved Model では保持しな�
 ```yaml
 apis:
   /orders:
-    get:
-      ...
+    get: ...
 
-    post:
-      ...
+    post: ...
 
   /orders/{received_order_no}:
     pathParameters:
       - parameterRef: $receivedOrderNo
 
-    get:
-      ...
+    get: ...
 
-    put:
-      ...
+    put: ...
 ```
 
 Path Parameter は Path 共通情報として Path 階層に保持する。
@@ -1803,15 +1794,15 @@ Path を先、Method を末尾とする。
 
 例:
 
-| Path / Method | operationId |
-| --- | --- |
-| `GET /orders` | `orders-get` |
-| `POST /orders` | `orders-post` |
-| `GET /orders/{received_order_no}` | `orders-received-order-no-get` |
-| `PATCH /orders/{received_order_no}/date` | `orders-received-order-no-date-patch` |
+| Path / Method                                            | operationId                                         |
+| -------------------------------------------------------- | --------------------------------------------------- |
+| `GET /orders`                                            | `orders-get`                                        |
+| `POST /orders`                                           | `orders-post`                                       |
+| `GET /orders/{received_order_no}`                        | `orders-received-order-no-get`                      |
+| `PATCH /orders/{received_order_no}/date`                 | `orders-received-order-no-date-patch`               |
 | `DELETE /orders/{received_order_no}/details/{detail_no}` | `orders-received-order-no-details-detail-no-delete` |
-| `GET /health` | `health-get` |
-| `GET /version` | `version-get` |
+| `GET /health`                                            | `health-get`                                        |
+| `GET /version`                                           | `version-get`                                       |
 
 Path Token の `{}` は除去し、snake_case は kebab-case へ正規化する。
 
@@ -2012,13 +2003,13 @@ ARIADNE が規約に基づいて Resolve 時に補完した定義であること
 
 Phase 3 では以下を使用する。
 
-| builtIn | 対象 | 意味 |
-| --- | --- | --- |
-| `pagination` | Parameter / Response Header | Pagination により生成 |
-| `location` | Response Header | Source / Raw Model の `location` 指定により生成 |
-| `error` | default Response | Standard Error |
-| `health` | Operation | `/health` built-in API |
-| `version` | Operation / Response | `/version` built-in API |
+| builtIn      | 対象                        | 意味                                            |
+| ------------ | --------------------------- | ----------------------------------------------- |
+| `pagination` | Parameter / Response Header | Pagination により生成                           |
+| `location`   | Response Header             | Source / Raw Model の `location` 指定により生成 |
+| `error`      | default Response            | Standard Error                                  |
+| `health`     | Operation                   | `/health` built-in API                          |
+| `version`    | Operation / Response        | `/version` built-in API                         |
 
 ### 12.19 Built-in API
 
@@ -2119,7 +2110,7 @@ Resolved Model は、
 
 と位置付ける。
 
-------------------------------------------------------------------------
+---
 
 ## 13. OpenAPI 3.1 Generation
 
@@ -2168,19 +2159,14 @@ info:
     受注および顧客情報を管理するサービス。
   version: ...
 
-servers:
-  ...
+servers: ...
 
-paths:
-  ...
+paths: ...
 
 components:
-  schemas:
-    ...
-  parameters:
-    ...
-  responses:
-    ...
+  schemas: ...
+  parameters: ...
+  responses: ...
 ```
 
 `info.title` / `info.description` は Resolved `service` から生成する。
@@ -2225,8 +2211,58 @@ Phase 2 Element を参照する
 elementRef: $customerId
 ```
 
-については、Phase 2 Element Definition から対応する OpenAPI Schema を生成し、
-`components/schemas` に配置したうえで `$ref` へ変換する。
+については、Phase 2 Element Definition および参照先 Type Definition から
+対応する OpenAPI Schema を生成し、`components/schemas` に配置したうえで `$ref` へ変換する。
+
+Element Schema の生成では、Element が参照する Type Definition を解決し、
+Type と Element の定義を組み合わせて OpenAPI Schema を構成する。
+
+主な変換対象は以下とする。
+
+```text
+Type.openapi
+  → OpenAPI の type / format
+
+Type.validation
+  → OpenAPI で表現可能な Schema Constraint
+
+Element.constraints
+  → OpenAPI で表現可能な Schema Constraint
+
+Element.values
+  → enum
+
+Element.description
+  → description
+
+Element.example
+  → example
+```
+
+Type 固有の `validation` は Resolved Model へ展開しない。
+OpenAPI Generation 時に Type Definition を参照し、 OpenAPI で表現可能な制約へ変換する。
+
+例えば `SEQUENCE` Type が以下を持つ場合、
+
+```yaml
+validation:
+  minimum: 1
+
+openapi:
+  type: integer
+  format: int64
+```
+
+`SEQUENCE` を参照する Element は、OpenAPI Generation 時に以下のような Schema Component へ変換される。
+
+```yaml
+orderDetailNo:
+  type: integer
+  format: int64
+  minimum: 1
+  description: 受注内で明細を識別する番号
+  example: 1
+```
 
 同一 Element は Service 内で一度だけ Schema Component を生成する。
 
@@ -2237,7 +2273,7 @@ elementRef: $customerId
 Resolved Model の `parameters` は、`elementRef` と `usages` を組み合わせて OpenAPI Parameter Object へ変換する。
 
 ARIADNE Parameter Definition は semantic な Parameter を表すが、OpenAPI Parameter Object は
- `in` / `name` / `required` 等を含む物理的な HTTP Parameter を表す。
+`in` / `name` / `required` 等を含む物理的な HTTP Parameter を表す。
 
 そのため、1つの Resolved Parameter が複数の `usages` を持つ場合、Usage ごとに OpenAPI Parameter Object を生成する。
 
@@ -2270,14 +2306,14 @@ components:
       in: query
       required: false
       schema:
-        $ref: '#/components/schemas/customerId'
+        $ref: "#/components/schemas/customerId"
 
     customerId-query-required:
       name: customer_id
       in: query
       required: true
       schema:
-        $ref: '#/components/schemas/customerId'
+        $ref: "#/components/schemas/customerId"
 ```
 
 Resolved Operation の `queryParameters` は、
@@ -2297,8 +2333,8 @@ queryParameters:
 
 ```yaml
 parameters:
-  - $ref: '#/components/parameters/orderPic-query-optional'
-  - $ref: '#/components/parameters/customerId-query-required'
+  - $ref: "#/components/parameters/orderPic-query-optional"
+  - $ref: "#/components/parameters/customerId-query-required"
 ```
 
 OpenAPI の `$ref` 参照側で `required` を Override することはしない。
@@ -2309,14 +2345,14 @@ Query Parameter が optional の場合:
 
 ```yaml
 parameters:
-  - $ref: '#/components/parameters/customerId-query-optional'
+  - $ref: "#/components/parameters/customerId-query-optional"
 ```
 
 Query Parameter が required の場合:
 
 ```yaml
 parameters:
-  - $ref: '#/components/parameters/customerId-query-required'
+  - $ref: "#/components/parameters/customerId-query-required"
 ```
 
 OpenAPI の `$ref` 参照側で `required` を Override することはせず、required 状態を含めて Parameter Component を確定する。
@@ -2581,7 +2617,7 @@ OpenAPI Generation に残すのは、
 
 である。
 
-------------------------------------------------------------------------
+---
 
 ## 14. API Document
 
@@ -2719,7 +2755,7 @@ OpenAPI Validation / API Document 生成のための開発ツールとして利�
 個別インストールは要求しない。
 
 Wails Application への API Document 表示機能の組み込み方式は、
-後続 Phase で決定する。
+Core で決定する。
 
 ### 14.6 Development Tools
 
@@ -2727,11 +2763,11 @@ Wails Application への API Document 表示機能の組み込み方式は、
 
 ARIADNE の Development Tools として以下を想定する。
 
-| Tool | 主な利用者 | 用途 |
-| --- | --- | --- |
-| ReDoc | API 利用者 / 開発者 | API 仕様の参照 |
-| Swagger UI | Backend 実装者 | OAS を利用した API 実装・動作確認 |
-| Mock Server | Frontend 実装者 | Backend 実装前の API 呼び出し・画面開発 |
+| Tool        | 主な利用者          | 用途                                    |
+| ----------- | ------------------- | --------------------------------------- |
+| ReDoc       | API 利用者 / 開発者 | API 仕様の参照                          |
+| Swagger UI  | Backend 実装者      | OAS を利用した API 実装・動作確認       |
+| Mock Server | Frontend 実装者     | Backend 実装前の API 呼び出し・画面開発 |
 
 Swagger UI / Mock Server は ARIADNE Source / Raw Model / Resolved Model に専用定義を持たない。
 
@@ -2765,34 +2801,24 @@ Frontend Application
 Mock Server 固有のレスポンス定義等を ARIADNE Source に追加せず、
 OpenAPI 3.1 に定義された Schema / Example 等を Mock Server が利用する。
 
-将来的な ARIADNE Development Environment では、 Swagger UI / Mock Server に加えて、
-Phase 4 で生成する DDL を利用した PostgreSQL も Docker Compose から起動可能とする。
+ReDoc / Swagger UI / Mock Server 等の Development Tools は、
+生成された OpenAPI 3.1 の利用先として位置付ける。
 
-```text
-ARIADNE Development Environment
+これらの Development Tools を ARIADNE Application からどのように提供するか、
+また Docker / Docker Compose 等を利用した統合 Development Environment を提供するかは、
+Core で必要性および実現方式を決定する。
 
-OpenAPI 3.1
-  ├─ Swagger UI
-  └─ Mock Server
+Prototype Phase 3 では、
+OpenAPI 3.1 が API Document および Development Tools の入力として
+利用可能であることまでを設計・検証対象とする。
 
-DDL
-  └─ PostgreSQL
-```
-
-PostgreSQL の初期化方法および DDL 適用方式は Phase 4 で設計する。
-Database Migration は Prototype Phase 4 の必須要件とはしない。
-
-Prototype Phase 3 では Development Tools の利用方針までを定義対象とし、
-Docker Compose を用いた Swagger UI / Mock Server の実動検証は、
-Phase 4 の DDL 定義後に Task Application を用いた End-to-End 検証として行う。
-
-------------------------------------------------------------------------
+---
 
 ## 15. Phase 2 / Phase 4 との境界
 
 ARIADNE の責務分離は以下とする。
 
-``` text
+```text
 Phase 2
 Element / Scalar Value Definition
         ↓
@@ -2816,26 +2842,26 @@ Phase 2 は「値は何者か」を定義する。
 - Pattern
 - Precision / Scale
 - Enum
-- API Identifier として利用可能か
+- Path Parameter として利用可能か
 
-Phase 3 は Element を参照し、「その値を API
-のどこで、どの意味で利用するか」を定義する。
+Phase 3 は Element を参照し、「その値を APIのどこで、どの意味で利用するか」を定義する。
 
 ### 15.2 Phase 3 → Phase 4
 
-Phase 3 は API 契約を管理し、Database の PK / Index / Null Constraint
-等を定義しない。
+Phase 3 は API 契約を管理し、Database の PK / Index / Null Constraint 等を定義しない。
 
-Phase 4 は Phase 2 Element を利用して Database Definition
-を構成する予定とする。
+Phase 4 は Phase 2 Element を利用して Database Definition を構成する。
 
-API Identifier と Database Primary Key は同義ではない。
+Path Parameter として利用可能であることと、Database Primary Key / Unique Key であることは同義ではない。
 
-------------------------------------------------------------------------
+---
 
 ## 16. Phase 3 Completion
 
-Prototype Phase 3 は現在進行中である。
+Prototype Phase 3 では、API Definition Model、
+Raw Model / Resolved Model、Validation Architecture、
+OpenAPI 3.1 Generation、および API Document / Development Tools の
+設計・手作業検証を完了した。
 
 ### 現時点の進捗
 
@@ -2879,6 +2905,6 @@ Prototype Phase 3 は現在進行中である。
 - [x] Phase 3 ドキュメント最終更新
 - [x] Prototype Phase 3 最終レビュー
 
-------------------------------------------------------------------------
+---
 
 ## Prototype Phase 3：API定義 YAML — COMPLETE

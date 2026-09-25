@@ -1,0 +1,148 @@
+formatVersion: "1.0"
+
+service:
+  id: task-management
+
+schema:
+  id: task
+
+enums: []
+
+tables:
+  tasks:
+    name: タスク
+    physicalName: tasks
+
+    columns:
+      taskId:
+        elementRef: $taskId
+        physicalName: task_id
+        notNull: true
+        generation:
+          kind: BUILTIN
+          strategy: ULID
+
+      title:
+        elementRef: $title
+        physicalName: title
+        notNull: true
+
+      description:
+        elementRef: $description
+        physicalName: description
+
+      createUser:
+        elementRef: $userId
+        physicalName: create_user
+        override:
+          name: 登録ユーザー
+
+      taskPic:
+        elementRef: $userId
+        physicalName: task_pic
+        override:
+          name: 担当者
+
+      priority:
+        elementRef: $priority
+        physicalName: priority
+        default: 3
+        notNull: true
+
+      statusCode:
+        elementRef: $taskStatus
+        physicalName: status_code
+        notNull: true
+        override:
+          name: ステータスコード
+
+      createdAt:
+        builtIn: system
+        physicalName: created_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      updatedAt:
+        builtIn: system
+        physicalName: updated_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+    primaryKey:
+      physicalName: pk_tasks
+      columns:
+        - task_id
+
+    foreignKeys:
+      - physicalName: fk_tasks_7a3910e6
+        columns:
+          - status_code
+        reference:
+          table: statuses
+          columns:
+            - status_code
+        onUpdate: NO_ACTION
+        onDelete: NO_ACTION
+        hash: 7a3910e665353d513bc84bcefe706a3a0fafc37d92dc4b400631c93c6b33d1cf
+        #INFO: foreign_key|tasks|status_code|statuses
+
+    indexes:
+      - physicalName: idx_tasks_fb4a92c9
+        columns:
+          - column: status_code
+            order: ASC
+          - column: priority
+            order: DESC
+          - column: task_pic
+            order: ASC
+            nulls: FIRST
+          - column: task_id
+            order: ASC
+        hash: fb4a92c953cefd911ba234c9d49483f4165cf83057fc09196684b629eaba6b5c
+        #INFO: index|tasks|status_code:ASC:DEFAULT,priority:DESC:DEFAULT,task_pic:ASC:FIRST,task_id:ASC:DEFAULT
+      - physicalName: idx_tasks_e0739e6d
+        columns:
+          - column: create_user
+            order: ASC
+          - column: task_id
+            order: ASC
+        hash: e0739e6d7ee5bbcf17c61be9b8d7b18e21302ffe7f46a0ed8ee0c6c48ea8cef6
+        #INFO: index|tasks|create_user:ASC:DEFAULT,task_id:ASC:DEFAULT
+
+  statuses:
+    name: ステータス
+    physicalName: statuses
+
+    columns:
+      statusCode:
+        elementRef: $taskStatus
+        physicalName: status_code
+        notNull: true
+        override:
+          name: ステータスコード
+
+      description:
+        elementRef: $description
+        physicalName: description
+        notNull: true
+
+      createdAt:
+        builtIn: system
+        physicalName: created_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      updatedAt:
+        builtIn: system
+        physicalName: updated_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+    primaryKey:
+      physicalName: pk_statuses
+      columns:
+        - status_code

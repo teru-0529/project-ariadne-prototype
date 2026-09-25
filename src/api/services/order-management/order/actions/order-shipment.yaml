@@ -8,14 +8,21 @@ action: OrderShipment
 resources:
   OrderShipment:
     properties:
-      shipmentId:
-        element: orderShipmentId
-        readOnly: true
-        required: true
-
       customerId:
         element: customerId
         required: true
+
+      personInCharge:
+        element: userId
+        required: true
+        name: 出荷担当者
+        description: 出荷担当者
+
+      notes:
+        element: comment
+        name: 摘要
+        description: 補足情報
+        example: 別途報告必要
 
       details:
         array:

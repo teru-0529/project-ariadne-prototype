@@ -1,0 +1,326 @@
+formatVersion: "1.0"
+updatedAt: "2026-09-14T21:50:00+09:00"
+domain: ddl
+kind: database
+
+service:
+  id: order-management
+
+schema: received_order
+
+audit:
+  element: traceId
+
+tables:
+  orders:
+    name: 受注
+
+    columns:
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+        generation:
+          custom: generateOrderNo
+
+      orderDate:
+        element: orderDate
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      orderPic:
+        element: userId
+        name: 受注担当者ID
+
+      customerId:
+        element: customerId
+        notNull: true
+
+      status:
+        element: orderStatus
+        notNull: true
+        default: PREPARING
+
+      urgent:
+        element: urgent
+        notNull: true
+
+      note:
+        element: comment
+        name: 備考
+
+      desiredDeliveryTime:
+        element: desiredDeliveryTime
+
+    primaryKey:
+      - orderNo
+
+    indexes:
+      - columns: #INFO: (検索条件)
+          - column: orderPic
+            nulls: LAST
+          - column: customerId
+          - column: orderNo
+      - columns: #INFO: ステータスで絞る
+          - column: status
+          - column: orderNo
+      - columns: #INFO: 緊急出荷
+          - column: urgent
+          - column: orderNo
+
+  order_details:
+    name: 受注明細
+
+    columns:
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+
+      detailNo:
+        element: orderDetailNo
+        notNull: true
+        generation:
+          custom: generateDetailNo
+
+      productNo:
+        element: productNo
+        notNull: true
+
+      orderQuantity:
+        element: quantity
+        notNull: true
+        constraints: #INFO: 受注数は必ず1以上
+          minimum: 1
+        name: 受注数
+
+      shippingQuantity:
+        element: quantity
+        notNull: true
+        default: 0
+        name: 出荷数
+
+      cancelQuantity:
+        element: quantity
+        notNull: true
+        default: 0
+        name: キャンセル数
+
+      remainingQuantity:
+        element: quantity
+        notNull: true
+        name: 受注残
+
+      status:
+        element: orderStatus
+        notNull: true
+        default: PREPARING
+
+      sellingPrice:
+        element: price
+        notNull: true
+        constraints: #INFO: 販売価格は必ず1（円）以上
+          minimum: 1
+        name: 販売価格
+
+      costPrice:
+        element: price
+        notNull: true
+        name: 想定原価
+
+      profitRate:
+        element: profitRate
+        notNull: true
+
+    primaryKey:
+      - orderNo
+      - detailNo
+
+    rowConstraints:
+      - expression: sellingPrice > costPrice
+
+    foreignKeys:
+      - columns:
+          - orderNo
+        reference: #INFO: PKの一部
+          table: orders
+          columns:
+            - orderNo
+        onDelete: CASCADE
+
+    indexes:
+      - columns: #INFO: 受注残がある順番
+          - column: remainingQuantity
+          - column: orderNo
+          - column: detailNo
+      - columns: #INFO: ステータスで絞る
+          - column: status
+          - column: orderNo
+          - column: detailNo
+      - columns: #INFO: 商品で絞る
+          - column: productNo
+          - column: orderNo
+          - column: detailNo
+      - columns: #INFO: 利益率で絞る
+          - column: profitRate
+            order: DESC
+          - column: productNo
+          - column: orderNo
+          - column: detailNo
+
+    customTriggers:
+      beforeInsertUpdate:
+        timing: BEFORE
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - calculateProfitRate #INFO: 利益率計算
+          - calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      afterInsertUpdate:
+        timing: AFTER
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - judgeStatus #INFO: 受注ステータス判定
+
+  shipping_instructions:
+    name: 出荷指示
+
+    columns:
+      orderShipmentId:
+        element: orderShipmentId
+        notNull: true
+        generation: DATABASE
+
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+
+      detailNo:
+        element: orderDetailNo
+        notNull: true
+
+      operationDate:
+        element: operationDate
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      personInCharge:
+        element: userId
+        notNull: true
+        name: 出荷担当者ID
+
+      quantity:
+        element: quantity
+        notNull: true
+        constraints: #INFO: 出荷数は必ず1以上
+          minimum: 1
+        name: 出荷数
+
+      note:
+        element: comment
+        name: 備考
+
+    primaryKey:
+      - orderShipmentId
+
+    uniqueConstraints:
+      - columns: #INFO: 同一日に同一受注明細を複数回出荷してはいけない
+          - operationDate
+          - orderNo
+          - detailNo
+
+    foreignKeys:
+      - columns:
+          - orderNo
+          - detailNo
+        reference: #INFO: PK
+          table: order_details
+          columns:
+            - orderNo
+            - detailNo
+
+    indexes:
+      - columns: #INFO: 受注明細順
+          - column: orderNo
+          - column: detailNo
+          - column: operationDate
+            order: DESC
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - setShippingQuantity #INFO: 出荷数登録
+
+  cancel_instructions:
+    name: キャンセル指示
+
+    columns:
+      orderCancelId:
+        element: orderCancelId
+        notNull: true
+        generation: DATABASE
+
+      orderNo:
+        element: receivedOrderNo
+        notNull: true
+
+      detailNo:
+        element: orderDetailNo
+        notNull: true
+
+      operationDate:
+        element: operationDate
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      personInCharge:
+        element: userId
+        notNull: true
+        name: キャンセル担当者ID
+
+      quantity:
+        element: quantity
+        notNull: true
+        constraints: #INFO: キャンセル数は必ず1以上
+          minimum: 1
+        name: キャンセル数
+
+      note:
+        element: comment
+        name: 備考
+
+    primaryKey:
+      - orderCancelId
+
+    foreignKeys:
+      - columns:
+          - orderNo
+          - detailNo
+        reference: #INFO: PK
+          table: order_details
+          columns:
+            - orderNo
+            - detailNo
+
+    indexes:
+      - columns: #INFO: 受注明細順
+          - column: orderNo
+          - column: detailNo
+          - column: operationDate
+            order: DESC
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - setCancelQuantity #INFO: キャンセル数登録

@@ -158,9 +158,10 @@ components:
             - $ref: "#/components/schemas/orderStatus"
           readOnly: true
 
-        price:
+        totalPrice:
           allOf:
             - $ref: "#/components/schemas/price"
+          readOnly: true
           description: 受注の合計金額。
 
         detailCount:
@@ -186,8 +187,14 @@ components:
       required:
         - detailNo
         - productNo
-        - quantity
+        - orderQuantity
+        - shippingQuantity
+        - cancelQuantity
+        - remainingQuantity
+        - orderStatus
         - sellingPrice
+        - costPrice
+        - profitRate
       properties:
         detailNo:
           allOf:
@@ -198,7 +205,7 @@ components:
         productNo:
           $ref: "#/components/schemas/productNo"
 
-        quantity:
+        orderQuantity:
           allOf:
             - $ref: "#/components/schemas/quantity"
           description: 受注数量
@@ -222,6 +229,11 @@ components:
           description: |
             受注数から出荷済数およびキャンセル数を差し引いた数量。
 
+        orderStatus:
+          allOf:
+            - $ref: "#/components/schemas/orderStatus"
+          readOnly: true
+
         sellingPrice:
           allOf:
             - $ref: "#/components/schemas/price"
@@ -230,7 +242,6 @@ components:
         costPrice:
           allOf:
             - $ref: "#/components/schemas/price"
-          readOnly: true
           description: 想定原価
 
         profitRate:
@@ -244,7 +255,11 @@ components:
       required:
         - detailNo
         - productNo
-        - quantity
+        - orderQuantity
+        - shippingQuantity
+        - cancelQuantity
+        - remainingQuantity
+        - orderStatus
       properties:
         detailNo:
           allOf:
@@ -255,7 +270,7 @@ components:
         productNo:
           $ref: "#/components/schemas/productNo"
 
-        quantity:
+        orderQuantity:
           allOf:
             - $ref: "#/components/schemas/quantity"
           description: 受注数量
@@ -279,6 +294,11 @@ components:
           description: |
             受注数のうち、まだ出荷またはキャンセルされていない数量。
           example: 5
+
+        orderStatus:
+          allOf:
+            - $ref: "#/components/schemas/orderStatus"
+          readOnly: true
 
     Order.WithDetails:
       type: object
@@ -395,17 +415,23 @@ components:
     OrderShipment:
       type: object
       required:
-        - shipmentId
         - customerId
+        - personInCharge
         - details
       properties:
-        shipmentId:
-          allOf:
-            - $ref: "#/components/schemas/orderShipmentId"
-          readOnly: true
-
         customerId:
           $ref: "#/components/schemas/customerId"
+
+        personInCharge:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: 出荷担当者
+
+        notes:
+          allOf:
+            - $ref: "#/components/schemas/comment"
+          description: 補足情報
+          example: 別途報告必要
 
         details:
           type: array
@@ -437,8 +463,20 @@ components:
     Cancellation:
       type: object
       required:
+        - personInCharge
         - details
       properties:
+        personInCharge:
+          allOf:
+            - $ref: "#/components/schemas/userId"
+          description: キャンセル担当者
+
+        notes:
+          allOf:
+            - $ref: "#/components/schemas/comment"
+          description: 補足情報
+          example: 緊急キャンセル
+
         details:
           type: array
           minItems: 1
@@ -548,6 +586,7 @@ components:
 
     orderDetailNo:
       type: integer
+      format: int64
       minimum: 1
       description: 受注内で明細を識別する番号
       example: 1
@@ -560,9 +599,13 @@ components:
 
     orderStatus:
       type: string
-      maxLength: 20
-      description: 受注の状態を表すコード
-      example: "CONFIRMED"
+      description: 受注状態
+      enum:
+        - PREPARING
+        - IN_PROGRESS
+        - CANCELED
+        - COMPLETED
+      example: IN_PROGRESS
 
     urgent:
       type: boolean
@@ -606,12 +649,6 @@ components:
       minimum: 0.0
       maximum: 100.0
       example: 22.5
-
-    orderShipmentId:
-      type: integer
-      format: int64
-      description: 出荷情報の受注反映時に受注領域で採番する連番
-      example: 32
 
     url:
       type: string
@@ -694,11 +731,13 @@ paths:
               urgent: true
               details:
                 - productNo: P123456
-                  quantity: 10
+                  orderQuantity: 10
                   sellingPrice: 1000
+                  costPrice: 800
                 - productNo: P654321
-                  quantity: 5
+                  orderQuantity: 5
                   sellingPrice: 1200
+                  costPrice: 900
 
       responses:
         "201":

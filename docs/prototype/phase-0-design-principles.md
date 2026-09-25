@@ -6,17 +6,24 @@
 
 ## 1. Phase 0 の目的
 
-Prototype は、Task 管理アプリを題材として、Project ARIADNE Core を構築するために必要な技術・設計・責務境界を先行検証する。
+Prototype は、現行の Excel ベースの運用を Windows デスクトップアプリとして再構築するために、
+Svelte + Wails + Go を用いたアプリケーション構成の技術的成立性を先行検証する。
 
-Prototype の成功は、Task 管理アプリそのものの完成度ではなく、以下を説明できる状態になることとする。
+Prototype の主な目的は、Task 管理アプリという小さな題材を使いながら、以下を実際に確認することである。
 
-- Windows デスクトップアプリを構築できること
-- Svelte / Go / YAML / SQLite / OAS / 外部ツールの責務境界を理解できること
-- ファイル正本と DB 正本を適切に使い分けられること
-- Core で利用する `src / dist / runtime` の構造を実際に経験できること
-- Core が生成・管理する成果物が後工程で利用可能であることを確認できること
+- Svelte + Wails + Go により Windows デスクトップアプリを構築できること
+- Svelte / Wails / Go の責務境界を理解できること
+- Windows アプリケーションからローカルファイルを Read / Edit / Write できること
+- Git で差分管理可能な可読形式を Source of Truth とする構成が技術的に成立すること
+- 決められた手順から Windows 実行ファイルを Build できること
 
-Prototype は「Web システムを作る Prototype」ではなく、**Web システムの設計成果物を作る Windows ツールの試金石**と位置付ける。
+また Prototype では、Project ARIADNE Core が将来扱う設計情報について、
+Element / API / DDL のモデルおよび変換構造を手作業で設計・検証する。
+
+Validator / Resolver / Generator 等、ARIADNE Model を処理する機能そのものの実装は Core で行う。
+
+Prototype は「Web システムを作る Prototype」ではなく、
+**Web システムの設計成果物を作る Windows ツールの技術および設計の試金石**と位置付ける。
 
 ---
 
@@ -54,18 +61,17 @@ Git で差分を確認でき、専用アプリケーションなしでも人間�
 
 ## 3. 技術スタック
 
-| 領域                   | 採用技術 / 方針              |
-|------------------------|------------------------------|
-| Frontend               | Svelte + TypeScript          |
-| Desktop / Backend      | Wails + Go                   |
-| Prototype 内部 DB      | SQLite                       |
-| ファイル正本           | YAML                         |
-| API 仕様               | OpenAPI 3.1                  |
-| OAS 検証・加工         | Redocly CLI                  |
-| Version Control        | Git / GitHub                 |
-| ローカル Development   | `tools/dev.sh`               |
-| ローカル Build         | `tools/build.sh`             |
-| Prototype 実行ファイル | `ariadne-prototype.exe`      |
+| 領域                   | 採用技術 / 方針         |
+| ---------------------- | ----------------------- |
+| Frontend               | Svelte + TypeScript     |
+| Desktop / Backend      | Wails + Go              |
+| ファイル正本           | YAML                    |
+| API 仕様               | OpenAPI 3.1             |
+| OAS 検証・加工         | Redocly CLI             |
+| Version Control        | Git / GitHub            |
+| ローカル Development   | `tools/dev.sh`          |
+| ローカル Build         | `tools/build.sh`        |
+| Prototype 実行ファイル | `ariadne-prototype.exe` |
 
 ### 補足
 
@@ -76,6 +82,8 @@ Git で差分を確認でき、専用アプリケーションなしでも人間�
 - Redocly 等の外部ツールは ARIADNE リリース単位でバージョンを固定する。
 - GitHub Actions は Prototype の必須範囲外とする。
 - Core で Docker を利用する可能性は残す。主用途は、ARIADNE 本体ではなく、PostgreSQL や生成 Backend 等の成果物検証環境を想定する。
+- Prototype では内部 Database を使用しない。
+- SQLite を含む内部 Database の必要性は Core の設計時に改めて判断する。
 
 ---
 
@@ -87,7 +95,7 @@ Web 系技術を利用するが、通常の Web アプリケーションのデ�
 
 Prototype の基本構造は以下とする。
 
-``` text
+```text
 Svelte
   ↓
 Wails Binding
@@ -103,22 +111,23 @@ Core 利用時には、ARIADNE が管理する設計領域は実 Web 開発プ�
 
 ## 5. 「作る」と「使う」の区別
 
-`src / dist / runtime` の意味を考える際は、Prototype / Core と、開発 / 利用を区別する。
+| 局面           | 扱い                                                                       |
+| -------------- | -------------------------------------------------------------------------- |
+| Prototype 開発 | Windows アプリ技術と ARIADNE Model の設計を検証する                        |
+| Prototype 利用 | Task 管理アプリとして、ローカル YAML の Read / Edit / Write を行う         |
+| Core 開発      | Prototype で検証した技術・設計をもとに ARIADNE 本体を実装する              |
+| Core 利用      | 実プロジェクトの設計情報を管理し、Validation / Resolve / Generation を行う |
 
-| 局面           | `src / dist / runtime` の扱い                                     |
-|----------------|-------------------------------------------------------------------|
-| Prototype 開発 | 使用する。Core の試金石として構造を検証する                       |
-| Prototype 利用 | Task 管理が目的。DDL / OAS は利用機能ではない。runtime は利用する |
-| Core 開発      | Core 自身の設計・生成・実行に使用する                             |
-| Core 利用      | 実プロジェクトの設計情報・生成物・Core 内部データの管理に使用する |
+Prototype の DDL / OAS は Prototype の利用機能ではない。
 
-Prototype の DDL / OAS は、**Prototype の利用機能ではなく、Prototype 開発時に Core の構造を検証するためのもの**とする。
+Prototype では、ARIADNE Model から DDL / OAS へ至るモデルおよび変換構造を設計・検証する。
+Validator / Resolver / Generator 等、その変換を実行する機能は Core で実装する。
 
 ---
 
 ## 6. `src / dist / runtime` の責務
 
-``` text
+```text
 src
   = 設計情報の正本
 
@@ -131,40 +140,65 @@ runtime
 
 `src` は「あらゆる正本」を意味しない。
 
-たとえば Prototype の Task 実データは SQLite が正本であり、`runtime/task.db` に存在する。一方、Task DB を構築するための設計情報は `src` に置き、そこから DDL を `dist` に生成する。
+Prototype の Task データは YAML を Source of Truth とする。
 
-Core 利用時に ARIADNE が設計対象とする PostgreSQL 等の実 DB は、ARIADNE の外側に存在する。ARIADNE が管理するのは、その DB を構築するための設計情報と生成 DDL である。
+Prototype において `runtime` を必須の永続化領域とはしない。
+Core における実行時データや一時データの必要性、およびその保存方式は Core の設計時に改めて判断する。
+
+Core 利用時に ARIADNE が設計対象とする PostgreSQL 等の実 Database は、ARIADNE の外側に存在する。
+ARIADNE が管理するのは、その Database を構築するための設計情報と生成 DDL である。
 
 ---
 
-## 7. Prototype 開発時の概念構成
+## 7. Service
+
+Project ARIADNEでは、API / DDL等の設計成果物を束ねる上位の定義単位を `Service` とする。
+
+Serviceは特定の技術表現そのものではなく、ARIADNE上で同一の業務・機能領域に属する設計情報を関連付けるための単位である。
+
+例えば `order-management` Serviceでは、APIとDDLで以下の異なる識別子を利用できる。
+
+```text
+Service: order-management
+├─ API
+│  └─ Resource: Order
+└─ DDL
+   └─ Schema: received_order
+```
+
+Service ID、API Resource識別子、Database Schema識別子は、それぞれ異なる責務を持ち、一致する必要はない。
+
+---
+
+## 8. Prototype 開発時の概念構成
 
 Phase 0 では詳細なファイル名や YAML の分割単位までは固定しない。役割として以下の構成を採用する。
 
 ```text
 src/
-├─ definitions/
-│   └─ elements/
-│       ├─ types.yaml
-│       └─ elements.yaml
+├─ elements/
+│   ├─ types.yaml
+│   └─ elements.yaml
 │
-├─ database/
-│   └─ DB 設計情報 YAML
-│       ※具体構造は Phase 4 で確定する
+├─ ddl/
+│   └─ schemas/
+│       └─ {service-id}/
+│           └─ DDL 定義 YAML
 │
 └─ api/
     └─ services/
         └─ {service-id}/
-            └─ API 定義 YAML(ARIADNE Source)
-
-templates/
-└─ Task 管理アプリ等の Prototype 用データ
+            └─ API 定義 YAML
 
         ↓ 生成・変換
 
 dist/
-├─ database/
-│   └─ *.sql
+├─ ddl/
+│   ├─ model/
+│   │   └─ {service-id}.resolved.yaml
+│   │
+│   └─ postgresql/
+│       └─ {service-id}.sql
 │
 └─ api/
     ├─ model/
@@ -177,51 +211,30 @@ dist/
             ├─ redoc.html
             └─ docs/
 
-        ↓ 実行
-
-runtime/
-└─ task.db
+prototype-data/
+ └─ tasks.yaml
 ```
 
-項目定義、DB 設計情報、OAS の具体的な構造は、Core の要件および現行 DXSI テンプレートの設計を踏まえて後続 Phase で決定する。
+Phase 0 では、Task YAML の具体的なファイル名や配置方法は固定しない。
+
+`prototype-data` は Prototype アプリケーションの技術検証に使用する専用データ領域であり、
+ARIADNE Model の設計情報を表す `src` および生成成果物を表す `dist` とは責務を分離する。
+
+ARIADNE Model であるAPI定義とDDL定義は物理的には異なる領域で管理するが、同一のService IDによってARIADNE上の同一Serviceに関連付ける。
+
+Serviceは物理ディレクトリ階層そのものを表す概念ではない。
 
 ---
 
-## 8. Prototype アプリの最小機能
+## 9. Prototype アプリの最小機能
 
-### 8.1 Task Template
+### 9.1 Task
 
-Task Template は **YAML 正本**とする。
-
-最小項目：
-
-``` text
-id
-name
-defaultPriority
-defaultDescription
-createdAt
-updatedAt
-```
-
-要件：
-
-- Template 一覧を表示できる
-- Template を新規作成できる
-- Template を編集できる
-- YAML へ保存できる
-- アプリ再起動後に YAML から復元できる
-- Template 群は 1 ファイルで管理し、全量 Read / 全量 Write とする
-- `createdAt / updatedAt` はアプリが管理し、UI から編集させない
-- 削除は Prototype の必須機能としない
-
-### 8.2 Task
-
-Task は **SQLite 正本**とする。
+Task は **YAML 正本**とする。
 
 最小項目：
 
-``` text
+```text
 id
 title
 description
@@ -236,108 +249,80 @@ updatedAt
 - Task 一覧を表示できる
 - Task を新規作成できる
 - Task を編集できる
-- SQLite へ保存できる
-- アプリ再起動後に SQLite から復元できる
+- YAML へ保存できる
+- アプリ再起動後に YAML から復元できる
+- Task 群は 1 ファイルで管理し、全量 Read / 全量 Write とする
 - `createdAt / updatedAt` はアプリが管理し、UI から編集させない
 - `CreateUser / UpdateUser` は持たない
-
-### 8.3 Template → Task
-
-Task 新規作成時には Template 選択を必須とする。
-
-Template の以下の値を Task の初期値としてコピーする。
-
-``` text
-defaultPriority
-defaultDescription
-```
-
-コピー後、Task と Template は独立する。Template の変更・削除が既存 Task に影響してはならない。Task 側の変更も Template に反映しない。
+- 削除は Prototype の必須機能としない
 
 ---
 
-## 9. Core の試金石として必須の検証
+## 10. Prototype で必須の検証
 
-### 9.1 YAML
+Prototype では、以下の2つを異なる目的の検証として扱う。
 
-アプリケーションから YAML の Read / Edit / Write を一巡する。
+1. Windows Application の技術検証
+2. ARIADNE Model の設計検証
 
-Prototype では Task Template を題材とする。
+### 10.1 Windows Application の技術検証
 
-### 9.2 DDL / DB
+Svelte + Wails + Go により、Windows デスクトップアプリケーションが成立することを確認する。
 
-以下の流れを Prototype 開発時に一度通す。
-
-``` text
-src/database/
-      ↓
-DDL 生成
-      ↓
-dist/database/*.sql
-      ↓
-DB 初期化
-      ↓
-runtime/task.db
-```
-
-Prototype では SQLite を利用する。
-
-Core 利用時の設計対象 DB は PostgreSQL 等になり得るが、その実 DB は ARIADNE の外部に存在する。
-
-### 9.3 API / OAS
-
-API 定義の Source of Truth は `src/api/services/` 配下の ARIADNE YAML とする。
-
-Prototype では以下の流れを検証する。
+基本構造は以下とする。
 
 ```text
-ARIADNE Source
-      ↓
-Raw Model
-      ↓
-Resolved Model
-      ↓
-OpenAPI 3.1 Generation
-      ↓
-dist/api/oas/{service-id}/openapi.yaml
-      ↓
-OpenAPI Validation
-      ↓
-API Document
+Svelte
+  ↓
+Wails Binding
+  ↓
+Go
 ```
 
-OpenAPI 3.1 自体は Source of Truth ではなく、ARIADNE Source から生成される成果物とする。
+Task 管理アプリを題材として、画面表示・操作から Go の処理までを一巡できることを確認する。
 
-Raw Model / Resolved Model は Source of Truth ではなく、ARIADNE Source から再生成可能な中間成果物とする。
+また、一覧から対象を選択し、編集領域へ遷移して操作できる Application Shell が成立すること。
 
-生成した OpenAPI 3.1 は以下で利用する。
+#### File I/O
 
-- ReDoc による API Document
-- Swagger UI
-- Mock Server
-- Backend / Frontend 等の後工程
-
----
-
-## 10. OAS の出口検証
-
-OAS のフォルダ構成・内容が後工程で利用可能であることを証明するため、Backend 側の出口検証を Prototype の必須範囲とする。
+Task YAML を利用し、Windows アプリケーションからローカルファイルの Read / Edit / Write を一巡する。
 
 ```text
-dist/api/oas/{service-id}/openapi.yaml
-        ↓
-Backend Generate
-        ↓
-Go Backend
-        ↓
-API 公開
+Task YAML
+    ↓ Read
+   Go
+    ↓
+Wails Binding
+    ↓
+ Svelte
+    ↓ Edit
+Wails Binding
+    ↓
+   Go
+    ↓ Write
+Task YAML
 ```
 
-目的は Backend アプリケーションの開発ではなく、**ARIADNE が管理した OAS が実際の後工程で利用可能であることの確認**である。
+アプリケーション終了後に再起動し、YAML から保存済み状態を復元できることを確認する。
 
-- Backend Generate：対象
-- Frontend Generate：対象外
-- Backend Generate に利用する具体的なツールは Phase 0 では固定しない
+Git 操作そのものは Prototype では実装しない。
+保存された YAML が人間に可読であり、Git による差分管理が可能な形式として維持されることを確認できればよい。
+
+### 10.2 ARIADNE Model の設計検証
+
+Prototype では、Core が将来扱う ARIADNE Model について、以下の設計を手作業で検証する。
+
+- Element Definition
+- API Definition
+- DDL Definition
+- Source of Truth の責務
+- Validation の責務
+- Raw / Resolved Model の役割
+- OAS / PostgreSQL DDL への変換構造
+
+Prototype では、正本 YAML、中間モデル、生成結果のサンプルを手作業で作成し、モデルおよび変換規則が成立することを確認する。
+
+Validator / Resolver / Generator は実装しない。これらの実装は Project ARIADNE Core で行う。
 
 ---
 
@@ -347,7 +332,7 @@ Prototype は Git / GitHub で管理する。
 
 ローカルでは以下の手順で実行ファイルを再生成できることを必須とする。
 
-``` text
+```text
 tools/build.sh
    ↓
 Wails build 等
@@ -359,6 +344,9 @@ ariadne-prototype.exe
 
 GitHub Actions は Prototype の必須範囲外とする。
 
+Prototype アプリケーションから Git の操作は行わない。
+Git status / diff / commit / push 等を ARIADNE から操作する機能については、Core で必要性を判断する。
+
 ---
 
 ## 12. Prototype でやらないこと
@@ -366,9 +354,7 @@ GitHub Actions は Prototype の必須範囲外とする。
 以下は Prototype の完成条件に含めない。
 
 - Excel ライクな高機能グリッド UI
-- Frontend Generate
 - 認証・権限管理
-- `CreateUser / UpdateUser`
 - 高度な検索・ソート・フィルタ
 - 履歴・コメント・タグ等の Task 管理拡張
 - 過剰な UI デザイン
@@ -377,6 +363,13 @@ GitHub Actions は Prototype の必須範囲外とする。
 - インストーラー
 - 自動更新
 - GitHub Actions
+- SQLite 等を利用した Prototype 内部 Database
+- SQLite Compatibility DDL
+- Prototype アプリケーションからの Git 操作
+- ARIADNE Model の Validator / Resolver / Generator の実装
+- ARIADNE Model から生成した OAS / DDL を利用した Application Integration
+- Backend / Frontend Generate
+- Core の最終的なファイル分割方式・Working Model・内部永続化方式の確定
 
 必要性が明確になったものは後続 Phase / Core の Backlog とする。
 
@@ -386,24 +379,26 @@ GitHub Actions は Prototype の必須範囲外とする。
 
 Prototype は、以下の2つを満たした時点で Done とする。
 
-### A. Task 管理 Windows アプリとして成立している
+### A. Windows Application の技術検証が成立している
 
 - `tools/build.sh` から `ariadne-prototype.exe` を生成できる
-- Template を YAML から読み書きできる
-- Task を SQLite から読み書きできる
-- Template から Task へ初期値をコピーできる
-- Template と Task は生成後に同期しない
-- 再起動後も各正本から状態を復元できる
+- Svelte + Wails + Go による Windows デスクトップアプリケーションとして動作する
+- Task を YAML から読み込める
+- Task を画面から新規作成・編集できる
+- Task を YAML へ保存できる
+- アプリ再起動後に YAML から状態を復元できる
+- YAML が人間に可読で、Git による差分管理が可能な形式として維持される
+- 一覧から対象を選択し、編集領域へ遷移して操作できる Application Shell が成立する
 
-### B. Core の試金石として成立している
+### B. ARIADNE Model の設計検証が成立している
 
-- `src / dist / runtime` の責務を実際の構成で確認できる
-- DB 設計情報から DDL を生成し SQLite を初期化できる
-- API 定義を ARIADNE YAML として分割管理できる
-- ARIADNE Source から Raw Model / Resolved Model / OpenAPI 3.1 を生成できる
-- Redocly で OpenAPI Validation / API Document 生成ができる
-- 生成済み OpenAPI 3.1 を後工程で利用できる
-- 各技術要素と責務境界を説明できる
+- Element Definition の正本モデルと責務を説明できる
+- API Definition の正本モデルと責務を説明できる
+- DDL Definition の正本モデルと責務を説明できる
+- Source / Raw / Resolved / Generated Artifact の責務境界を説明できる
+- OAS へ至る変換構造および規則を説明できる
+- PostgreSQL DDL へ至る変換構造および規則を説明できる
+- Prototype で手作業とした領域と、Core で実装する領域を説明できる
 
 ---
 
@@ -411,14 +406,15 @@ Prototype は、以下の2つを満たした時点で Done とする。
 
 Phase 0 では以下を確定した。
 
-1. Prototype で何を作るか
-2. Core へ進むために何を検証するか
-3. 正本・生成物・実行時データの責務
-4. Prototype と Core、および開発時と利用時の違い
-5. 採用する技術スタック
-6. Prototype の最小機能
-7. Prototype でやらないこと
-8. Prototype の Definition of Done
+1. Prototype の目的
+2. Windows Application として検証する技術要素
+3. ARIADNE Model として設計検証する領域
+4. Source of Truth と成果物の責務
+5. Prototype と Core の責務境界
+6. 採用する技術スタック
+7. Prototype アプリの最小機能
+8. Prototype でやらないこと
+9. Prototype の Definition of Done
 
 ---
 

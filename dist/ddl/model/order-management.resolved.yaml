@@ -1,0 +1,566 @@
+formatVersion: "1.0"
+
+service:
+  id: order-management
+
+schema:
+  id: received_order
+
+enums:
+  orderStatus:
+    elementRef: $orderStatus
+    physicalName: order_status
+
+tables:
+  orders:
+    name: 受注
+    physicalName: orders
+
+    columns:
+      orderNo:
+        elementRef: $receivedOrderNo
+        physicalName: order_no
+        notNull: true
+        generation:
+          kind: CUSTOM
+          functionRef: $generateOrderNo
+
+      orderDate:
+        elementRef: $orderDate
+        physicalName: order_date
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      orderPic:
+        elementRef: $userId
+        physicalName: order_pic
+        override:
+          name: 受注担当者ID
+
+      customerId:
+        elementRef: $customerId
+        physicalName: customer_id
+        notNull: true
+
+      status:
+        elementRef: $orderStatus
+        physicalName: status
+        notNull: true
+        default: PREPARING
+
+      urgent:
+        elementRef: $urgent
+        physicalName: urgent
+        notNull: true
+
+      note:
+        elementRef: $comment
+        physicalName: note
+        override:
+          name: 備考
+
+      desiredDeliveryTime:
+        elementRef: $desiredDeliveryTime
+        physicalName: desired_delivery_time
+
+      createdAt:
+        builtIn: system
+        physicalName: created_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      updatedAt:
+        builtIn: system
+        physicalName: updated_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      createdBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: created_by
+        notNull: true
+
+      updatedBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: updated_by
+        notNull: true
+
+    primaryKey:
+      physicalName: pk_orders
+      columns:
+        - order_no
+
+    indexes:
+      - physicalName: idx_orders_87299842
+        columns:
+          - column: order_pic
+            order: ASC
+            nulls: LAST
+          - column: customer_id
+            order: ASC
+          - column: order_no
+            order: ASC
+        hash: 87299842ff05fc3679f7a50099b3922aa7d891492272c49a3fcb522b82627cd7
+        #INFO: index|orders|order_pic:ASC:LAST,customer_id:ASC:DEFAULT,order_no:ASC:DEFAULT
+      - physicalName: idx_orders_8d714912
+        columns:
+          - column: status
+            order: ASC
+          - column: order_no
+            order: ASC
+        hash: 8d714912b213a652c500d1cec6f54b400d2f6d337b5c4fa0f13b9e6b9a47e791
+        #INFO: index|orders|status:ASC:DEFAULT,order_no:ASC:DEFAULT
+      - physicalName: idx_orders_d399f774
+        columns:
+          - column: urgent
+            order: ASC
+          - column: order_no
+            order: ASC
+        hash: d399f77422610fa27111bdadcd7312fc4a0288f78c0cfc0c37da6a820c301421
+        #INFO: index|orders|urgent:ASC:DEFAULT,order_no:ASC:DEFAULT
+
+  order_details:
+    name: 受注明細
+    physicalName: order_details
+
+    columns:
+      orderNo:
+        elementRef: $receivedOrderNo
+        physicalName: order_no
+        notNull: true
+
+      detailNo:
+        elementRef: $orderDetailNo
+        physicalName: detail_no
+        notNull: true
+        generation:
+          kind: CUSTOM
+          functionRef: $generateDetailNo
+
+      productNo:
+        elementRef: $productNo
+        physicalName: product_no
+        notNull: true
+
+      orderQuantity:
+        elementRef: $quantity
+        physicalName: order_quantity
+        notNull: true
+        constraints:
+          minimum: 1
+        override:
+          name: 受注数
+
+      shippingQuantity:
+        elementRef: $quantity
+        physicalName: shipping_quantity
+        notNull: true
+        default: 0
+        override:
+          name: 出荷数
+
+      cancelQuantity:
+        elementRef: $quantity
+        physicalName: cancel_quantity
+        notNull: true
+        default: 0
+        override:
+          name: キャンセル数
+
+      remainingQuantity:
+        elementRef: $quantity
+        physicalName: remaining_quantity
+        notNull: true
+        override:
+          name: 受注残
+
+      status:
+        elementRef: $orderStatus
+        physicalName: status
+        notNull: true
+        default: PREPARING
+
+      sellingPrice:
+        elementRef: $price
+        physicalName: selling_price
+        notNull: true
+        constraints:
+          minimum: 1
+        override:
+          name: 販売価格
+
+      costPrice:
+        elementRef: $price
+        physicalName: cost_price
+        notNull: true
+        override:
+          name: 想定原価
+
+      profitRate:
+        elementRef: $profitRate
+        physicalName: profit_rate
+        notNull: true
+
+      createdAt:
+        builtIn: system
+        physicalName: created_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      updatedAt:
+        builtIn: system
+        physicalName: updated_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      createdBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: created_by
+        notNull: true
+
+      updatedBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: updated_by
+        notNull: true
+
+    customTriggers:
+      beforeInsertUpdate:
+        timing: BEFORE
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - functionRef: $calculateProfitRate #INFO: 利益率計算
+          - functionRef: $calculateQuantityAndStatus #INFO: 受注残計算/ステータス判定
+
+      afterInsertUpdate:
+        timing: AFTER
+        events:
+          - INSERT
+          - UPDATE
+        functions:
+          - functionRef: $judgeStatus #INFO: 受注ステータス判定
+
+    primaryKey:
+      physicalName: pk_order_details
+      columns:
+        - order_no
+        - detail_no
+
+    rowConstraints:
+      - physicalName: ck_order_details_bcddbe76a
+        expression: sellingPrice > costPrice
+        columns:
+          - sellingPrice
+          - costPrice
+        hash: bcddbe76a2e020cdfea77d8057e3ef2ce0c6d97d8c999f91677b9f9b8238c8c7
+        #INFO: check|order_details|sellingPrice > costPrice
+
+    foreignKeys:
+      - physicalName: fk_order_details_2ad11561
+        columns:
+          - order_no
+        reference:
+          table: orders
+          columns:
+            - order_no
+        onUpdate: NO_ACTION
+        onDelete: CASCADE
+        hash: 2ad115614686f2f6f05b852fbbb95d8701a50e3e3f905e2198efee7111c58499
+        #INFO: foreign_key|order_details|order_no|orders
+
+    indexes:
+      - physicalName: idx_order_details_295f8bd3
+        columns:
+          - column: remaining_quantity
+            order: ASC
+          - column: order_no
+            order: ASC
+          - column: detail_no
+            order: ASC
+        hash: 295f8bd3e10321229e5266202daeb06e0012a8a3a4d7f0ce2f5a77f5784a04a7
+        #INFO: index|order_details|remaining_quantity:ASC:DEFAULT,order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT
+      - physicalName: idx_order_details_95afc6c2
+        columns:
+          - column: status
+            order: ASC
+          - column: order_no
+            order: ASC
+          - column: detail_no
+            order: ASC
+        hash: 95afc6c2d8e19e1a6a311af9bb500d08de3e150413fe45a5702869df6c6f17dc
+        #INFO: index|order_details|status:ASC:DEFAULT,order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT
+      - physicalName: idx_order_details_9c1ea31e
+        columns:
+          - column: product_no
+            order: ASC
+          - column: order_no
+            order: ASC
+          - column: detail_no
+            order: ASC
+        hash: 9c1ea31e6ee0da2dff33f90c0324ec9a95f24b4fd3a46e98467c4d6578553f86
+        #INFO: index|order_details|product_no:ASC:DEFAULT,order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT
+      - physicalName: idx_order_details_2ff016e3
+        columns:
+          - column: profit_rate
+            order: DESC
+          - column: product_no
+            order: ASC
+          - column: order_no
+            order: ASC
+          - column: detail_no
+            order: ASC
+        hash: 2ff016e3b854cf56e4832fc331043ccf0e9ab100705be18b7050ed77aaf26702
+        #INFO: index|order_details|profit_rate:DESC:DEFAULT,product_no:ASC:DEFAULT,order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT
+
+  shipping_instructions:
+    name: 出荷指示
+    physicalName: shipping_instructions
+
+    columns:
+      orderShipmentId:
+        elementRef: $orderShipmentId
+        physicalName: order_shipment_id
+        notNull: true
+        generation:
+          kind: DATABASE
+
+      orderNo:
+        elementRef: $receivedOrderNo
+        physicalName: order_no
+        notNull: true
+
+      detailNo:
+        elementRef: $orderDetailNo
+        physicalName: detail_no
+        notNull: true
+
+      operationDate:
+        elementRef: $operationDate
+        physicalName: operation_date
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      personInCharge:
+        elementRef: $userId
+        physicalName: person_in_charge
+        notNull: true
+        override:
+          name: 出荷担当者ID
+
+      quantity:
+        elementRef: $quantity
+        physicalName: quantity
+        notNull: true
+        constraints:
+          minimum: 1
+        override:
+          name: 出荷数
+
+      note:
+        elementRef: $comment
+        physicalName: note
+        override:
+          name: 備考
+
+      createdAt:
+        builtIn: system
+        physicalName: created_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      updatedAt:
+        builtIn: system
+        physicalName: updated_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      createdBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: created_by
+        notNull: true
+
+      updatedBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: updated_by
+        notNull: true
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - functionRef: $setShippingQuantity #INFO: 出荷数登録
+
+    primaryKey:
+      physicalName: pk_shipping_instructions
+      columns:
+        - order_shipment_id
+
+    uniqueConstraints:
+      - physicalName: uq_shipping_instructions_ba368286
+        columns:
+          - operation_date
+          - order_no
+          - detail_no
+        hash: ba3682869c048f7b175132052d27e475d10ebc570a0bf20dad5f06467631a7f3
+        #INFO: unique|shipping_instructions|operation_date,order_no,detail_no
+
+    foreignKeys:
+      - physicalName: fk_shipping_instructions_3c47e712
+        columns:
+          - order_no
+          - detail_no
+        reference:
+          table: order_details
+          columns:
+            - order_no
+            - detail_no
+        onUpdate: NO_ACTION
+        onDelete: NO_ACTION
+        hash: 3c47e712542ce6947a3931e1ce54110d5a7eafe4d3f27e7303c60dcb1fb9ec22
+        #INFO: foreign_key|shipping_instructions|order_no,detail_no|order_details
+
+    indexes:
+      - physicalName: idx_shipping_instructions_ab467bdc
+        columns:
+          - column: order_no
+            order: ASC
+          - column: detail_no
+            order: ASC
+          - column: operation_date
+            order: DESC
+        hash: ab467bdc43c579c9182782117f49835f789b99659f68b56796bba88becd883d5
+        #INFO: index|shipping_instructions|order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT,operation_date:DESC:DEFAULT
+
+  cancel_instructions:
+    name: キャンセル指示
+    physicalName: cancel_instructions
+
+    columns:
+      orderCancelId:
+        elementRef: $orderCancelId
+        physicalName: order_cancel_id
+        notNull: true
+        generation:
+          kind: DATABASE
+
+      orderNo:
+        elementRef: $receivedOrderNo
+        physicalName: order_no
+        notNull: true
+
+      detailNo:
+        elementRef: $orderDetailNo
+        physicalName: detail_no
+        notNull: true
+
+      operationDate:
+        elementRef: $operationDate
+        physicalName: operation_date
+        notNull: true
+        default:
+          expression: CURRENT_DATE
+
+      personInCharge:
+        elementRef: $userId
+        physicalName: person_in_charge
+        notNull: true
+        override:
+          name: キャンセル担当者ID
+
+      quantity:
+        elementRef: $quantity
+        physicalName: quantity
+        notNull: true
+        constraints:
+          minimum: 1
+        override:
+          name: キャンセル数
+
+      note:
+        elementRef: $comment
+        physicalName: note
+        override:
+          name: 備考
+
+      createdAt:
+        builtIn: system
+        physicalName: created_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      updatedAt:
+        builtIn: system
+        physicalName: updated_at
+        notNull: true
+        default:
+          expression: CURRENT_DATETIME
+
+      createdBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: created_by
+        notNull: true
+
+      updatedBy:
+        builtIn: audit
+        elementRef: $traceId
+        physicalName: updated_by
+        notNull: true
+
+    customTriggers:
+      afterInsert:
+        timing: AFTER
+        events:
+          - INSERT
+        functions:
+          - functionRef: $setCancelQuantity #INFO: キャンセル数登録
+
+    primaryKey:
+      physicalName: pk_cancel_instructions
+      columns:
+        - order_cancel_id
+
+    foreignKeys:
+      - physicalName: fk_cancel_instructions_6cd0febd
+        columns:
+          - order_no
+          - detail_no
+        reference:
+          table: order_details
+          columns:
+            - order_no
+            - detail_no
+        onUpdate: NO_ACTION
+        onDelete: NO_ACTION
+        hash: 6cd0febd2c78963be96496d8d3ea6c51e08dd027ccf6ca76a4fa2e05293ac2c6
+        #INFO: foreign_key|cancel_instructions|order_no,detail_no|order_details
+
+    indexes:
+      - physicalName: idx_cancel_instructions_ef1249a3
+        columns:
+          - column: order_no
+            order: ASC
+          - column: detail_no
+            order: ASC
+          - column: operation_date
+            order: DESC
+        hash: ef1249a3915741df011dccd9e556ef32f94f4508072e4653245bd0e605336d26
+        #INFO: index|cancel_instructions|order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT,operation_date:DESC:DEFAULT

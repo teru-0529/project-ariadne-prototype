@@ -159,8 +159,9 @@ schemas:
         readOnly: true
         name: 受注ステータス
 
-      price:
+      totalPrice:
         elementRef: $price
+        readOnly: true
         name: 金額
         description: 受注の合計金額。
 
@@ -209,7 +210,7 @@ schemas:
         required: true
         name: 商品番号
 
-      quantity:
+      orderQuantity:
         elementRef: $quantity
         required: true
         name: 受注数
@@ -217,22 +218,31 @@ schemas:
 
       shippingQuantity:
         elementRef: $quantity
+        required: true
         readOnly: true
         name: 出荷済数
         description: 出荷済数量
 
       cancelQuantity:
         elementRef: $quantity
+        required: true
         readOnly: true
         name: キャンセル数
         description: キャンセル数量
 
       remainingQuantity:
         elementRef: $quantity
+        required: true
         readOnly: true
         name: 受注残
         description: |
           受注数から出荷済数およびキャンセル数を差し引いた数量。
+
+      orderStatus:
+        elementRef: $orderStatus
+        required: true
+        readOnly: true
+        name: 受注ステータス
 
       sellingPrice:
         elementRef: $price
@@ -242,12 +252,13 @@ schemas:
 
       costPrice:
         elementRef: $price
-        readOnly: true
+        required: true
         name: 想定原価
         description: 想定原価
 
       profitRate:
         elementRef: $profitRate
+        required: true
         readOnly: true
         name: 想定利益率
         description: 想定利益率
@@ -273,7 +284,7 @@ schemas:
         required: true
         name: 商品番号
 
-      quantity:
+      orderQuantity:
         elementRef: $quantity
         required: true
         name: 受注数
@@ -281,23 +292,32 @@ schemas:
 
       shippingQuantity:
         elementRef: $quantity
+        required: true
         readOnly: true
         name: 出荷済数
         description: 出荷済数量
 
       cancelQuantity:
         elementRef: $quantity
+        required: true
         readOnly: true
         name: キャンセル数
         description: キャンセル数量
 
       remainingQuantity:
         elementRef: $quantity
+        required: true
         readOnly: true
         name: 未出荷・未キャンセル数
         description: |
           受注数のうち、まだ出荷またはキャンセルされていない数量。
         example: 5
+
+      orderStatus:
+        elementRef: $orderStatus
+        required: true
+        readOnly: true
+        name: 受注ステータス
 
   Order.WithDetails:
     origin:
@@ -435,14 +455,21 @@ schemas:
       parent: Order
 
     properties:
-      shipmentId:
-        elementRef: $orderShipmentId
-        readOnly: true
-        required: true
-
       customerId:
         elementRef: $customerId
         required: true
+
+      personInCharge:
+        schemaRef: $userId
+        required: true
+        name: 出荷担当者
+        description: 出荷担当者
+
+      notes:
+        schemaRef: $comment
+        name: 摘要
+        description: 補足情報
+        example: 別途報告必要
 
       details:
         array:
@@ -484,6 +511,18 @@ schemas:
       parent: Order
 
     properties:
+      personInCharge:
+        schemaRef: $userId
+        required: true
+        name: キャンセル担当者
+        description: キャンセル担当者
+
+      notes:
+        schemaRef: $comment
+        name: 摘要
+        description: 補足情報
+        example: 緊急キャンセル
+
       details:
         array:
           schemaRef: $CancellationDetail
@@ -625,11 +664,13 @@ apis:
         exampleOverride:
           details:
             - productNo: P123456
-              quantity: 10
+              orderQuantity: 10
               sellingPrice: 1000
+              costPrice: 800
             - productNo: P654321
-              quantity: 5
+              orderQuantity: 5
               sellingPrice: 1200
+              costPrice: 900
 
       responses:
         "201":
@@ -942,6 +983,5 @@ elementRefs:
   - $quantity
   - $price
   - $profitRate
-  - $orderShipmentId
   - $url
   - $description

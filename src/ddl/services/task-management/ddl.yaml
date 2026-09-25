@@ -1,0 +1,83 @@
+formatVersion: "1.0"
+updatedAt: "2026-09-14T21:50:00+09:00"
+domain: ddl
+kind: database
+
+service:
+  id: task-management
+
+schema: task
+
+tables:
+  tasks:
+    name: タスク
+
+    columns:
+      taskId:
+        element: taskId
+        notNull: true
+        generation: ULID
+
+      title:
+        element: title
+        notNull: true
+
+      description:
+        element: description
+
+      createUser:
+        element: userId
+        name: 登録ユーザー
+
+      taskPic:
+        element: userId
+        name: 担当者
+
+      priority:
+        element: priority
+        notNull: true
+        default: 3
+
+      statusCode:
+        element: taskStatus
+        notNull: true
+        name: ステータスコード
+
+    primaryKey:
+      - taskId
+
+    foreignKeys:
+      - columns:
+          - statusCode
+        reference: #INFO: PK
+          table: statuses
+          columns:
+            - statusCode
+
+    indexes:
+      - columns: #INFO: (検索条件\)
+          - column: statusCode
+          - column: priority
+            order: DESC
+          - column: taskPic
+            nulls: FIRST
+          - column: taskId
+      - columns: #INFO: 登録ユーザーで絞る
+          - column: createUser
+          - column: taskId
+
+  statuses:
+    name: ステータス
+
+    columns:
+      statusCode:
+        element: taskStatus
+        notNull: true
+        name: ステータスコード
+
+      description:
+        element: description
+        notNull: true
+
+    primaryKey:
+      - statusCode
