@@ -317,7 +317,7 @@ COMMENT ON COLUMN received_order.cancel_instructions.updated_at IS '更新日時
 COMMENT ON COLUMN received_order.cancel_instructions.created_by IS '作成者 [BuiltIn, Element: traceId]';
 COMMENT ON COLUMN received_order.cancel_instructions.updated_by IS '更新者 [BuiltIn, Element: traceId]';
 
--- INFO: BuiltIn Function
+-- INFO: ARIADNE generated BuiltIn Function
 CREATE FUNCTION received_order.ariadne_builtin_row_metadata_insert()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -359,47 +359,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
--- INFO: BuiltIn Trigger
-CREATE TRIGGER ariadne_builtin_orders_before_insert
-BEFORE INSERT ON received_order.orders
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
-
-CREATE TRIGGER ariadne_builtin_orders_before_update
-BEFORE UPDATE ON received_order.orders
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
-
-CREATE TRIGGER ariadne_builtin_order_details_before_insert
-BEFORE INSERT ON received_order.order_details
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
-
-CREATE TRIGGER ariadne_builtin_order_details_before_update
-BEFORE UPDATE ON received_order.order_details
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
-
-CREATE TRIGGER ariadne_builtin_shipping_instructions_before_insert
-BEFORE INSERT ON received_order.shipping_instructions
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
-
-CREATE TRIGGER ariadne_builtin_shipping_instructions_before_update
-BEFORE UPDATE ON received_order.shipping_instructions
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
-
-CREATE TRIGGER ariadne_builtin_cancel_instructions_before_insert
-BEFORE INSERT ON received_order.cancel_instructions
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
-
-CREATE TRIGGER ariadne_builtin_cancel_instructions_before_update
-BEFORE UPDATE ON received_order.cancel_instructions
-FOR EACH ROW
-EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
 
 -- INFO: Custom Function
 -- order_no の値を新たに採番する。
@@ -594,6 +553,47 @@ BEGIN
   RETURN p_row;
 END;
 $$;
+
+-- INFO: ARIADNE generated BuiltIn Trigger
+CREATE TRIGGER ariadne_builtin_orders_before_insert
+BEFORE INSERT ON received_order.orders
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
+
+CREATE TRIGGER ariadne_builtin_orders_before_update
+BEFORE UPDATE ON received_order.orders
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
+
+CREATE TRIGGER ariadne_builtin_order_details_before_insert
+BEFORE INSERT ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
+
+CREATE TRIGGER ariadne_builtin_order_details_before_update
+BEFORE UPDATE ON received_order.order_details
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
+
+CREATE TRIGGER ariadne_builtin_shipping_instructions_before_insert
+BEFORE INSERT ON received_order.shipping_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
+
+CREATE TRIGGER ariadne_builtin_shipping_instructions_before_update
+BEFORE UPDATE ON received_order.shipping_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
+
+CREATE TRIGGER ariadne_builtin_cancel_instructions_before_insert
+BEFORE INSERT ON received_order.cancel_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_insert();
+
+CREATE TRIGGER ariadne_builtin_cancel_instructions_before_update
+BEFORE UPDATE ON received_order.cancel_instructions
+FOR EACH ROW
+EXECUTE FUNCTION received_order.ariadne_builtin_row_metadata_update();
 
 -- INFO: ARIADNE generated Generation Trigger Function
 CREATE OR REPLACE FUNCTION received_order.ariadne_generation_orders()

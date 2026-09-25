@@ -259,6 +259,9 @@ tables:
     rowConstraints:
       - physicalName: ck_order_details_bcddbe76a
         expression: sellingPrice > costPrice
+        columns:
+          - sellingPrice
+          - costPrice
         hash: bcddbe76a2e020cdfea77d8057e3ef2ce0c6d97d8c999f91677b9f9b8238c8c7
         #INFO: check|order_details|sellingPrice > costPrice
 

@@ -34,7 +34,7 @@ CREATE TABLE task.tasks (
 CREATE TABLE task.statuses (
   status_code varchar(15) NOT NULL,
 
-  description text,
+  description text NOT NULL,
   CHECK (LENGTH(description) >= 10),
 
   created_at timestamp with time zone NOT NULL,
@@ -89,7 +89,7 @@ COMMENT ON COLUMN task.statuses.description IS '説明 [Element: description]';
 COMMENT ON COLUMN task.statuses.created_at IS '作成日時 [BuiltIn]';
 COMMENT ON COLUMN task.statuses.updated_at IS '更新日時 [BuiltIn]';
 
--- INFO: BuiltIn Function
+-- INFO: ARIADNE generated BuiltIn Function
 CREATE FUNCTION task.ariadne_builtin_row_metadata_insert()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -147,7 +147,7 @@ BEGIN
 END;
 $$;
 
--- INFO: BuiltIn Trigger
+-- INFO: ARIADNE generated BuiltIn Trigger
 CREATE TRIGGER ariadne_builtin_tasks_before_insert
 BEFORE INSERT ON task.tasks
 FOR EACH ROW

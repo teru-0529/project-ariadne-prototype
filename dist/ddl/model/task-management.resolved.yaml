@@ -126,6 +126,7 @@ tables:
       description:
         elementRef: $description
         physicalName: description
+        notNull: true
 
       createdAt:
         builtIn: system

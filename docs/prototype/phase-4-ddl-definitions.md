@@ -1,6 +1,6 @@
 # Project ARIADNE — Prototype Phase 4：DDL YAML
 
-**Status:** IN PROGRESS
+**Status:** COMPLETE
 
 ---
 
@@ -214,6 +214,7 @@ Tableには以下を定義する。
 - Column
 - Primary Key
 - Unique Constraint
+- Row Constraint
 - Foreign Key
 - Index
 
@@ -236,9 +237,11 @@ DDL Source YAMLには物理Table名を別途保持しない。
 
 Database上の物理Table名はTable識別子からNaming Ruleに従って生成する。
 
-生成SQLをTable単位でファイル分割するかどうかはDDLモデルの仕様には含めない。
+生成SQLのファイル分割方式はDDLモデルの仕様には含めない。
 
-生成DDLのファイル分割単位および実行順序は、Generatorの出力仕様としてPhase 4で検討する。
+Prototype Phase 4では、PostgreSQL向け生成DDLをService単位で1つのSQLファイルとして出力する。
+
+生成DDL内部の実行順序はGeneratorの出力仕様として管理する。
 
 ---
 
@@ -576,7 +579,8 @@ CHECK (order_quantity >= 0)
 CHECK (order_quantity >= 1)
 ```
 
-複数Column間の関係等、単一ColumnのConstraintとして表現できない業務制約はColumn固有Constraintの対象とはせず、Custom SQLを利用する。
+複数Column間の関係等、単一ColumnのConstraintとして表現できない業務制約は、
+Column固有ConstraintではなくRow Constraintとして定義する。
 
 ### 5.6 Default
 
@@ -805,7 +809,17 @@ orderQuantity:
 
 生成DDLのColumn Commentでは、Columnの実効論理名および参照元Elementを追跡可能な情報を利用する。
 
-Commentの具体的な生成形式はPhase 4内で決定する。
+Elementを参照する通常Columnでは、以下の形式でCommentを生成する。
+
+`<実効論理名> [Element: <Element ID>]`
+
+ARIADNE BuiltIn Columnでは、以下の形式でCommentを生成する。
+
+`<論理名> [BuiltIn]`
+
+Audit Column等、BuiltIn ColumnがElementの値表現を利用する場合は、以下の形式でCommentを生成する。
+
+`<論理名> [BuiltIn, Element: <Element ID>]`
 
 ---
 
@@ -1091,11 +1105,77 @@ Prototype Phase 4ではUnique IndexをDDL YAMLの独立した定義対象とは�
 
 一意性はUnique Constraintとして表現する。
 
-PostgreSQL固有のPartial Unique Index、Expression Unique Index等が必要な場合はCustom SQLを利用する。
+PostgreSQL固有のPartial Unique Index、Expression Unique Index等は、
+Prototype Phase 4の対象外とする。
+必要性が生じた場合はCoreにおいて拡張を検討する。
 
 ---
 
-## 10. Foreign Key
+### 10. Row Constraint
+
+複数Column間の関係等、単一ColumnのConstraintとして表現できない
+Table単位の業務制約をRow Constraintとして定義可能とする。
+
+Row Constraintは、同一Tableに属する複数Column間の関係を表す条件式として定義する。
+
+例：
+
+```yaml
+rowConstraints:
+  - expression: "sellingPrice > costPrice"
+  - expression: "shippingQuantity <= orderQuantity"
+```
+
+`expression` では対象Tableに属するColumn IDを参照する。
+
+Prototype Phase 4では、Row ConstraintのOperandとしてColumn IDのみを許可する。
+LiteralはOperandとして利用できない。
+
+したがって、以下のような単一ColumnとLiteralの比較はRow Constraintとして定義できない。
+
+```text
+shippingQuantity > 0
+sellingPrice >= 100
+```
+
+単一Columnに対する値域等の制約は、
+Element由来ConstraintまたはColumn固有Constraintとして定義する。
+
+Prototype Phase 4では、Row Constraint Expressionとして以下を利用可能とする。
+
+比較演算子：
+
+```text
+=  !=  <  <=  >  >=
+```
+
+論理演算子：
+
+```text
+AND  OR
+```
+
+グループ化：
+
+```text
+( )
+```
+
+Row Constraint Expressionは、2つ以上の異なるColumn IDを参照しなければならない。
+
+Database固有Functionの呼び出し等、
+Database固有のExpressionはRow Constraintでは扱わない。
+
+Row ConstraintはDatabase固有SQLではなく、
+ARIADNEのDDL Modelとして構造化して管理する。
+
+各Database GeneratorはRow Constraintを対象DatabaseのConstraint表現へ変換する。
+
+PostgreSQLではCHECK Constraintとして生成する。
+
+---
+
+## 11. Foreign Key
 
 Foreign KeyをDDL YAMLで管理可能とする。
 
@@ -1147,7 +1227,8 @@ Foreign Keyで対応する参照元Columnと参照先Columnは、同一Element�
 
 SchemaをまたぐForeign KeyはPrototype Phase 4では許可しない。
 
-Schemaをまたぐ参照が必要な場合はCustom SQLとして利用者の責任で定義する。
+Schemaをまたぐ参照が必要となった場合は、
+Coreにおいて対応方式を検討する。
 
 同一Tableを参照先とする自己参照Foreign Keyは許可する。
 
@@ -1157,7 +1238,7 @@ Foreign Keyを理由として、参照元ColumnにIndexを自動生成しない�
 
 Indexが必要な場合は、利用者が検索・更新特性に基づいて明示的に定義する。
 
-### 10.1 Foreign Key Action
+### 11.1 Foreign Key Action
 
 Foreign Keyには、参照先RecordのDELETE / UPDATEに対するActionを指定可能とする。
 
@@ -1199,7 +1280,7 @@ Table生成後にForeign Keyを適用する等、依存関係を考慮したDDL�
 
 ---
 
-## 11. Index
+## 12. Index
 
 検索性能等を目的として、通常IndexをDDL YAMLで定義可能とする。
 
@@ -1285,9 +1366,10 @@ Prototype Phase 4では、以下は構造化されたIndex定義の対象外と�
 - Expression Index
 - Unique Index
 
-これらが必要な場合はCustom SQLを利用する。
+これらはPrototype Phase 4ではサポートしない。
+必要性が生じた場合はCoreにおいて拡張を検討する。
 
-### 11.1 Primary Key / Unique Constraintとの重複
+### 12.1 Primary Key / Unique Constraintとの重複
 
 Primary KeyおよびUnique Constraintでは、一意性を保証するためのIndexがDatabase側で生成されることを前提とする。
 
@@ -1356,12 +1438,13 @@ DDL YAMLではIndex名を指定しない。
 
 ---
 
-## 12. Constraint / Index Naming
+## 13. Constraint / Index Naming
 
 以下の物理名はARIADNEがNaming Ruleに従って自動生成する。
 
 - Primary Key
 - Unique Constraint
+- Row Constraint
 - Foreign Key
 - Index
 
@@ -1369,7 +1452,7 @@ DDL YAMLではIndex名を指定しない。
 
 Naming Ruleでは、Source YAMLに人工的なConstraint / Index識別子を持たせず、定義内容から決定的かつ安定した物理名を生成する。
 
-### 12.1 Naming形式
+### 13.1 Naming形式
 
 物理名は以下の形式とする。
 
@@ -1380,6 +1463,9 @@ Primary Key
 Unique Constraint
   uq_<table>_<hash8>
 
+Row Constraint
+  ck_<table>_<hash8>
+
 Foreign Key
   fk_<table>_<hash8>
 
@@ -1389,9 +1475,10 @@ Index
 
 Primary KeyはTableごとに1つであるためHashを付与しない。
 
-Unique Constraint、Foreign Key、Indexには、定義内容から生成した8桁のHashを付与する。
+Unique Constraint、Row Constraint、Foreign Key、Indexには、
+定義内容から生成した8桁のHashを付与する。
 
-### 12.2 Hash生成
+### 13.2 Hash生成
 
 HashにはSHA-256を使用する。
 
@@ -1401,7 +1488,7 @@ SchemaはHash計算に含めない。
 
 Constraint / Indexの一意性はSchema内で管理する。
 
-### 12.3 Unique Constraint
+### 13.3 Unique Constraint
 
 Unique ConstraintのHash入力には以下を利用する。
 
@@ -1418,7 +1505,24 @@ unique|shipping_instructions|operation_date,order_no,detail_no
 
 Column順序はHash生成時に保持する。
 
-### 12.4 Foreign Key
+### 13.4 Row Constraint
+
+Row ConstraintのHash入力には以下を利用する。
+
+```text
+table
+expression
+```
+
+Canonical Stringの概念例：
+
+```text
+check|order_details|sellingPrice > costPrice
+```
+
+`expression` はDDL Source YAML上のColumn IDを利用した正規化済みExpressionを使用する。
+
+### 13.5 Foreign Key
 
 Foreign KeyのHash入力には以下を利用する。
 
@@ -1438,7 +1542,7 @@ foreign_key|shipping_instructions|order_no,detail_no|order_details
 
 Foreign Key ActionはForeign Keyの属性であり、物理名上のIdentityとはしない。
 
-### 12.5 Index
+### 13.6 Index
 
 IndexのHash入力には以下を利用する。
 
@@ -1470,43 +1574,46 @@ index|shipping_instructions|order_no:ASC:DEFAULT,detail_no:ASC:DEFAULT,operation
 
 これにより、Source上の省略表現の違いではHashを変化させず、意味が同一の定義から同一の物理名を生成する。
 
-物理識別子長がDatabaseの上限を超える場合のTable名等の短縮Ruleは、Physical Naming Ruleとして別途定義する。
+物理識別子長がDatabaseの上限を超える場合の短縮Ruleは、
+Prototype Phase 4では定義しない。
+
+必要性が生じた場合はCoreにおいてPhysical Naming Ruleとして定義する。
 
 ---
 
-## 13. BuiltIn Database Behavior
+## 14. BuiltIn Database Behavior
 
 ARIADNEでは、各Projectが毎回個別に定義する必要のない共通Database BehaviorをBuiltInとして提供可能とする。
 
 Prototype Phase 4では少なくとも以下を対象とする。
 
-### 13.1 createdAt自動設定
+### 14.1 createdAt自動設定
 
 INSERT時に現在日時を設定する。
 
-### 13.2 updatedAt自動設定
+### 14.2 updatedAt自動設定
 
 INSERT時に現在日時を設定する。
 
-### 13.3 updatedAt自動更新
+### 14.3 updatedAt自動更新
 
 UPDATE時に`updatedAt`を現在日時へ変更する。
 
-PostgreSQLでは共通FunctionおよびTableごとのTriggerを自動生成する方式を候補とする。
+PostgreSQLではSchema単位の共通FunctionおよびTable単位のTriggerを自動生成する。
 
 利用者がこれらのBuiltIn Function / TriggerをDDL YAMLへ直接記述する必要はない。
 
-### 13.4 createdBy自動設定
+### 14.4 createdBy自動設定
 
 Auditが有効なSchemaでは、INSERT時に現在のAudit Contextを `createdBy` へ設定する。
 
-### 13.5 updatedBy自動設定・更新
+### 14.5 updatedBy自動設定・更新
 
 Auditが有効なSchemaでは、INSERT時に現在のAudit Contextを `updatedBy` へ設定する。
 
 UPDATE時には、現在のAudit Contextを `updatedBy` へ設定する。
 
-### 13.6 PostgreSQLでのBuiltIn実装方針
+### 14.6 PostgreSQLでのBuiltIn実装方針
 
 PostgreSQLでは、`updatedAt` およびAudit Columnの自動更新を、Schema単位のBuiltIn FunctionとTable単位のTriggerによって実現する。
 
@@ -1516,31 +1623,40 @@ PostgreSQLでは、`updatedAt` およびAudit Columnの自動更新を、Schema�
 
 ---
 
-## 14. Custom SQL
+## 15. Custom SQL
 
-Database Function、Stored Procedure、Trigger等のDBMS固有機能は、原則としてDDL YAMLによる構造化管理の対象外とする。
+Database固有SQLのうち、ARIADNEがその用途を認識して管理するものをCustom SQLとして扱う。
 
-一方、実システムではこれらが必要になる場合があるため、任意のSQLを追加登録可能とする。
+Prototype Phase 4では、少なくとも以下を対象とする。
 
-例：
-
-- Database Function
-- Stored Procedure
-- Trigger
-- Event Trigger
-- Extension設定
-- DBMS固有DDL
-- 初期化処理
+- Custom Function
+- Custom Trigger
+- Custom Generation Function
 
 Custom SQLはDBMS固有であることを許容する。
 
-Custom SQLとARIADNE生成DDLとの実行順序を指定または管理できる方式をPhase 4で検討する。
+任意のSQLを用途不明のまま生成DDLへ追加する仕組みは提供しない。
 
-ファイル名による実行順制御はARIADNEの概念モデルには含めない。
+Custom SQLは、その用途に応じてARIADNEが定めるDDL実行Phaseの所定位置へ組み込む。
+
+Custom Functionとして登録されたCustom SQLはCustom Function Phaseに、
+Custom Triggerとして登録されたCustom SQLはCustom Trigger Phaseに組み込む。
+
+Custom Generation FunctionはCUSTOM GenerationとしてColumnから参照され、
+Custom Function PhaseにFunctionを配置し、
+ARIADNEが生成するGeneration Triggerから利用する。
+
+同一Phaseに複数のCustom SQLが存在する場合は、
+DDL Source YAML上の配列順で生成DDLへ組み込む。
+
+Custom SQL間の依存関係はARIADNEでは解析しない。
+必要な順序は利用者がDDL Source YAML上の配列順によって定義する。
+
+ファイル名による実行順制御は行わない。
 
 ---
 
-## 15. Custom Generation Function
+## 16. Custom Generation Function
 
 Service固有の値生成ロジックをDatabase Functionとして実装する場合、
 DDL Source YAMLではCUSTOM Generationとして定義する。
@@ -1627,7 +1743,7 @@ Service固有のCustom Generation Functionを利用者が実装する必要は�
 
 ---
 
-## 16. Resolved DDL Model
+## 17. Resolved DDL Model
 
 SourceとなるDDL YAMLから、参照・省略表現・Naming Rule等を解決し、後続処理が一意に解釈可能なResolved DDL Modelを定義する。
 
@@ -1653,6 +1769,7 @@ Resolved DDL Modelでは、以下を解決済みとする。
 - Column固有論理名のOverride
 - Primary Key
 - Unique Constraint
+- Row Constraint
 - Foreign Key
 - Foreign Key ActionのDefault
 - Index
@@ -1682,7 +1799,7 @@ DBMS固有SQLへの変換はResolved後の処理とする。
 
 Prototype Phase 4ではResolved DDL Modelの仕様およびSampleを定義し、Generator実装は行わない。
 
-### 16.1 Resolved DDL Model形式
+### 17.1 Resolved DDL Model形式
 
 Resolved DDL ModelはDDL Source単位で生成し、Service IDとSchema IDを保持する。
 
@@ -1730,7 +1847,7 @@ Table / ColumnのDatabase上の物理名はNaming Ruleを適用し、 `physicalN
 
 Column固有の `name` が指定されている場合は、Elementの論理名に対するOverrideとして `override.name` に保持する。
 
-### 16.2 BuiltIn / Audit Columns
+### 17.2 BuiltIn / Audit Columns
 
 DDL Source YAMLに記載されないBuiltIn Columnは、Resolved DDL Modelで明示的に展開する。
 
@@ -1767,9 +1884,9 @@ updatedBy:
 Auditが有効な場合に展開される `createdBy` / `updatedBy` は
 `builtIn: audit` とし、`audit.element` を `elementRef` として保持する。
 
-### 16.3 Constraint / Index
+### 17.3 Constraint / Index
 
-Primary Key、Unique Constraint、Foreign Key、Indexでは、
+Primary Key、Unique Constraint、Row Constraint、Foreign Key、Indexでは、
 対象となるTable / Columnの物理名およびNaming Ruleによる物理名を解決する。
 
 Primary Keyの例：
@@ -1837,9 +1954,39 @@ Index Columnの `order` がSourceで省略されている場合、Resolved DDL M
 
 `nulls` がSourceで省略されている場合はResolved DDL Modelにも出力せず、対象DatabaseのDefault Semanticsに従う。
 
-Unique Constraint、Foreign Key、Indexでは、Naming Ruleによって算出したSHA-256 Hashを `hash` として保持する。
+Unique Constraint、Row Constraint、Foreign Key、Indexでは、
+Naming Ruleによって算出したSHA-256 Hashを `hash` として保持する。
 
-### 16.4 Default
+#### 17.4 Row Constraint
+
+Source：
+
+```yaml
+rowConstraints:
+  - expression: "sellingPrice > costPrice"
+```
+
+Resolved：
+
+```yaml
+rowConstraints:
+  - physicalName: ck_order_details_bcddbe76a
+    expression: sellingPrice > costPrice
+    columns:
+      - sellingPrice
+      - costPrice
+    hash: bcddbe76a2e020cdfea77d8057e3ef2ce0c6d97d8c999f91677b9f9b8238c8c7
+```
+
+Resolved DDL Modelでは、Row ConstraintのExpressionと、
+Expressionから参照されるColumnを保持する。
+
+Columnの物理名およびDatabase固有のCHECK Constraint表現は保持しない。
+
+Database GeneratorはResolved DDL ModelのRow Constraintと
+Column Physical Nameを利用してDatabase固有DDLへ変換する。
+
+### 17.5 Default
 
 Literal DefaultはResolved DDL ModelでもLiteralとして保持する。
 
@@ -1860,7 +2007,7 @@ orderDate:
     expression: CURRENT_DATE
 ```
 
-### 16.5 Generation
+### 17.6 Generation
 
 Source YAMLの `generation` は、Resolved DDL ModelではGeneration種別を明示した共通形式へ正規化する。
 
@@ -1954,7 +2101,7 @@ Resolved DDL Model
 
 Generation TriggerとCustom Triggerは、Resolved DDL Model上でも別の責務として扱う。
 
-### 16.6 Comment生成情報
+### 17.7 Comment生成情報
 
 Database CommentそのものはResolved DDL Modelへ保持しない。
 
@@ -1966,7 +2113,7 @@ Column Commentは、Columnに `override.name` が存在する場合はその値�
 したがってComment生成に必要な情報はResolved DDL ModelとTypes / Elementsの参照関係によって保持され、
 Comment文字列そのものをResolved DDL Modelへ複製しない。
 
-### 16.7 Element由来Constraint
+### 17.8 Element由来Constraint
 
 Types / Elementsに定義された型・桁・値域等のConstraintは、Resolved DDL Modelへ複製しない。
 
@@ -2004,7 +2151,7 @@ Element由来Constraintは `elementRef` から参照し、Column固有Constraint
 
 実効Constraintの決定、およびDatabase表現への変換はGeneratorの責務とする。
 
-### 16.8 ENUM Dependency
+### 17.9 ENUM Dependency
 
 Resolved DDL Modelでは、そのDDL Source内で利用するENUM Elementを依存情報として保持する。
 
@@ -2039,7 +2186,7 @@ enums: []
 
 ---
 
-## 17. PostgreSQL DDL
+## 18. PostgreSQL DDL
 
 PostgreSQLをARIADNE DDLの基準Databaseとする。
 
@@ -2054,6 +2201,7 @@ Phase 4では以下を生成対象とする。
 - Data Type
 - Default
 - Check Constraint
+- Row Constraint
 - Primary Key
 - Unique Constraint
 - Foreign Key
@@ -2068,38 +2216,21 @@ Phase 4では以下を生成対象とする。
 - Custom Function
 - Custom Trigger
 
-### 17.1 DDL生成順序
+### 18.1 DDL生成順序
 
 PostgreSQL DDLは、Database Object間の依存関係を満たす順序で生成する。
 
-基本的な生成順序を以下とする。
-
-```text
-Schema
-  ↓
-ENUM
-  ↓
-Table / Column / Default / Check Constraint
-  ↓
-Primary Key / Unique Constraint
-  ↓
-Index
-  ↓
-Foreign Key
-  ↓
-BuiltIn Function / Custom Function
-  ↓
-BuiltIn Trigger / Generation Trigger / Custom Trigger
-```
+論理的な実行Phaseは「18. DDL Output」で定義する順序に従う。
 
 Functionを利用するTriggerは、参照するFunctionの生成後に生成する。
 
-Custom Function / Custom Triggerについても、ARIADNE生成Objectとの依存関係を満たす順序で配置する。
+Custom Function / Custom Triggerについても、
+「18. DDL Output」で定義するそれぞれの実行Phaseへ配置する。
 
-生成DDLを単一ファイルとするか複数ファイルへ分割するかは論理モデルには含めず、
-Generatorの出力仕様として扱う。
+生成DDLのファイル構成および実行PhaseはGeneratorの出力仕様として扱い、
+DDL YAMLの論理モデルには含めない。
 
-### 17.2 Schema / ENUM / Table
+### 18.2 Schema / ENUM / Table
 
 SchemaはResolved DDL Modelの `schema.id` から生成する。
 
@@ -2121,10 +2252,14 @@ ColumnのDatabase型、桁、値制約等は `elementRef` からTypes / Elements
 Element由来ConstraintおよびColumn固有Constraintのうち、
 Database型のみでは保証できないものはCHECK Constraintとして生成する。
 
-### 17.3 Constraint / Index / Comment
+### 18.3 Constraint / Index / Comment
 
-Primary Key、Unique Constraint、Foreign Key、Indexは、
-Resolved DDL Modelで解決済みのPhysical NameおよびPhysical Column Nameを利用して生成する。
+Primary Key、Unique Constraint、Row Constraint、Foreign Key、Indexは、
+Resolved DDL Modelで解決済みの情報を利用して生成する。
+
+Row Constraintは、Resolved DDL Modelの `expression` に含まれるColumn IDを
+対応するPhysical Column Nameへ変換し、
+PostgreSQLのCHECK Constraintとして生成する。
 
 Foreign Keyは参照先Table / Constraintが生成された後に適用する。
 
@@ -2132,7 +2267,7 @@ Table CommentにはTableの論理名を利用する。
 
 Column CommentにはColumnの実効論理名を利用し、参照Elementを追跡可能な情報を含める。
 
-### 17.4 DATABASE Generation
+### 18.4 DATABASE Generation
 
 `generation.kind: DATABASE` は、対象Typeに対応するPostgreSQLネイティブの値生成機構へ変換する。
 
@@ -2147,7 +2282,7 @@ DATABASE GenerationではARIADNEによるGeneration Triggerを生成しない。
 
 値生成はPostgreSQL自身へ委譲する。
 
-### 17.5 BUILTIN Generation
+### 18.5 BUILTIN Generation
 
 `generation.kind: BUILTIN` は、ARIADNEが提供するPostgreSQL向けBuiltIn Generationへ変換する。
 
@@ -2176,7 +2311,7 @@ BuiltIn ULID Functionは対象Rowを引数として受け取らない。
 
 Generation TriggerがBuiltIn Functionを呼び出し、返された値をGeneration対象Columnへ設定する。
 
-### 17.6 CUSTOM Generation
+### 18.6 CUSTOM Generation
 
 `generation.kind: CUSTOM` は、
 Service固有のCustom Generation FunctionとARIADNEが生成するGeneration Triggerを組み合わせて実現する。
@@ -2206,7 +2341,7 @@ NEW.order_no :=
 
 そのためCustom Generation Functionは、同一Row内の他のGeneration Columnが生成した値へ依存してはならない。
 
-### 17.7 BuiltIn Function / BuiltIn Trigger
+### 18.7 BuiltIn Function / BuiltIn Trigger
 
 `createdAt` / `updatedAt` およびAudit Columnの自動設定・更新は、
 ARIADNEが生成するBuiltIn Function / BuiltIn Triggerによって実現する。
@@ -2229,7 +2364,7 @@ Audit ContextはTransaction単位で設定された値から取得する。
 
 Auditが有効であるにもかかわらずAudit Contextが存在しない場合はDatabase Errorとする。
 
-### 17.8 Trigger
+### 18.8 Trigger
 
 ARIADNEが扱うTriggerは責務によって以下の3種類に分離する。
 
@@ -2256,14 +2391,14 @@ PostgreSQLでは、同一Table・同一Eventに複数Triggerが存在する場�
 
 各GenerationおよびCustom処理は、暗黙のTrigger実行順序へ依存しない設計を基本とする。
 
-### 17.9 PostgreSQL実行検証
+### 18.9 PostgreSQL実行検証
 
 Phase 4ではOrder ManagementおよびTask ManagementのSample DDLを生成し、
 PostgreSQL Runtimeへ適用して以下を実証する。
 
 - Schema / ENUM / Table生成
 - Data Type / Default / Check Constraint
-- Primary Key / Unique Constraint / Foreign Key
+- Primary Key / Unique Constraint / Row Constraint / Foreign Key
 - Index
 - Comment
 - DATABASE Generation
@@ -2282,41 +2417,79 @@ Sample DDLは使い捨てのPostgreSQL Runtimeへ先頭から再適用し、
 
 ---
 
-## 18. DDL Output
+## 19. DDL Output
 
 生成DDLのファイル構成はARIADNEの論理モデルとは分離する。
 
-Prototype Phase 4では、生成DDLの具体的なファイル分割方式を論理モデルには含めない。
+Prototype Phase 4では、PostgreSQL向け生成DDLをService単位で1つのSQLファイルとして出力する。
 
-Generatorは、生成DDLの物理的なファイル構成とは独立して、依存関係を満たす論理的な実行順序を管理する。
+```text
+dist/ddl/postgresql/
+├─ order-management.sql
+└─ task-management.sql
+```
 
-重要なのはファイル単位ではなく、依存関係を満たす実行順序である。
+1つのServiceに属するTable、Constraint、Index、Function、Trigger等は、
+依存関係を満たす順序で1つのSQLファイルへ生成する。
 
-概念的な実行Phaseは以下を想定する。
+Custom Function / Custom Triggerとして登録されたCustom SQLも別の成果物とはせず、
+それぞれの実行PhaseにおいてService単位のSQLファイルへ組み込む。
+
+生成DDLの論理的な実行Phaseは以下とする。
 
 ```text
 Schema
   ↓
+ENUM
+  ↓
 Table
   ↓
-Constraint / Index
+Primary Key Constraint
   ↓
-Foreign Key
+Unique Constraint
   ↓
-BuiltIn / Custom SQL
+Row Constraint
+  ↓
+Foreign Key Constraint
+  ↓
+Index
+  ↓
+Comment
+  ↓
+BuiltIn Function
+  ↓
+Custom Function
+  ↓
+BuiltIn Trigger
+  ↓
+Generation Trigger
+  （Trigger用の取りまとめFunctionを含む）
+  ↓
+Custom Trigger
+  （Trigger用の取りまとめFunctionを含む）
 ```
 
-具体的な順序は、BuiltIn FunctionやCustom SQLの依存関係を含めPhase 4で決定する。
+Custom Function / Custom Triggerとして登録されたCustom SQLは、
+それぞれCustom Function / Custom TriggerのPhaseに組み込む。
 
-ファイル名の数字等による順序制御は、必要であればGeneratorの出力仕様として採用できるが、DDL YAMLの概念モデルには含めない。
+同一Phaseに複数のCustom SQLが存在する場合は、
+DDL Source YAML上の配列順で生成DDLへ組み込む。
+
+Generatorは上記の論理的な実行Phaseに従ってSQLを生成する。
+
+生成DDLはService単位で1ファイルとするため、
+ファイル名による実行順序制御は行わない。
+
+DDLのファイル分割および実行順序はGeneratorの出力仕様であり、
+DDL YAMLの論理モデルには含めない。
 
 ---
 
-## 19. Runtime
+## 20. Runtime
 
 Phase 4では、設計したPostgreSQL DDLが実Database上で成立することを検証する。
 
-### 19.1 PostgreSQL
+### 20.1 PostgreSQL
 
 PostgreSQLをDDL設計の基準Databaseとして利用する。
 
@@ -2347,16 +2520,16 @@ Order ManagementをPostgreSQLでの主要検証Modelとして利用する。
 
 ---
 
-## 20. Sample / Verification
+## 21. Sample / Verification
 
-### 20.1 Task Management
+### 21.1 Task Management
 
 主用途：
 
 - 小規模なDDL Modelによる基本仕様の確認
 - Element / Column / Constraint / BuiltIn等の基本変換規則の確認
 
-### 20.2 Order Management
+### 21.2 Order Management
 
 主用途：
 
@@ -2366,7 +2539,7 @@ Order ManagementをPostgreSQLでの主要検証Modelとして利用する。
 
 ---
 
-## 21. Validation Rule
+## 22. Validation Rule
 
 Prototype Phase 4ではValidatorそのものは実装しない。
 
@@ -2377,7 +2550,7 @@ File Validationと、DDL Modelとしての意味的な整合性を検証する�
 
 Phase 2 / Phase 3からValidation IDを継続し、Phase 4では `V-085` 以降を使用する。
 
-### 21.1 File Validation
+### 22.1 File Validation
 
 File Validationでは、DDL Source YAMLの構造・記述形式・Source上の命名規約を検証する。
 
@@ -2427,7 +2600,7 @@ Phase 2 Element / Typeの参照解決や、Constraint間の意味的な整合性
 | V-124 | Service IDが `kebab-case` の命名規約を満たす                                                                   | Error |
 | V-125 | DDL Source YAMLのファイル名がService IDと一致する                                                              | Error |
 
-### 21.2 Element / Column Validation
+### 22.2 Element / Column Validation
 
 Element / Column Validationでは、DDL ColumnとPhase 2 Element / Typeとの意味的な整合性を検証する。
 
@@ -2461,7 +2634,7 @@ Element由来Regexと完全に同一のRegexは、意味のない重複として
 Type Capabilityは、そのTypeを参照するColumnで値生成を定義可能であることを表す。
 実際にそのColumnで値生成を行うかどうかは、DDL Sourceの `generation` によって決定する。
 
-### 21.3 Default Validation
+### 22.3 Default Validation
 
 Default Validationでは、Column Defaultと参照Element / Typeとの整合性を検証する。
 
@@ -2479,7 +2652,7 @@ Literal Defaultでは暗黙の型変換を行わない。
 任意のDatabase SQLをExpressionとして指定することはできない。
 利用可能なExpressionは `defaultAllowed.expressions` により決定する。
 
-### 21.4 Generation Validation
+### 22.4 Generation Validation
 
 Generation Validationでは、Columnに指定されたGeneration方式と参照Element / Type、
 およびCustom Generation Functionとの意味的な整合性を検証する。
@@ -2526,7 +2699,7 @@ Custom Generation Functionは対象Columnへ値を設定せず、生成値のみ
 
 Generation Column間の実行順序は保証しない。
 
-### 21.5 Primary Key / Unique Constraint Validation
+### 22.5 Primary Key / Unique Constraint Validation
 
 #### Primary Key
 
@@ -2553,21 +2726,33 @@ Unique ConstraintのColumn順序はDDL生成時に保持する。
 
 例えば `[a, b]` と `[b, a]` は、同一Column集合を持つUnique Constraintとして重複Errorとする。
 
-### 21.6 Foreign Key Validation
+### 22.6 Row Constraint Validation
+
+| ID    | Rule                                                                                | Level |
+| ----- | ----------------------------------------------------------------------------------- | ----- |
+| V-151 | `rowConstraints` を指定する場合、Row Constraint Mapを要素とする1件以上のArrayである | Error |
+| V-152 | 各Row Constraintが `expression` を持つ                                              | Error |
+| V-153 | `expression` が空文字または空白のみではない                                         | Error |
+| V-154 | `expression` から参照されるすべてのColumnが対象Tableに存在する                      | Error |
+| V-155 | `expression` がARIADNEでサポートするRow Constraint Expressionとして解釈可能である   | Error |
+| V-156 | `expression` のOperandは対象Tableに属するColumn IDのみであり、Literalを含まない     | Error |
+| V-157 | `expression` が2つ以上の異なるColumn IDを参照する                                   | Error |
+
+### 22.7 Foreign Key Validation
 
 Foreign Key Validationでは、Foreign Keyの参照関係およびReferential Actionの意味的整合性を検証する。
 
 | ID    | Rule                                                                                                         | Level |
 | ----- | ------------------------------------------------------------------------------------------------------------ | ----- |
-| V-151 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する                               | Error |
-| V-152 | `reference.table` に指定されたTableが同一Schema内に存在する                                                  | Error |
-| V-153 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する                                        | Error |
-| V-154 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する                         | Error |
-| V-155 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である                 | Error |
-| V-156 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
-| V-157 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない                                              | Error |
-| V-158 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない                                           | Error |
-| V-159 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない                   | Error |
+| V-158 | Foreign KeyのLocal側 `columns` に指定されたすべてのColumnが対象Tableに存在する                               | Error |
+| V-159 | `reference.table` に指定されたTableが同一Schema内に存在する                                                  | Error |
+| V-160 | `reference.columns` に指定されたすべてのColumnが参照先Tableに存在する                                        | Error |
+| V-161 | `reference.columns` が参照先TableのPrimary Keyまたは1つのUnique Constraintに対応する                         | Error |
+| V-162 | `onDelete` / `onUpdate` が `SET_NULL` の場合、対象となるすべてのLocal ColumnがNULL許容である                 | Error |
+| V-163 | `onDelete` / `onUpdate` が `SET_DEFAULT` の場合、対象となるすべてのLocal Columnに `default` が定義されている | Error |
+| V-164 | 同一Foreign KeyのLocal側 `columns` に同じColumnを重複指定しない                                              | Error |
+| V-165 | 同一Foreign Keyの `reference.columns` に同じColumnを重複指定しない                                           | Error |
+| V-166 | 同一Table内に、Local Columnsの並びとReference Tableが同一であるForeign Keyを複数定義しない                   | Error |
 
 Foreign KeyのIdentityは以下により決定する。
 
@@ -2586,22 +2771,22 @@ Foreign Keyは同一Schema内のみを参照可能とする。
 
 Self Referenceは許可する。
 
-### 21.7 Foreign Key Element一致 Validation
+### 22.8 Foreign Key Element一致 Validation
 
 | ID    | Rule                                                                                     | Level |
 | ----- | ---------------------------------------------------------------------------------------- | ----- |
-| V-160 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
+| V-167 | Foreign KeyのLocal Columnと対応するReference Columnが同一のPhase 2 Elementを参照している | Error |
 
 Database上の型が互換であっても、異なるElement間にForeign Keyを定義することは許可しない。
 
 Foreign KeyにおけるElement一致は、
 Database型の一致ではなく、同一の業務上の値を参照していることを保証するためのRuleとする。
 
-### 21.8 Composite Foreign Key Validation
+### 22.9 Composite Foreign Key Validation
 
 | ID    | Rule                                                                           | Level |
 | ----- | ------------------------------------------------------------------------------ | ----- |
-| V-161 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
+| V-168 | 複合Foreign KeyではLocal側 `columns` と `reference.columns` の要素数が一致する | Error |
 
 複合Foreign KeyのColumn対応はArrayの記載順とする。
 
@@ -2609,15 +2794,15 @@ Database型の一致ではなく、同一の業務上の値を参照している
 
 各対応Columnには Foreign Key Element一致Validationを適用する。
 
-### 21.9 Index Validation
+### 22.10 Index Validation
 
 | ID    | Rule                                                                            | Level |
 | ----- | ------------------------------------------------------------------------------- | ----- |
-| V-162 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する    | Error |
-| V-163 | 同一Index内で同じColumnを複数回指定しない                                       | Error |
-| V-164 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない                  | Error |
-| V-165 | `notNull: true` のColumnに `nulls` を指定しない                                 | Error |
-| V-166 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
+| V-169 | `indexes[].columns[].column` に指定されたすべてのColumnが対象Tableに存在する    | Error |
+| V-170 | 同一Index内で同じColumnを複数回指定しない                                       | Error |
+| V-171 | 同一Table内に同一Canonical Identityを持つIndexを複数定義しない                  | Error |
+| V-172 | `notNull: true` のColumnに `nulls` を指定しない                                 | Error |
+| V-173 | Primary Key / Unique ConstraintのBacking Indexと同一定義の通常Indexを定義しない | Error |
 
 IndexのCanonical Identityは以下により決定する。
 
@@ -2668,7 +2853,7 @@ Index             : (a)
 
 上記Indexは重複とはみなさない。
 
-### 21.10 Naming Ruleとの関係
+### 22.11 Naming Ruleとの関係
 
 Constraint / Indexの物理名はARIADNEがNaming Ruleに従って自動生成するため、Naming自体を独立したValidation Ruleとはしない。
 
@@ -2677,8 +2862,9 @@ Constraint / Indexの物理名はARIADNEがNaming Ruleに従って自動生成�
 ```text
 Primary Key       : pk_<table>
 Unique Constraint : uq_<table>_<hash8>
+Row Constraint    : ck_<table>_<hash8>
 Foreign Key       : fk_<table>_<hash8>
-Index              : idx_<table>_<hash8>
+Index             : idx_<table>_<hash8>
 ```
 
 `hash8` は対象定義のCanonical InputをUTF-8で表現し、SHA-256を計算した結果の先頭8桁をlowercaseで使用する。
@@ -2688,6 +2874,13 @@ Unique ConstraintのCanonical Inputは以下とする。
 ```text
 Table
 ＋ Columns（記載順）
+```
+
+Row ConstraintのCanonical Inputは以下とする。
+
+```text
+Table
+＋ Expression（記載順）
 ```
 
 Foreign KeyのCanonical Inputは以下とする。
@@ -2712,7 +2905,7 @@ Source ValidationではなくGeneratorの生成不能Errorとして扱う。
 
 ---
 
-## 22. Phase 4で決定する事項
+## 23. Phase 4で決定する事項
 
 Phase 4では、以下を確定する。
 
@@ -2723,6 +2916,7 @@ Phase 4では、以下を確定する。
 - Default定義形式
 - Primary Key定義形式
 - Unique Constraint定義形式
+- Row Constraint定義形式
 - Foreign Key定義形式
 - Index定義形式
 - Constraint / Index Naming Rule
@@ -2739,6 +2933,107 @@ Phase 4では、以下を確定する。
 - DDL出力ファイル構成
 - Validation Rule
 - Runtime構成
+
+---
+
+## 24. Coreへの引継ぎ
+
+Prototype Phase 4ではDDL YAML、Resolved DDL Model、Validation Rule、
+PostgreSQL DDL生成規則および実行検証までを行った。
+
+Coreでは、本Phaseで確定した仕様に基づき、
+Validator / Resolver / PostgreSQL DDL Generatorを実装する。
+
+### 24.1 Validator
+
+Coreでは、Phase 4で定義したDDL Validation Ruleを実装する。
+
+ValidatorはDDL Source YAML、Types / Elementsおよび関連するSourceを参照し、
+Source定義がARIADNEのDDL仕様を満たしていることを検証する。
+
+Validation Ruleの正本は、本ドキュメントで定義したRuleとする。
+
+### 24.2 Resolver
+
+Coreでは、DDL Source YAMLからResolved DDL Modelを生成するResolverを実装する。
+
+Resolverは、本ドキュメントで定義したResolved DDL Model仕様に従い、
+少なくとも以下を解決する。
+
+- Service / Schema
+- Table / Column Physical Name
+- Element参照
+- Column固有Override
+- BuiltIn / Audit Column
+- Default / Generation
+- Primary Key
+- Unique Constraint
+- Row Constraint
+- Foreign Key
+- Index
+- Constraint / Index Physical Name
+- Constraint / Index Naming用Hash
+- Comment生成に必要な情報
+
+Types / Elementsを正本とする情報はResolved DDL Modelへ複製せず、
+`elementRef` による参照関係を維持する。
+
+### 24.3 PostgreSQL DDL Generator
+
+Coreでは、Resolved DDL ModelおよびTypes / Elementsから
+PostgreSQL DDLを生成するGeneratorを実装する。
+
+Generatorは、本ドキュメントで定義したPostgreSQL DDL生成規則に従う。
+
+生成DDLはService単位で1つのSQLファイルとして出力する。
+
+Generatorは、以下の論理的な実行Phaseに従ってSQLを生成する。
+
+Schema
+↓
+ENUM
+↓
+Table
+↓
+PK Constraint
+↓
+Unique Constraint
+↓
+Row Constraint
+↓
+FK Constraint
+↓
+Index
+↓
+Comment
+↓
+BuiltIn Function
+↓
+Custom Function
+↓
+BuiltIn Trigger
+↓
+Generation Trigger
+↓
+Custom Trigger
+
+Custom Function / Custom TriggerのSQL Sourceは、
+それぞれ対応する実行Phaseへ組み込む。
+
+同一Phase内のCustom SQLはDDL Source YAML上の配列順を保持する。
+
+Custom SQL間の依存関係解析およびファイル名による実行順制御は行わない。
+
+### 24.4 Core実装時の原則
+
+Core実装では、Prototype Phase 4で確定したDDLモデルの意味を
+実装都合によって変更しない。
+
+実装上追加の内部Modelが必要となる場合でも、
+DDL Source YAMLおよびResolved DDL Modelの意味・責務を維持する。
+
+PostgreSQL以外のDatabase対応、およびARIADNE自身の内部Databaseについては、
+Phase 4の引継ぎ対象とはせず、必要性が生じた時点でCoreにおいて検討する。
 
 ---
 
@@ -2773,6 +3068,7 @@ Phase 4では、以下を確定する。
 - [x] Index定義形式を確定する
 - [x] Unique Constraint / Index重複Ruleを確定する
 - [x] Constraint / Index Naming Ruleを確定する
+- [x] Row Constraint定義形式を確定する
 - [x] Foreign Key Action仕様を確定する
 - [x] Foreign Key参照範囲・自己参照Ruleを確定する
 
@@ -2784,6 +3080,7 @@ Phase 4では、以下を確定する。
 - [x] FK Validation Ruleを確定する
 - [x] FK Element一致Ruleを確定する
 - [x] 複合FK Validation Ruleを確定する
+- [x] Row Constraint Validation Ruleを確定する
 - [x] Index Validation Ruleを確定する
 - [x] Naming Validation Ruleを確定する
 
@@ -2794,6 +3091,7 @@ Phase 4では、以下を確定する。
 - [x] BuiltIn Columnsの展開結果をSample化する
 - [x] Audit Trace Columnsの展開結果をSample化する
 - [x] Constraint / Indexの解決結果をSample化する
+- [x] Row Constraintの解決結果をSample化する
 - [x] Comment情報の解決結果をSample化する
 - [x] Physical Namingの解決結果をSample化する
 - [x] Element由来Constraintの解決結果をSample化する
@@ -2807,6 +3105,7 @@ Phase 4では、以下を確定する。
 - [x] Default / Check Constraint変換を定義する
 - [x] Column Comment生成規則を定義する
 - [x] PK / Unique Constraint生成規則を定義する
+- [x] Row Constraint生成規則を定義する
 - [x] Index生成規則を定義する
 - [x] FK生成規則を定義する
 - [x] DATABASE Generation生成規則を定義する
@@ -2819,16 +3118,16 @@ Phase 4では、以下を確定する。
 
 ### Step 7：Custom SQL
 
-- [ ] Custom SQLの登録方式を確定する
-- [ ] DBMS別Custom SQLの扱いを確定する
-- [ ] Custom SQLと生成DDLの実行順序を確定する
+- [x] Custom SQLの登録方式を確定する
+- [x] DBMS別Custom SQLの扱いを確定する
+- [x] Custom SQLと生成DDLの実行順序を確定する
 
 ### Step 8：DDL Output
 
-- [ ] DDLのファイル分割方針を検討する
-- [ ] DDLの実行Phaseを確定する
-- [ ] ファイル名による順序制御を利用するか決定する
-- [ ] Sample出力構成を作成する
+- [x] DDLのファイル分割方針を確定する
+- [x] DDLの実行Phaseを確定する
+- [x] ファイル名による順序制御を利用しないことを確定する
+- [x] Sample出力構成を定義する
 
 ### Step 9：PostgreSQL Runtime
 
@@ -2842,15 +3141,15 @@ Phase 4では、以下を確定する。
 
 ### Step 10：Phase 4 Completion
 
-- [ ] Sample DDL YAMLを整理する
-- [ ] Resolved DDL Sampleを整理する
-- [ ] PostgreSQL Sample SQLを整理する
+- [x] Sample DDL YAMLを整理する
+- [x] Resolved DDL Sampleを整理する
+- [x] PostgreSQL Sample SQLを整理する
 - [x] PostgreSQL Runtime検証を完了する
-- [ ] Phase 4ドキュメントを実証結果に合わせて更新する
-- [ ] Coreへ引き継ぐGenerator / Validator仕様を整理する
-- [ ] 未決事項が残っていないことを確認する
-- [ ] Phase 4 COMPLETE
+- [x] Phase 4ドキュメントを実証結果に合わせて更新する
+- [x] Coreへ引き継ぐGenerator / Validator仕様を整理する
+- [x] 未決事項が残っていないことを確認する
+- [x] Phase 4 COMPLETE
 
 ---
 
-## Prototype Phase 4: DDL YAML — IN PROGRESS
+## Prototype Phase 4: DDL YAML — COMPLETE
