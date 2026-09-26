@@ -59,15 +59,45 @@ Phase 5 Applicationの基本構造は以下とする。
 ```text
 Svelte
   ↓
-Wails generated binding / runtime
+Wails Generated Binding / Runtime
   ↓
-Go
+Go Application Service
   ↓
-File
+Persistence Port
+  ↑
+File Persistence Adapter
+  ↓
+tasks.yaml
 ```
 
+Phase 5では **Go Service First** を採用する。
+
+Wails v3ではGo Serviceを起点としてFrontend向けBindingを生成する構造を基本とし、
+Wails専用のController Interface / Adapter等は追加しない。
+
+Go Application ServiceはWailsから公開されるServiceである一方、
+Wailsに依存しない通常のGo Application Serviceとして実装する。
+
+WailsはGo Application ServiceをFrontendへ公開するApplication境界として利用し、
+Application Service自体にはWailsとの接続に関する責務を持たせない。
+
+Persistenceについては、
+Application ServiceがFile / YAMLを直接認識しないようPersistence Portを設ける。
+
+File Persistence AdapterはPersistence Portを実装し、
+Taskの永続化をFile / YAMLとして実現する。
+
+この構造により、
+Application ServiceからPersistence技術を分離し、
+将来的にFile以外のPersistence方式を利用する場合にも
+Application Serviceの変更を最小化できる構造とする。
+
+Wails Generated BindingはFramework管理のgenerated filesとして扱い、
+手動編集しない。
+
 FrontendはSvelte + TypeScript、
-Desktop / BackendはWails v3 + Goを使用する。
+BackendはGo、
+Desktop Application FrameworkはWails v3を使用する。
 
 TaskデータはローカルYAMLをSource of Truthとする。
 
@@ -89,41 +119,320 @@ SvelteはユーザーとのInteractionおよび画面状態を担当する。
 - Task一覧表示
 - Task新規登録画面
 - Task編集画面
-- 入力Validationの表示
+- Frontend Validation
+- Validation ErrorのForm表示
 - Confirmation Modal
 - Notification Toast
 - Frontend上の入力状態・画面状態の管理
 
+Frontend ValidationはUXのためのValidationとしてSvelte側で実行する。
+
+Focus Out時の単独項目Validation、
+Create / Modify操作時の全項目Validationおよび相関ValidationはSvelte側で実行する。
+
+Frontend Validationに失敗した場合はBackendを呼び出さず、対象Form FieldへErrorを表示する。
+
 #### Wails
 
-WailsはSvelteとGoを接続するApplication境界として利用する。
+WailsはSvelteとGo Application Serviceを接続するApplication境界として利用する。
 
-Wails generated bindingsはFramework管理のgenerated filesとして扱い、
+Wails Generated BindingはFramework管理のgenerated filesとして扱い、
 原則として手動編集しない。
 
-#### Go
+Application内部から返されたErrorについては、
+原因情報を失わない状態でWails Application Boundaryまで伝達する。
 
-GoはFrontendから利用されるApplication ServiceおよびFile操作を担当する。
+Wails Application Boundaryでは、
+内部診断に必要な情報とFrontendへ公開する情報を分離する。
+
+```text
+Internal Error
+    ↓
+Wails Application Boundary
+    ├─ Diagnostic Information → Log
+    └─ Public Error           → Svelte
+                                  ↓
+                               Error Toast
+```
+
+具体的なWails v3でのError Boundary実現方式は、Phase 5実装時に技術検証して決定する。 TODO:
+
+#### Go Application Service
+
+Go Application Serviceは、
+Frontendから要求されるApplication Operationを実現する。
+
+Prototypeでは以下を基本的なPublic Serviceとする。
+
+```text
+ListTasks()
+GetTask(ID)
+CreateTask(Properties)
+ModifyTask(ID, Properties)
+```
+
+Application Serviceは、Taskを成立・変更させる主体とする。
+
+Application ServiceはFile / YAML等のPersistence技術を直接認識せず、
+Persistence Portを通じて永続化を要求する。
+
+また、Application ServiceはFrontendの表示方法を認識しない。
+
+PrototypeではBusiness TaskをそのままFrontendへ公開する。
+
+ただし、
+Application Serviceが外部へ公開する情報を決定する責務を持つものとし、
+Business ModelとFrontendへ公開するModelが常に同一であることをArchitecture上の前提とはしない。
+
+#### Persistence Port
+
+Persistence Portは、
+Application ServiceからPersistenceへ要求する操作を定義する。
+
+Prototypeでは以下を基本とする。
+
+```text
+Retrieve()
+Pick(ID)
+Store(Task, StoreIntent)
+```
+
+各Operationの意味は以下とする。
+
+- `Retrieve`
+  - 格納されているTask群を取得する
+- `Pick`
+  - IDを指定して1件のTaskを取得する
+- `Store`
+  - Taskを格納する
+
+`Store` ではApplication ServiceからPersistenceへ
+格納Intentを明示する。
+
+```text
+Deposit
+    新しいTaskを初めて格納する
+
+Replace
+    既に格納されているTaskを置き換える
+```
+
+Persistence AdapterはTaskの状態からIntentを推測しない。
+
+将来、`Retrieve` に取得対象を指定する必要が生じた場合は、
+引数としてCriteriaを導入できる。
+
+Criteriaは概念的に以下を含む。
+
+```text
+Criteria
+├─ Conditions
+├─ Order
+└─ Range
+```
+
+ただしPrototypeでは必要性がないためCriteriaは実装しない。
+
+#### File Persistence Adapter
+
+File Persistence Adapterは、
+Persistence PortをFile / YAMLとして実現する。
 
 主な責務は以下とする。
 
-- TaskデータのRead
-- TaskデータのWrite
-- Task登録・更新に必要なBackend処理
-- File I/O Error等のBackend Errorの返却
+- `tasks.yaml` Read / Write
+- YAML Parse / Serialization
+- `format / version` Validation
+- Persistence ModelとBusiness Taskの相互変換
+- Deposit時のULID生成
+- `createdAt / updatedAt` の生成・維持
+- Safe Write
+  - Temporary Fileへの全量Write
+  - Canonical FileへのReplace
 
-GoはFrontendの表示方法を認識しない。
+Application Serviceは、
+ULID生成方式、Timestamp取得、YAML Format、
+File I/O等を認識しない。
 
-例えばFile Write Errorが発生した場合、
-GoはErrorをFrontendへ返すところまでを責務とし、
-Toast等による表示方法はSvelte側の責務とする。
+### 3.3 Frontend / Backend Data Boundary
 
-#### File
+Prototypeでは、
+SvelteとGo Application Service間の基本Operationを以下とする。
 
-PrototypeではTaskデータをFileで管理する。
+```text
+Svelte → Application Service
 
-Task群は1つのYAML Fileで管理し、
-全量Read / 全量Writeを基本とする。
+ListTasks()
+GetTask(ID)
+CreateTask(Properties)
+ModifyTask(ID, Properties)
+```
+
+Application ServiceからSvelteへの返却は以下を基本とする。
+
+```text
+ListTasks()       → []Task
+GetTask(ID)       → Task
+CreateTask(...)   → storedTask
+ModifyTask(...)   → storedTask
+```
+
+PrototypeではBusiness TaskをそのままFrontendへ公開する。
+
+ただし、
+Business TaskとFrontend公開Modelが常に同一であることを
+Architecture上の制約とはしない。
+
+将来、Application Serviceが公開する情報を制御する必要が生じた場合は、
+Frontend公開用Modelを分離できるものとする。
+
+#### Properties
+
+Create / Modifyでは、
+SvelteからApplication Serviceへ `Properties` を渡す。
+
+```text
+CreateTask(Properties)
+ModifyTask(ID, Properties)
+```
+
+`Properties` は、
+Taskへ与えるProperty値の集合を表す共通概念とする。
+
+Create / ModifyというOperationの意味はService Method側が持ち、
+Properties自体へOperationの意味を持たせない。
+
+CreateではPropertiesを
+新しいTaskを成立させるための材料として使用する。
+
+```text
+Properties
+    ↓
+newTask
+```
+
+Modifyでは、
+Repositoryから取得した既存Taskへ
+指定されたPropertiesを適用する。
+
+```text
+ID
+ ↓
+Pick
+ ↓
+storedTask
+    +
+Properties
+ ↓
+modifiedTask
+```
+
+ModifyのPropertiesでは、
+Propertyごとに概念上以下の3状態を区別できる必要がある。
+
+```text
+未指定
+    → 変更しない
+
+指定 + null
+    → nullへ変更
+
+指定 + value
+    → 指定値へ変更
+```
+
+Svelte / Wails / Go間で
+この3状態をどのような型として表現するかは、
+Phase 5実装時の技術検証課題とする。 TODO:
+
+Step 1では具体的な実装型を固定しない。
+
+### 3.4 Error / Logging
+
+Application内部で発生したErrorは、
+発生箇所で握り潰さず、
+原因情報を維持したままWails Application Boundaryまで伝達する。
+
+```text
+Adapter / Repository / Service
+    ↓
+Error Chain
+    ↓
+Wails Application Boundary
+```
+
+下位層で発生した具体的なErrorと、
+上位層が扱うErrorの意味は同一である必要はない。
+
+例えばFile / YAMLに関する具体的な失敗は、
+Persistenceとして意味のあるErrorへ変換してよい。
+
+ただし、
+元の原因情報は失わないものとする。
+
+Application Serviceの振る舞いが変わらないErrorについて、
+Application Serviceへ不要な詳細分類を公開しない。
+
+例えば以下はPersistence内部では異なる原因であるが、
+Application Serviceがそれらを区別して振る舞う必要がなければ
+同一のRead Failureとして扱ってよい。
+
+```text
+File Read Failure
+YAML Parse Failure
+Invalid Format
+Unsupported Version
+```
+
+一方、`Pick(ID)` で対象Taskが存在しないことは、
+Persistence Operationとして意味のある結果であるため
+Not Foundとして区別する。
+
+#### FrontendへのError公開
+
+Wailsを経由してFrontendへ返却されたErrorは、
+Application Errorとして扱う。
+
+```text
+Internal Error
+    ↓
+Wails Application Boundary
+    ├─ Diagnostic Information → Log
+    └─ Public Message         → Svelte
+                                  ↓
+                               Error Toast
+```
+
+Frontendへ内部Error Chainそのものを公開しない。
+
+Application Error Codeは設けない。
+
+Phase 2〜4で定義したValidation Rule ID等、
+Core機能そのものに意味を持つ識別子とは区別する。
+
+#### Logging
+
+本格的なApplication LoggingはPrototype Phase 5の必須実装とはしない。
+
+ただし、
+将来CoreでStructured Loggingを導入することを想定し、
+PrototypeでもErrorの原因情報を失わない設計とする。
+
+Loggingでは以下を基本的な考え方とする。
+
+```text
+Error
+    → Error Chainとして上位へ伝達
+    → Application Boundaryで診断情報を記録
+
+Information / Debug
+    → その情報を認識している場所で記録
+```
+
+Errorを各Layerで重複してLogすることは基本としない。
+
+具体的なLogger、出力先、Log Rotation等は
+Prototype Phase 5では設計・実装対象としない。
 
 ---
 
@@ -216,7 +525,7 @@ Taskの新規登録画面を表示する。
 
 既存Taskの編集画面を表示する。
 
-`createdAt / updatedAt` はApplicationが管理し、
+`createdAt / updatedAt` はPersistence側で管理し、
 ユーザーから直接編集させない。
 
 ---
@@ -326,6 +635,17 @@ Task Dataおよび各画面の実装時に決定する。
 
 存在しないValidation Ruleを技術検証のためだけに追加することはしない。
 
+Frontend ValidationはSvelte側で実行する。
+
+Application Service側でもBusiness / Applicationの整合性を保証するため
+Validationを実施する場合があるが、
+Frontend Validationを正常に通過した入力が
+Application Service側でValidation Errorとなることは異常系として扱う。
+
+その場合、
+Validation ErrorをFormへ戻すのではなくApplication Errorとして扱い、
+Wails経由でFrontendへ返却しError Toastで通知する。
+
 #### Notification Toast
 
 入力項目の修正では解消できないApplication Errorおよび
@@ -339,8 +659,27 @@ Prototypeでは以下を基本とする。
 | Error    | File I/O失敗等のApplication Error | ユーザーがCloseするまで表示 |
 | Info     | 登録・更新成功等の情報通知        | 一定時間後に自動消去        |
 
-Frontend / Backendのどちらで発生したかではなく、
-Errorの意味に応じてPresentation方法を決定する。
+Svelte上で検出したErrorのうち、
+ユーザーが入力内容を修正することで解消できるValidation Errorは
+Form Fieldへ表示する。
+
+入力項目の修正では解消できないFrontend上のApplication Errorは、
+Error Toastで通知する。
+
+Wailsを経由してApplication Serviceから返却されたErrorは、
+Application ErrorとしてError Toastで通知する。
+
+```text
+Svelte
+├─ Input Validation Error
+│      → Form Field
+│
+└─ Application Error
+       → Error Toast
+
+Wails経由のApplication Error
+       → Error Toast
+```
 
 Warning等、その他のSeverityは必要性が生じた場合に検討する。
 
@@ -348,36 +687,146 @@ Warning等、その他のSeverityは必要性が生じた場合に検討する�
 
 ## 5. Task Data
 
-Phase 0で決定したTaskを使用する。
+Phase 5では、
+Business Logicが扱うTaskとPersistence上のTask表現を分離する。
 
-最小項目は以下とする。
+### 5.1 Business Task
+
+Business Taskは以下を基本とする。
 
 ```text
-id
-title
-description
-priority
-status
+Task
+├─ id
+├─ title
+├─ description
+├─ priority
+└─ status
+```
+
+各Propertyは以下とする。
+
+| Property      | 内容                                     |
+| ------------- | ---------------------------------------- |
+| `id`          | ULID。TaskのIdentityとして利用する       |
+| `title`       | 必須。空文字・空白のみ不可。最大50文字   |
+| `description` | 任意。複数行可                           |
+| `priority`    | 必須。1〜5。値が大きいほどPriorityが高い |
+| `status`      | 必須。`TODO / DOING / DONE`              |
+
+Business Taskは `createdAt / updatedAt` を持たない。
+
+`createdAt / updatedAt` はBusiness Logicで利用する情報ではなく、
+Persistence上で管理する情報とする。
+
+TaskはIDが未設定の状態でもBusiness Taskとして成立し得る。
+
+Create時にはApplication ServiceがPropertiesから新しいTaskを成立させ、
+PersistenceへDepositする時点でFile Persistence AdapterがULIDを生成する。
+
+```text
+CreateTask(Properties)
+    ↓
+newTask
+    ↓
+Validate
+    ↓
+validatedTask
+    ↓
+Store(validatedTask, Deposit)
+    ↓
+storedTask
+```
+
+Application ServiceはTaskのIdentityとしてIDを認識・利用するが、
+IDの生成方式は認識しない。
+
+### 5.2 Persistence Task
+
+`tasks.yaml` 上ではBusiness TaskのPropertyに加えて、
+以下を保持する。
+
+```text
 createdAt
 updatedAt
 ```
 
-Task群は1つのYAML Fileで管理する。
+Deposit時には以下を行う。
 
-具体的なTask Modelおよび `tasks.yaml` のFormatは、
-Step 1で決定する。
+- ULIDを生成して `id` を設定する
+- `createdAt` を現在日時で設定する
+- `updatedAt` を `createdAt` と同一日時で設定する
+- TaskをYAML末尾へ追加する
 
-Step 1では少なくとも以下を確定する。
+Replace時には以下を行う。
 
-- YAML全体構造
-- 各項目の表現
-- IDの形式
-- `priority` の値
-- `status` の値
-- `createdAt / updatedAt` の形式
-- Empty状態の表現
+- `id` により既存Taskを特定する
+- `createdAt` を維持する
+- `updatedAt` を現在日時へ更新する
+- YAML上のTask順序を維持する
 
-### 5.1 File存在条件
+TimestampはTimezoneを含むRFC3339 / ISO 8601形式を使用する。
+
+Application ServiceはTimestampの取得・管理を行わない。
+
+### 5.3 tasks.yaml Format
+
+`tasks.yaml` のRootは以下とする。
+
+```yaml
+format: ariadne-tasks
+version: "2.1"
+
+tasks: []
+```
+
+`format` は `ariadne-tasks` 固定とする。
+
+`version` はStringによる `Major.Minor` 形式とする。
+
+Prototype Applicationが対応するVersionを `2.1` とし、
+互換性は以下とする。
+
+```text
+2.1 → OK
+2.0 → OK
+1.0 → NG(Majorが異なる)
+2.2 → NG(Minorが対応バージョンよりも大きい)
+3.0 → NG(Majorが異なる)
+```
+
+同一MajorかつFile MinorがApplication対応Minor以下の場合のみ読み込み可能とする。
+
+`format` が異なる場合、
+または非対応Versionの場合はRead Errorとする。
+
+Task 0件は以下で表現する。
+
+```yaml
+format: ariadne-tasks
+version: "2.1"
+
+tasks: []
+```
+
+`description` が空の場合は以下とする。
+
+```yaml
+description: ""
+```
+
+`description` に値がある場合は、
+1行の場合を含めLiteral Block `|` を使用する。
+
+複数行のdescriptionはRead / Write後も内容を維持する。
+
+TaskのYAML Sequence順を一覧表示順として扱う。
+
+PrototypeではSortを行わない。
+
+CreateではTaskを末尾へ追加し、
+Modifyでは既存Taskの位置を維持する。
+
+### 5.4 File存在条件
 
 Prototypeでは `tasks.yaml` が事前に存在することを前提とする。
 
@@ -396,21 +845,38 @@ tasks.yamlあり
        → 正常
 
 tasks.yamlなし
-       → Error
+       → Read Error
 ```
 
 Project / Workspaceの初期化方式については、
 Coreで必要に応じて検討する。
 
-Phase 5では以下を実装する。
+### 5.5 File Write
 
-- Task一覧表示
-- Task新規作成
-- Task編集
-- YAMLへの保存
-- Application再起動後のYAMLからの復元
+Task群は1つのYAML Fileで管理し、
+全量Read / 全量Writeを基本とする。
 
-削除はPrototypeの必須機能としない。
+Write時はCanonical Fileへ直接書き込まず、
+Temporary Fileへ全量Writeした後、
+Canonical `tasks.yaml` を置き換える。
+
+```text
+Task Data
+    ↓
+Temporary File
+    ↓ Write成功
+Canonical tasks.yamlをReplace
+```
+
+Temporary FileへのWriteに失敗した場合は、
+既存のCanonical Fileを維持する。
+
+Canonical FileのReplaceに失敗した場合はWrite Errorとする。
+
+Backup GenerationおよびCrash Recovery機構はPrototypeでは実装しない。
+
+Windows上でのFile Replaceの具体的な実現方式は、
+Phase 5実装時に技術検証する。TODO:
 
 ---
 
@@ -808,19 +1274,40 @@ Phase 5は以下のStepで進める。
 Svelte / Wails / Go / Fileの責務境界と、
 Applicationが扱うTask Dataの基本仕様を整理する。
 
-主な確認事項：
+Step 1では以下を確定した。
 
-- Svelteの責務
-- Wailsの位置付け
-- Go Backend Serviceの責務
-- File Accessの責務
-- Frontend / Backend間のError伝達
-- Public API / Serviceの単位
-- Task Model
-- `tasks.yaml` Format
-- `tasks.yaml` のFile存在条件
-- Empty状態の表現
+- Go Service FirstによるApplication Architecture
+- Svelte / Wails / Application Service / Persistence Port / File Persistence Adapterの責務境界
+- Application ServiceのPublic Operation
+  - `ListTasks`
+  - `GetTask`
+  - `CreateTask`
+  - `ModifyTask`
+- Persistence Operation
+  - `Retrieve`
+  - `Pick`
+  - `Store`
+  - `Deposit / Replace`
+- Business Task Model
+- Persistence Task Model
+- ULIDおよびTimestampの責務
+- `tasks.yaml` Format / Version
+- File存在条件
+- Empty状態
+- Safe Write方針
 - Frontend / Backend間で受け渡すData
+- Create / Modifyで共通するProperties概念
+- Frontend ValidationとApplication Errorの境界
+- Error Chain / Wails Application Boundary / Loggingの基本方針
+
+以下は実装時の技術検証課題とする。
+
+- Modify Propertiesの
+  `未指定 / null / value`
+  をSvelte / Wails / Go間で表現する方式
+- Wails v3におけるApplication Error Boundaryの具体的な実現方式
+- Windows上でのSafe File Replace方式
+- Integration Testの具体的な自動化方式
 
 ---
 
@@ -897,15 +1384,43 @@ Task YAMLを読み込み、
 Task一覧として画面へ表示するVertical Sliceを構築する。
 
 ```text
-Task YAML
+tasks.yaml
     ↓
-Go
+File Persistence Adapter
+    ↓
+Repository
+    ↓
+ListTasks()
     ↓
 Wails
     ↓
 Svelte
     ↓
 Task List
+```
+
+また、Task一覧からTaskを選択した場合は、
+一覧表示時に取得したTaskをそのまま編集対象として使用せず、
+`GetTask(ID)` により対象Taskを改めて取得する。
+
+```text
+Task選択
+    ↓
+GetTask(ID)
+    ↓
+Application Service
+    ↓
+Pick(ID)
+    ↓
+File Persistence Adapter
+    ↓
+tasks.yaml
+    ↓
+Task
+    ↓
+Svelte
+    ↓
+Task Edit
 ```
 
 主な実施事項：
@@ -984,7 +1499,11 @@ Info Toast
 - 登録時の全項目Validation
 - 必要な場合の相関Validation
 - Validation ErrorのField表示
-- `createdAt / updatedAt` のApplication管理
+- `CreateTask(Properties)` によるTask生成
+- Application ServiceでのTask Validation
+- `Store(..., Deposit)` による永続化
+- File Persistence AdapterによるULID生成
+- File Persistence Adapterによる `createdAt / updatedAt` 設定
 - Confirmation Modal
 - Confirm時のTask登録
 - Cancel時に登録しないこと
@@ -1048,8 +1567,12 @@ Info Toast
 - 更新時の全項目Validation
 - 必要な場合の相関Validation
 - Validation ErrorのField表示
-- `createdAt` の維持
-- `updatedAt` のApplication管理
+- `GetTask(ID)` による編集対象Task取得
+- `ModifyTask(ID, Properties)` によるTask変更
+- Application ServiceでのTask Validation
+- `Store(..., Replace)` による永続化
+- File Persistence Adapterによる `createdAt` 維持
+- File Persistence Adapterによる `updatedAt` 更新
 - Confirmation Modal
 - Confirm時のTask更新
 - Cancel時に更新しないこと
