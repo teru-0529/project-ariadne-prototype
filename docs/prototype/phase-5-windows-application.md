@@ -128,7 +128,7 @@ SvelteはユーザーとのInteractionおよび画面状態を担当する。
 Frontend ValidationはUXのためのValidationとしてSvelte側で実行する。
 
 Focus Out時の単独項目Validation、
-Create / Modify操作時の全項目Validationおよび相関ValidationはSvelte側で実行する。
+Create / Modify Button押下時の全項目Validationおよび相関ValidationはSvelte側で実行する。
 
 Frontend Validationに失敗した場合はBackendを呼び出さず、対象Form FieldへErrorを表示する。
 
@@ -592,48 +592,108 @@ Info Toast
 - 対象項目を視覚的に強調する
 - Error状態が認識できる程度の背景色・Border等を使用する
 
-単独項目で判定できるValidationは、
-原則としてFocus Out時に実行する。
+Frontend Validationは、
+以下の2種類に分けて扱う。
 
-例：
+```text
+Single Field Validation
+    単独Fieldで判定できるValidation
 
-- 必須入力
-- 文字数
-- 単独項目内で完結する形式チェック
+Correlation Validation
+    複数Fieldの関係によって判定するValidation
+```
 
-登録・更新操作時には、
-Focus Outの有無にかかわらず全単独項目Validationを再実行する。
+Single Field Validationは、
+原則としてFocus Out時に対象Fieldについて実行する。
 
-複数項目の関係によって判定する相関Validationは、
-原則として登録・更新操作時に実行する。
+Create / Modify Button押下時には、
+Focus Outの有無にかかわらず全FieldのSingle Field Validationを再実行する。
 
-相関Validation Errorについても、
-ユーザーが修正すべき項目を特定できる場合は
-Toastではなく関連するForm Field付近へ表示する。
+Correlation Validationについては、
+Formごとに以下のModeを持つ。
+
+```text
+INITIAL
+    全Correlation Validationをまだ実行していない
+
+ACTIVE
+    全Correlation Validationを一度実行済み
+```
+
+INITIALでは、
+Focus Out時にCorrelation Validationを実行しない。
+
+Create / Modify Button押下時に、
+全Single Field ValidationがValidとなった場合のみ
+全Correlation Validationを実行する。
+
+全Correlation Validationを実際に実行した時点で、
+Correlation Validation ModeをACTIVEとする。
+
+ACTIVEとなった後は、
+Focus OutしたFieldに関連するCorrelation Validationを再実行する。
+
+ただし、
+Correlation Validationに関連するFieldが
+Single Field Validation上Validでない場合、
+そのCorrelation Ruleは評価しない。
+
+その場合、
+当該Ruleに対応する既存Correlation ErrorはClearする。
 
 ```text
 Focus Out
+
+Correlation Validation Mode = INITIAL
     ↓
-対象項目の単独Validation
+対象FieldのSingle Field Validation
+    ↓
+終了
 
 
-Create / Update
+Correlation Validation Mode = ACTIVE
     ↓
-全単独項目Validation
-    +
-相関Validation
+対象FieldのSingle Field Validation
     ↓
-NG
-    → Form FieldへError表示
-
-OK
-    → Confirmation Modal
+関連FieldがすべてSingle Valid
+    ↓
+関連するCorrelation Validation
 ```
 
-Prototypeで実際に必要となるValidation Ruleは、
-Task Dataおよび各画面の実装時に決定する。
+Create / Modify Button押下時は以下とする。
 
-存在しないValidation Ruleを技術検証のためだけに追加することはしない。
+```text
+Create / Modify
+    ↓
+全Single Field Validation
+    ↓
+Single Field Errorあり？
+    ├─ YES
+    │    ↓
+    │  Correlation Validationを実行しない
+    │
+    └─ NO
+         ↓
+       全Correlation Validation
+         ↓
+       Correlation Validation Mode = ACTIVE
+         ↓
+       Correlation Errorあり？
+         ├─ YES → Form FieldへError表示
+         └─ NO  → Confirmation Modal
+```
+
+1 Fieldに表示するValidation Messageは1つとする。
+
+Single Field ErrorとCorrelation Errorの双方が存在する場合は、
+Single Field Errorを優先して表示する。
+
+同一Fieldに複数のCorrelation Errorが存在する場合は、
+Validation Priorityにより表示するErrorを決定する。
+
+Prototype Phase 5で使用する具体的なValidation Ruleおよび
+Validation Priorityについては、
+別途 `validation-priority.md` に定義する。
 
 Frontend ValidationはSvelte側で実行する。
 
@@ -1131,22 +1191,43 @@ Behavior MapはPhase 5で実現する振る舞いの全体像を把握するた�
 詳細なTest Caseを事前にすべて定義するものではない。
 
 Behavior Mapでは、
-各Use CaseについてFrontend / Backendの関与を整理する。
+ユーザーによる1つのActionをBehaviorの基本単位とする。
 
-例：
+同一Actionに対して結果が分岐する場合は、
+Behaviorを分割せずResult Patternとして整理する。
+
+基本形式は以下とする。
 
 ```text
-Use Case
-│
-├─ Frontendのみ
-│    └─ Front B
-│
-└─ Frontend + Backend
-     ├─ Front B
-     ├─ Back B
-     └─ Integration A
-          ※ 代表経路のみ
+Behavior
+├─ Start    : Action実行前の状態
+├─ Action   : ユーザーによる1つのAction
+├─ Result
+│   └─ Pattern : Resultの分岐
+└─ Scope    : Front / Back
 ```
+
+各Behaviorでは、
+Frontend / Backendの関与をScopeとして整理する。
+
+```text
+Front
+    → Front B
+
+Front + Back
+    → Front B
+    → Back B
+
+代表的なVertical Slice
+    → Integration A
+```
+
+すべてのBehaviorについてIntegration Aを作成するのではなく、
+Svelte / Wails / Go間の実際の境界接続を保証する価値のある
+代表的な経路のみIntegration Aとして確認する。
+
+Phase 5のBehavior Mapは、
+別途 `behavior-map.md` に定義する。
 
 各StepではBehavior Mapを基に、
 実装対象となるBehaviorのTest Caseを実装直前に具体化する。
@@ -1315,24 +1396,96 @@ Step 1では以下を確定した。
 
 Phase 5全体で使用するTest / Build基盤を構築する。
 
-主な実施事項：
+機能実装を開始する前に、
+Behavior Mapによって保証対象を整理した上で、
+Go / FrontendそれぞれのTest Foundationを
+最小のDummy Testを実際に動かしながら構築する。
 
-- Phase 5 Behavior Mapの整理
-- 各Use CaseのFrontend / Backend関与の整理
-- Go Test環境確認
-- Svelte / TypeScript Test環境構築
-- Behavior Testの最小技術検証
-- Logic / Development Step Testの最小技術検証
-- Integration Test方式の技術検証
-- `test.sh` 整備
-- `build.sh` 整備
-- Build Gateの確立
+その後、
+日常的なTest実行およびBuild Gateを成立させる。
 
-Behavior Mapでは、
-Step 3以降で実現する主要なUse Case / Behaviorを整理する。
+主な実施順序：
 
-詳細なTest Caseおよび実装途中で必要となるCは、
-各Stepの実装時に具体化する。
+```text
+2-1 Behavior Map
+    ↓
+2-2 Go Test Foundation
+    ↓
+2-3 Frontend Test Foundation
+    ↓
+2-4 test.sh
+    ↓
+2-5 build.sh / Build Gate
+    ↓
+2-6 Behavior / Logic Test 最小技術検証
+    ↓
+2-7 Integration Test 技術検証
+```
+
+#### 2-1 Behavior Map
+
+Step 3以降で実現する主要なBehaviorを整理する。
+
+Behaviorはユーザーによる1つのActionを基本単位とし、
+同一Actionに対する結果の分岐はResult Patternとして整理する。
+
+各Behaviorについて、
+Front / Backの関与を明確にする。
+
+詳細は `behavior-map.md` に定義する。
+
+#### 2-2 Go Test Foundation
+
+Go Testを実際に動かしながら、
+Backend Testの基本構造を成立させる。
+
+最小のDummy Testを作成し、
+Go Testを実行できることを確認する。
+
+#### 2-3 Frontend Test Foundation
+
+Frontend Testを実際に動かしながら、
+Svelte / TypeScript Testの基本構造を成立させる。
+
+Vitest + Svelte Testing Libraryを基本候補とし、
+最小のDummy Testを作成して実行できることを確認する。
+
+#### 2-4 test.sh
+
+Go TestおよびFrontend Testを
+`test.sh` から一括実行できるようにする。
+
+TDD中に繰り返し利用するため、
+日常的に高速に実行できるTestを対象とする。
+
+#### 2-5 build.sh / Build Gate
+
+`build.sh` からTestを実行し、
+Test成功時のみWails ApplicationをBuildする。
+
+意図的にTestを失敗させ、
+TestがREDの場合にBuildが実行されないことを確認する。
+
+#### 2-6 Behavior / Logic Test 最小技術検証
+
+B. Behavior Testを中心として、
+Phase 5で採用するTest方式を最小単位で技術検証する。
+
+必要に応じて、
+C. Logic / Development Step Testについても
+小さな実装の足場として利用できることを確認する。
+
+#### 2-7 Integration Test 技術検証
+
+Svelte / Wails / Go間の実際の接続を確認する
+Integration Test方式を技術検証する。
+
+自動化方式、実行時間、安定性を確認した上で、
+`test.sh` およびRelease Build Gateへの組み込み方を決定する。
+
+詳細なTest Caseおよび
+実装途中で必要となるCは、
+Step 3以降の各Behavior実装時に具体化する。
 
 ---
 
@@ -1495,22 +1648,35 @@ Info Toast
 
 - Task Create画面
 - Task入力
-- Focus Out時の単独項目Validation
-- 登録時の全項目Validation
-- 必要な場合の相関Validation
+- Create画面初期表示
+  - `title = ""`
+  - `description = ""`
+  - `priority = 3`
+  - `status = TODO`
+  - Correlation Validation Mode = INITIAL
+  - Create Button = Disabled
+- Focus Out時のSingle Field Validation
+- Correlation Validation Mode = ACTIVE後の関連Correlation Validation再実行
+- Create操作時の全Single Field Validation
+- 全Single Field Validation成功後の全Correlation Validation
 - Validation ErrorのField表示
+- Validation成功時のConfirmation Modal表示
+- Cancel時の入力内容維持
 - `CreateTask(Properties)` によるTask生成
 - Application ServiceでのTask Validation
 - `Store(..., Deposit)` による永続化
 - File Persistence AdapterによるULID生成
 - File Persistence Adapterによる `createdAt / updatedAt` 設定
-- Confirmation Modal
 - Confirm時のTask登録
-- Cancel時に登録しないこと
 - Task YAML全量Write
-- Write Errorの返却
+- Write Failureの返却
 - Error Toast
 - 保存成功時のInfo Toast
+- 保存成功後のForm Reset
+  - 初期値へ戻す
+  - Validation ErrorをClear
+  - Correlation Validation Mode = INITIAL
+  - Create Button = Disabled
 
 正常系と、
 Create Use Case内で発生する異常系を同じStepで検証する。
@@ -1562,24 +1728,36 @@ Info Toast
 主な実施事項：
 
 - 既存TaskのEdit画面表示
-- Task編集
-- Focus Out時の単独項目Validation
-- 更新時の全項目Validation
-- 必要な場合の相関Validation
-- Validation ErrorのField表示
 - `GetTask(ID)` による編集対象Task取得
-- `ModifyTask(ID, Properties)` によるTask変更
+- Original Values / Current Valuesの管理
+- Original ValuesとCurrent Valuesの比較によるChanged Fields管理
+- Original Valuesへ戻したFieldをNot Changedとして扱う
+- Changed Fieldsがない場合はModify ButtonをDisabledとする
+- Focus Out時のSingle Field Validation
+- Correlation Validation Mode = ACTIVE後の関連Correlation Validation再実行
+- Modify操作時の全Single Field Validation
+- 全Single Field Validation成功後の全Correlation Validation
+- Validation ErrorのField表示
+- Validation成功時のConfirmation Modal表示
+- Cancel時のCurrent Values / Original Values / Changed Fields維持
+- Changed FieldsのみをPropertiesとして `ModifyTask(ID, Properties)` へ渡す
 - Application ServiceでのTask Validation
 - `Store(..., Replace)` による永続化
 - File Persistence Adapterによる `createdAt` 維持
 - File Persistence Adapterによる `updatedAt` 更新
-- Confirmation Modal
 - Confirm時のTask更新
-- Cancel時に更新しないこと
 - Task YAML全量Write
-- Write Errorの返却
+- Not Foundの返却
+- Read Failureの返却
+- Write Failureの返却
 - Error Toast
 - 保存成功時のInfo Toast
+- 保存成功後のEdit Baseline Reset
+  - Current Valuesを新しいOriginal Valuesとする
+  - Changed FieldsをClear
+  - Validation ErrorをClear
+  - Correlation Validation Mode = INITIAL
+  - Modify Button = Disabled
 
 正常系と、
 Edit Use Case内で発生する異常系を同じStepで検証する。
@@ -1730,9 +1908,10 @@ Prototype Phase 5をCOMPLETEとする。
 - TaskをYAMLへ保存できる
 - Application再起動後に保存内容を復元できる
 - Primary NavigationによりTask / Config Dummy Pageを切り替えられる
-- 単独項目Validationを適切なタイミングで実行できる
-- 登録・更新時に必要なValidationを実行できる
-- Validation Errorを対象Form Field付近へ表示できる
+- Focus Out時にSingle Field Validationを実行できる
+- Correlation Validation Mode = INITIAL / ACTIVEに応じて相関Validationを適切なタイミングで実行できる
+- Create / Modify Button押下時に全Single Field Validationおよび必要なCorrelation Validationを実行できる
+- Validation Errorを対象Form Field付近へ適切な優先順位で表示できる
 - Application ErrorをError Toastとして通知できる
 - Info Toastが動作する
 - Confirmation Modalが動作する
