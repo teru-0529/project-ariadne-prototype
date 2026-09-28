@@ -36,32 +36,71 @@ backend_total=0
 backend_ng=0
 backend_classification_error=0
 
+current_test=""
+current_detail=""
+
 while IFS= read -r line; do
-    if [[ "${line}" =~ ^---\ (PASS|FAIL):\ Test([BC])_(.+)\ \((.+)\)$ ]]; then
-        result="${BASH_REMATCH[1]}"
-        class="${BASH_REMATCH[2]}"
-        name="${BASH_REMATCH[3]//_/ }"
-        duration="${BASH_REMATCH[4]}"
 
-        ((backend_total+=1))
+    # Test開始
+    if [[ "${line}" =~ ^===\ RUN[[:space:]]+(.+)$ ]]; then
+        current_test="${BASH_REMATCH[1]}"
+        current_detail=""
+        continue
+    fi
 
-        if [[ "${result}" == "PASS" ]]; then
-            echo "[${class}] PASS   ${name} (${duration})"
-        else
-            echo "[${class}] FAIL   ${name} (${duration})"
-            ((backend_ng+=1))
+    # Test実行中の詳細情報を保持
+    if [[ -n "${current_test}" &&
+          ! "${line}" =~ ^---\ (PASS|FAIL): ]]; then
+
+        if [[ -n "${current_detail}" ]]; then
+            current_detail+=$'\n'
         fi
 
-    elif [[ "${line}" =~ ^---\ (PASS|FAIL):\ (Test[^[:space:]]+)\ \((.+)\)$ ]]; then
-        name="${BASH_REMATCH[2]}"
+        current_detail+="${line}"
+        continue
+    fi
+
+    # Test終了
+    if [[ -n "${current_test}" &&
+          "${line}" =~ ^---\ (PASS|FAIL):[[:space:]]+([^[:space:]]+)[[:space:]]+\((.+)\)$ ]]; then
+
+        result="${BASH_REMATCH[1]}"
+        test_name="${BASH_REMATCH[2]}"
         duration="${BASH_REMATCH[3]}"
 
         ((backend_total+=1))
-        ((backend_ng+=1))
-        backend_classification_error=1
 
-        echo "[?] ERROR  ${name} (${duration})"
+        # B / C 分類
+        if [[ "${test_name}" =~ ^Test([BC])_(.+)$ ]]; then
+            class="${BASH_REMATCH[1]}"
+            name="${BASH_REMATCH[2]//_/ }"
+
+            if [[ "${result}" == "PASS" ]]; then
+                echo "[${class}] PASS   ${name} (${duration})"
+            else
+                echo "[${class}] FAIL   ${name} (${duration})"
+                ((backend_ng+=1))
+
+                # FAIL詳細
+                if [[ -n "${current_detail}" ]]; then
+                    while IFS= read -r detail; do
+                        echo "           ${detail#"${detail%%[![:space:]]*}"}"
+                    done <<< "${current_detail}"
+                fi
+            fi
+
+        # 未分類
+        else
+            ((backend_ng+=1))
+            backend_classification_error=1
+
+            echo "[?] ERROR  ${test_name} (${duration})"
+        fi
+
+        current_test=""
+        current_detail=""
     fi
+
 done <<< "${backend_output}"
 
 backend_end_ms=$(date +%s%3N)
@@ -95,27 +134,86 @@ frontend_total=0
 frontend_ng=0
 frontend_classification_error=0
 
+frontend_result=""
+frontend_class=""
+frontend_name=""
+frontend_duration=""
+frontend_error=""
+frontend_message=""
+frontend_location=""
+
+# ------------------------------------------------------------
+# Frontend Test Resultを取得
+# ------------------------------------------------------------
+
 while IFS= read -r line; do
-    if [[ "${line}" =~ \[([BC])\][[:space:]]+(.+)[[:space:]]+([0-9]+ms)$ ]]; then
-        class="${BASH_REMATCH[1]}"
-        name="${BASH_REMATCH[2]}"
-        duration="${BASH_REMATCH[3]}"
+
+    # 分類済みTest
+    if [[ "${line}" =~ ^[[:space:]]*([^[:space:]])[[:space:]]+.*\>[[:space:]]+\[([BC])\][[:space:]]+(.+)[[:space:]]+([0-9]+ms)$ ]]; then
+        mark="${BASH_REMATCH[1]}"
+
+        if [[ "${mark}" == "×" ]]; then
+            frontend_result="FAIL"
+            ((frontend_ng+=1))
+        else
+            frontend_result="PASS"
+        fi
+
+        frontend_class="${BASH_REMATCH[2]}"
+        frontend_name="${BASH_REMATCH[3]}"
+        frontend_duration="${BASH_REMATCH[4]}"
 
         ((frontend_total+=1))
+        continue
+    fi
 
-        echo "[${class}] PASS   ${name} (${duration})"
-
-    elif [[ "${line}" =~ \>[[:space:]]+([^[][^[:space:]].*)[[:space:]]+([0-9]+ms)$ ]]; then
-        name="${BASH_REMATCH[1]}"
-        duration="${BASH_REMATCH[2]}"
+    # 未分類Test
+    if [[ "${line}" =~ ^[[:space:]]*[^[:space:]][[:space:]]+.*\>[[:space:]]+([^[][^[:space:]].*)[[:space:]]+([0-9]+ms)$ ]]; then
+        unclassified_name="${BASH_REMATCH[1]}"
+        unclassified_duration="${BASH_REMATCH[2]}"
 
         ((frontend_total+=1))
         ((frontend_ng+=1))
         frontend_classification_error=1
-
-        echo "[?] ERROR  ${name} (${duration})"
+        continue
     fi
+
+    # Error種別 + Message
+    if [[ "${line}" =~ ^([^[:space:]]+Error):[[:space:]]+(.+)$ ]]; then
+        frontend_error="${BASH_REMATCH[1]}"
+        frontend_message="${BASH_REMATCH[2]}"
+        continue
+    fi
+
+    # 自分のTest FileのLocation
+    if [[ "${line}" =~ (src/[^[:space:]]+\.test\.ts:[0-9]+:[0-9]+) ]]; then
+        frontend_location="${BASH_REMATCH[1]}"
+    fi
+
 done <<< "${frontend_output_clean}"
+
+# ------------------------------------------------------------
+# Frontend Test Resultを表示
+# ------------------------------------------------------------
+
+if [[ -n "${frontend_name}" ]]; then
+    echo "[${frontend_class}] ${frontend_result}   ${frontend_name} (${frontend_duration})"
+
+    if [[ "${frontend_result}" == "FAIL" ]]; then
+        [[ -n "${frontend_location}" ]] &&
+            echo "           ${frontend_location}"
+
+        [[ -n "${frontend_error}" ]] &&
+            echo "           ${frontend_error}:"
+
+        [[ -n "${frontend_message}" ]] &&
+            echo "           ${frontend_message}"
+    fi
+fi
+
+if [[ ${frontend_classification_error} -ne 0 ]]; then
+    echo "[?] ERROR  ${unclassified_name} (${unclassified_duration})"
+fi
 
 frontend_end_ms=$(date +%s%3N)
 frontend_elapsed_ms=$((frontend_end_ms - frontend_start_ms))
