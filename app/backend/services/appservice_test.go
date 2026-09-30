@@ -5,18 +5,21 @@ import (
 	"testing"
 )
 
-func TestB_Display_App_Name(t *testing.T) {
+func Test_Display_App_Name(t *testing.T) {
+	// INFO: アプリ名称の応答
 	service := &services.AppService{}
 
 	got := service.GetAppName()
 	want := "Project ARIADNE Prototype"
-	// want := "WRONG"
 
 	if got != want {
 		t.Errorf("GetAppName() = %q, want %q", got, want)
 	}
 }
 
-// FIXME:
-func TestUnclassified(t *testing.T) {
+func Test_Small_Logic(t *testing.T) {
+	// INFO: ダミーテスト（D：Logicテスト相当）
+	if !*logic {
+		t.SkipNow()
+	}
 }
