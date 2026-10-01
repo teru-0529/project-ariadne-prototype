@@ -6,10 +6,9 @@
 
 set -u
 
-GREEN='\033[92m'
-RED='\033[91m'
-RESET='\033[0m'
-
+GREEN='\E[32m\E[2m'
+GRAY='\E[2m'
+RESET='\E[0m'
 
 # ------------------------------------------------------------
 # Initial
@@ -66,13 +65,13 @@ while IFS= read -r line; do
     fi
 
     # INFO: test結果行
-    if [[ "${line}" =~ ^---\ (FAIL:|PASS:)[[:space:]]+Test_([^[:space:]]+)[[:space:]]+(\(.+\)) ]]; then
+    if [[ "${line}" =~ ^---\ (FAIL:|PASS:)[[:space:]]+Test_([^[:space:]]+)[[:space:]]+\((.+)\) ]]; then
 
         if [[ "${BASH_REMATCH[1]}" == "FAIL:" ]]; then
-            printf "  ${RED}●${RESET} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]//_/ } ${BASH_REMATCH[3]}\n"
+            printf " 🔴 ${BASH_REMATCH[2]//_/ } ${GREEN}${BASH_REMATCH[3]}${RESET}\n"
             ((ng+=1))
         else
-            printf "  ${GREEN}●${RESET} ${BASH_REMATCH[1]} ${BASH_REMATCH[2]//_/ } ${BASH_REMATCH[3]}\n"
+            printf " 🟢 ${BASH_REMATCH[2]//_/ } ${GREEN}${BASH_REMATCH[3]}${RESET}\n"
         fi
         ((total+=1))
         continue
@@ -80,7 +79,7 @@ while IFS= read -r line; do
 
     # INFO: 詳細情報
     if [[ "${line}" =~ ^[[:space:]]+(.+\.go:[[:digit:]]+:.+) ]]; then
-        echo  "  ↓ ${BASH_REMATCH[1]}"
+        printf "  ${GRAY}⇂${RESET} ${GRAY}${BASH_REMATCH[1]}${RESET}\n"
         continue
     fi
 
@@ -96,8 +95,6 @@ done <<< "${output}"
 
 end_ms=$(date +%s%3N)
 elapsed_ms=$((end_ms - start_ms))
-
-echo
 
 
 # ------------------------------------------------------------
@@ -123,17 +120,17 @@ ng_rate() {
     fi
 }
 
-
+echo
 echo "=== Result ==="
 echo
 
 if (( ng == 0 && status == 0 )); then
-    printf "Total      : ${GREEN}●${RESET} PASS\n"
+    printf "${GRAY}Total${RESET}      : 🟢 PASS\n"
 else
-    printf "Total      : ${RED}●${RESET} FAIL\n"
+    printf "${GRAY}Total${RESET}      : 🔴 FAIL\n"
 fi
 
-printf "Error Rate : %d tests / %d NG (%s)   %s\n" \
+printf "${GRAY}Error Rate${RESET} : %d tests / %d NG (%s) ${GREEN}%s${RESET}\n" \
     "${total}" \
     "${ng}" \
     "$(ng_rate "${total}" "${ng}")" \

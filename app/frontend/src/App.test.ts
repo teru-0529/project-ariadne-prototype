@@ -10,7 +10,7 @@ vi.mock("../bindings/ariadne/backend/services", () => ({
 }));
 
 // テスト実行
-test("[B] Display App Name", async () => {
+test("Display App Name", async () => {
   render(App);
 
   const heading = await screen.findByRole("heading", {
@@ -20,5 +20,6 @@ test("[B] Display App Name", async () => {
   expect(heading).toBeTruthy();
 });
 
-// FIXME:
-test("Unclassified", () => {});
+test("Dummy Logic", () => {
+  expect(true).toBe(true);
+});
