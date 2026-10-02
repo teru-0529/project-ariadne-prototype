@@ -22,6 +22,44 @@ Behavior
 └─ Scope    : Front / Back
 ```
 
+Integration Testについては、
+Scopeが `Front + Back` のBehaviorについて
+Result Pattern単位で対象を定義する。
+
+Integration Test対象となるResult Patternには、
+
+```text
+Integration Test:
+- Target: Yes
+- Priority: HIGH / MID / LOW
+```
+
+を定義する。
+
+Integration Test対象外の場合は、
+
+```text
+Integration Test:
+- Target: No
+```
+
+とし、Priorityは定義しない。
+
+Priorityは、
+Manual Integration Testの実施判断の目安とする。
+
+- HIGH
+  - 原則として実施する
+- MID
+  - 変更内容・影響範囲に応じて実施する
+- LOW
+  - 通常は実施しない
+
+Priorityは品質上の重要度を表すものではない。
+
+Scopeが `Front` のBehaviorには、
+Integration Test情報を定義しない。
+
 ---
 
 ## 2. Application Shell
@@ -112,15 +150,30 @@ Result / Pattern:
 - Task Listを取得する
 - Task Listを表示する
 
+Integration Test:
+
+- Target: Yes
+- Priority: HIGH
+
 #### Success - Empty
 
 - Task Listを取得する
 - 0件のTask Listを正常状態として表示する
 
+Integration Test:
+
+- Target: Yes
+- Priority: LOW
+
 #### Read Failure
 
 - Task Listを表示できない
 - Error Toastを表示する
+
+Integration Test:
+
+- Target: Yes
+- Priority: MID
 
 Scope:
 
@@ -149,15 +202,28 @@ Result / Pattern:
 - 選択されたTaskをIDで再取得する
 - Task Edit画面を表示する
 
+Integration Test:
+
+- Target: Yes
+- Priority: HIGH
+
 #### Not Found
 
 - 選択されたTaskが存在しない
 - Error Toastを表示する
 
+Integration Test:
+
+- Target: No
+
 #### Read Failure
 
 - Taskを取得できない
 - Error Toastを表示する
+
+Integration Test:
+
+- Target: No
 
 Scope:
 
@@ -381,6 +447,11 @@ Form Reset:
 - Correlation Validation Mode = INITIAL
 - Create Button = Disabled
 
+Integration Test:
+
+- Target: Yes
+- Priority: HIGH
+
 #### Write Failure
 
 - Taskを保存できない
@@ -388,6 +459,11 @@ Form Reset:
 - Error Toastを表示する
 - 入力内容を維持する
 - Correlation Validation Mode = ACTIVEを維持する
+
+Integration Test:
+
+- Target: Yes
+- Priority: LOW
 
 Scope:
 
@@ -605,6 +681,11 @@ Edit Baseline Reset:
 - Correlation Validation Mode = INITIAL
 - Modify Button = Disabled
 
+Integration Test:
+
+- Target: Yes
+- Priority: HIGH
+
 #### Not Found
 
 - 更新対象Taskが存在しない
@@ -614,6 +695,10 @@ Edit Baseline Reset:
 - Original Valuesを維持する
 - Changed Fieldsを維持する
 - Correlation Validation Mode = ACTIVEを維持する
+
+Integration Test:
+
+- Target: No
 
 #### Read Failure
 
@@ -625,6 +710,10 @@ Edit Baseline Reset:
 - Changed Fieldsを維持する
 - Correlation Validation Mode = ACTIVEを維持する
 
+Integration Test:
+
+- Target: No
+
 #### Write Failure
 
 - Taskを保存できない
@@ -634,6 +723,10 @@ Edit Baseline Reset:
 - Original Valuesを維持する
 - Changed Fieldsを維持する
 - Correlation Validation Mode = ACTIVEを維持する
+
+Integration Test:
+
+- Target: No
 
 Scope:
 

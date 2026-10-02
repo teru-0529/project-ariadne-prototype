@@ -943,18 +943,21 @@ Phase 5実装時に技術検証する。TODO:
 ## 6. Test Strategy
 
 Phase 5では、テストを技術要素ごとではなく、
-保証する範囲によってA / B / Cに分類する。
+保証する範囲によってA / B / C / Dに分類する。
 
-基本戦略は **A + B** とする。
+基本戦略は **Module Test + Integration Test** とする。
 
-CはBを適切な粒度に保つため、
-または実装を小さな段階に分けて確認するための補助的なテストと位置付ける。
+D. Logic / Development Step Testは、
+Module Testを適切な粒度に保つため、
+または実装を小さな段階に分けて確認するための
+補助的なテストと位置付ける。
 
 ---
 
 ### 6.1 A. Integration Test
 
-Svelte / Wails / Go間の実際の接続を保証する。
+Svelte / Wails / Go / File間の
+実際のApplication経路が結合した状態で成立することを保証する。
 
 ```text
 Svelte
@@ -962,221 +965,370 @@ Svelte
 Wails generated binding / runtime
   ↓
 Go
+  ↓
+File
 ```
 
-- Mockを使用せず、実際のWails経由で確認する
-- 全機能・全パターンを確認するものではない
-- 代表的なVertical Sliceを少数通し、Svelte ↔ Goの境界そのものが成立していることを保証する
-- Phase 5ではFileまで含めた実経路を確認対象としてよい
+Mockを使用せず、実際のApplication経路で確認する。
 
-例：
+Project ARIADNEでは、
+Integration TestはManualでの実施を基本とする。
+
+全Behavior / 全Result Patternを確認するものではなく、
+Behavior MapのResult Pattern単位で
+Integration Test対象を選定する。
+
+事前状態のFixture切り替えによって
+対象Result Patternを再現できるかどうかを
+選定時の判断材料とする。
+
+Test実行途中でYAMLを直接変更するなど、
+特殊な状態操作を必要とするResult Patternは、
+通常のIntegration Test対象とはしない。
+
+必要な場合は、
+特殊な異常系Testとして個別に確認方法を決定する。
+
+Integration Test対象となるResult Patternには、
+Manual Testの実施優先度を定義する。
+
+- HIGH
+  - 原則として実施する
+- MID
+  - 変更内容・影響範囲に応じて実施する
+- LOW
+  - 通常は実施しない
+
+このPriorityは品質上の重要度ではなく、
+Manual Integration Testの実施判断の目安とする。
+
+Integration Testは
+dev環境で実施することを基本とする。
+
+推奨する実施位置は以下とする。
 
 ```text
-test data
+作業Branch
    ↓
-File
+実装
    ↓
-Go
+Frontend / Backend Module Test
    ↓
-Wails
+test.sh PASS
    ↓
-Svelte
+Manual Integration Test
    ↓
-画面表示
+PASS
+   ↓
+Merge
 ```
 
-具体的な自動化方法はPhase 5実装時にWails v3環境で検証して決定する。
+原則として、
+対象Behaviorの実装を行った作業Branch上、
+Merge前、かつCleanな状態で実施する。
+
+Integration Test実施時には、
+対象コードを識別できるよう、
+Branch / Commit / Dirty状態等を
+Evidenceとして記録できるようにする。
+
+事前状態のFixture切り替え、
+元YAMLの退避・復元、
+Evidence取得等の具体的な仕組みについては、
+実際のYAML Read / Write実装後に
+実体を確認した上で決定する。TODO:
+
+Build済みApplicationそのものの確認は、
+Integration Testの目的には含めない。
 
 ---
 
-### 6.2 B. Behavior Test
+### 6.2 B. Frontend Module Test
 
-公開された振る舞いを単位としてテストする。
+対象BehaviorのFrontend側の振る舞いを、
+Backendから切り離して保証する。
 
-Phase 5におけるTDDは、
-原則としてこのBを中心に行う。
-
-Use CaseがFrontendのみで完結する場合は、
-Front Bのみを作成する。
-
-FrontendとBackendの双方を利用するUse Caseでは、
-原則としてFront BとBack Bに分けてBehaviorを保証する。
-
-```text
-FrontendのみのUse Case
-
-Front B
-  Svelte
-    ↓
-Behavior
-
-
-Frontend + BackendのUse Case
-
-Front B
-  Svelte
-    ↓
-Go Mock
-
-Back B
-  Go Public API
-    ↓
-File
-
-代表経路
-  ↓
-Integration A
-```
-
-すべてのBehaviorについてIntegration Testを作成するのではなく、
-実際の境界接続を保証する価値のある代表的な経路をAとして確認する。
-
-#### Front B
-
-Front Bでは、
-ユーザー操作を起点としたFrontendの振る舞いを確認する。
+Test対象は、
+対象Behaviorを開始できる
+公開されたSvelte Componentとする。
 
 Backendを利用するBehaviorではGo側をMockし、
 ユーザー操作に対するBackend Responseを再現する。
 
+```text
+User Action
+   ↓
+Svelte Component
+   ↓
+Frontend Logic
+   ↓
+Go Mock
+   ↓
+Frontend Logic
+   ↓
+Screen / Toast / State
+```
+
+Frontend Module Testでは、
+ユーザー操作と、
+それに対する表示・状態変化等の
+振る舞いを確認する。
+
+子Component単位で網羅的にTestすることは目的とせず、
+BehaviorのFrontend側を外部から確認できる
+適切なComponent境界を選択する。
+
+1 Behavior = 1 Component = 1 Test File
+とは規定しない。
+
+Frontend Testには
+Vitest + Svelte Testing Libraryを使用する。
+
+Test Fileは実装と同じ場所へ配置する。
+
 例：
 
-- Task / Configを選択すると対象Pageへ切り替わる
-- Listを選択するとTask一覧取得を要求し、取得したTaskを一覧表示する
-- Taskを選択すると編集画面が表示される
-- Task一覧取得に失敗した場合にError Toastが表示される
-- Focus Outにより対象項目のValidationが実行され、Errorがある場合はFieldへ表示される
-- 登録操作を行いValidationに成功するとConfirmation Modalが表示される
-
-デザインそのもの
-（色、余白、サイズ等）は原則として自動テスト対象とせず、
-実機確認する。
-
-Svelte側のテスト基盤は、
-Vitest + Svelte Testing Libraryを基本候補とする。
-
-#### Back B
-
-Svelteから呼ばれるPublic API / Service等、
-外部から見た公開単位をテストする。
-
-内部関数の構成は原則として意識せず、
-
 ```text
-入力
- ↓
-Public API / Service
- ↓
-期待する結果
+TaskList.svelte
+TaskList.test.ts
 ```
 
-を確認する。
+Frontend Module Testでは、
+Visual Designそのものは原則として自動Test対象としない。
 
-PrototypeではFile I/Oも基本的にBehavior Testへ含める。
+対象外の例：
 
-```text
-test data / temporary file
-       ↓
-Go Public API
-       ↓
-expected result
-```
+- CSS
+- Layout
+- 色
+- 余白
+- サイズ
+- Rendering環境に依存する見た目
 
-File System自体をMockすることを基本とはせず、
-`t.TempDir()` 等を利用して実際のFile I/Oを行う。
+これらは実機で確認する。
+
+一方、
+表示される / 表示されない、
+Validation Messageが表示される、
+Toastが表示される、
+画面状態が変化する等、
+Behaviorとして意味を持つUI状態はTest対象とする。
+
+Frontend Testの日常的な実行入口は
+`frontend-test.sh` とする。
+
+Test結果は日常利用しやすいよう
+コンパクトに表示する。
+
+主な表示内容：
+
+- TestごとのPASS / FAIL
+- Total
+- Error Rate
+- 実行時間
+- Failure時のみErrors
+
+巨大なDOM、
+冗長なStack Trace、
+ANSI等のノイズは抑制する。
 
 ---
 
-### 6.3 C. Logic / Development Step Test
+### 6.3 C. Backend Module Test
 
-Cは必要な場合のみ使用する。
+対象BehaviorのBackend側の振る舞いを、
+Serviceの公開APIから保証する。
 
-Cを利用する主な目的は以下の2つとする。
+```text
+Input
+  ↓
+Service Public API
+  ↓
+Persistence Port / File Adapter
+  ↓
+Expected Result
+```
+
+File I/Oの有無にかかわらず、
+Backend Module Testは
+Serviceの公開APIをTest境界とする。
+
+Service内部の関数構成は原則として意識しない。
+
+Test Fileは実装と同じPackage Directoryへ
+`xxx_test.go` として配置する。
+
+Backend Module Testでは原則として
+external test packageを使用し、
+privateな実装へTestが入り込まないようにする。
+
+File I/Oを伴うBehaviorでは、
+File SystemをMockすることを基本とはせず、
+`t.TempDir()` 等を利用して
+実際のFile I/Oを行う。
+
+このためFile Persistence Adapterは、
+対象となるWorkspace / Root Directoryを
+内部で固定・探索するのではなく、
+外部から与えられる設計とする。
+
+ProductionとTestでは、
+同じFile Adapterへ異なるDirectoryを与える。
+
+```text
+Production
+  → workspaceDir
+
+Test
+  → t.TempDir()
+```
+
+Writeの確認は、
+先に成立しているRead機能を利用して読み戻し、
+Domain上の結果を確認することを基本とする。
+
+これはWrite実装がRead実装へ依存するという意味ではなく、
+Testの実施順序として
+Read機能 / Testが先に成立していることを前提とする。
+
+YAML文字列そのものの直接比較は、
+Backend Module Testの基本方針とはしない。
+
+Backend Testの日常的な実行入口は
+`backend-test.sh` とする。
+
+通常実行ではBackend Module Testを実行する。
+
+---
+
+### 6.4 D. Logic / Development Step Test
+
+Dは必要な場合のみ使用する。
+
+Dを利用する主な目的は以下の2つとする。
 
 #### 1. Logicの独立保証
 
-BのBehavior Testだけではパターン数が過大になる場合、
-複雑な内部Logicを切り出して直接テストする。
+Frontend / Backend Module Testだけでは
+パターン数が過大になる場合、
+複雑な内部Logicを切り出して直接Testする。
 
-GoではTable-Driven Testを基本候補とする。
+例えば、
 
-Frontend側でも、
-複雑なTypeScript Logicが存在する場合のみ純粋Logicとして切り出し、
-Vitestで直接テストする。
+- 多数の境界値を持つLogic
+- 多数の組み合わせを持つLogic
+- パス解決
+- File判定
+- 複雑なTypeScript Logic
 
-File I/OについてもBを基本とするが、
-パス解決、File判定等で多数のパターンが発生する局所Logicについては
-Cとして切り出してよい。
+等を対象とする。
+
+Module Testで十分に保証できる場合は、
+Logic Testを追加する必要はない。
 
 #### 2. 段階的な実装確認
 
 未知の技術要素を含むBehaviorについて、
-最終的なBまで一度に実装せず、
-小さな技術単位で動作を確認しながら段階的に進めたい場合にもCを利用してよい。
+最終的なModule Testまで一度に実装せず、
+小さな技術単位で動作を確認しながら
+段階的に進めたい場合にも利用してよい。
 
 例えばTask YAML Loadでは、
-最終的なBack Bへ到達するまでに以下のような段階を踏むことができる。
 
 ```text
-[C] Fileを読み込める
+[D] Fileを読み込める
        ↓
-[C] YAMLをParseできる
+[D] YAMLをParseできる
        ↓
-[C] Task Modelへ変換できる
+[D] Task Modelへ変換できる
        ↓
-[B] LoadTasks()からTask一覧を取得できる
+[C] Service Public APIからTask一覧を取得できる
 ```
 
-この用途のCは、
-完成後の仕様保証だけを目的とするものではなく、
-実装中に「ここまで動いた」ことを確認して次へ進むための足場として利用する。
+のように進めることができる。
 
-上位のBが成立した後、
-そのCを継続して保持する価値がない場合は削除してよい。
+Development Stepとして作成したDは、
+上位のModule Testが成立した後、
+継続して保持する価値がなければ削除してよい。
 
-一方、
-内部Logicを直接保証する価値がある場合は継続して保持する。
+内部Logicを直接保証する価値がある場合は
+継続して保持する。
 
-Cを利用する場合でも、
+Dを利用する場合でも、
 実装内部を網羅的にTestすることを目的とはしない。
+
+Logic Test専用のDirectoryや
+特別なFile命名規則は設けない。
+
+Goでは通常のTestと同様に
+実装と同じPackage Directoryへ
+`xxx_test.go` として配置する。
+
+privateなLogicを直接Testする必要がある場合は、
+internal test packageを使用してよい。
+
+Logic Testであることは
+各Test自身のskipによって明示する。
+
+通常の `backend-test.sh` では実行せず、
+必要な場合のみ
+
+```text
+backend-test.sh --logic
+```
+
+によって実行する。
+
+Logic / Development Step Testは
+`test.sh` およびBuild Gateには含めない。
 
 ---
 
-### 6.4 A / B / Cの関係
+### 6.5 A / B / C / Dの関係
 
 ```text
 A. Integration Test
 ────────────────────────
-Svelte → Wails → Go
-境界そのものを保証
-代表経路のみ
+Svelte → Wails → Go → File
+
+実Application経路を保証
+Manual
+選定したResult Patternのみ
 
 
-B. Behavior Test
+B. Frontend Module Test
 ────────────────────────
        ★ TDDの主戦場 ★
 
-Front B               Back B
-Svelte                 Go
-   │                    │
-Go Mock             Public API
-                        │
-                       File
+Svelte Component
+       │
+    Go Mock
 
-公開された振る舞いを保証
+BehaviorのFrontend側を保証
 
 
-C. Logic / Development Step Test
+C. Backend Module Test
+────────────────────────
+       ★ TDDの主戦場 ★
+
+Service Public API
+       │
+Persistence / File
+
+BehaviorのBackend側を保証
+
+
+D. Logic / Development Step Test
 ────────────────────────
        必要な場合のみ
 
 ① 複雑なLogicを独立して保証する
 
-② Bへ到達するまで
+② Module Testへ到達するまで
    小さな段階で動作を確認する
 
-上位B成立後、
-保証価値のない足場のCは削除してよい
+上位Module Test成立後、
+保証価値のない足場のDは削除してよい
 ```
 
 ---
@@ -1212,22 +1364,24 @@ Frontend / Backendの関与をScopeとして整理する。
 
 ```text
 Front
-    → Front B
+    → Frontend Module Test
 
 Front + Back
-    → Front B
-    → Back B
-
-代表的なVertical Slice
-    → Integration A
+    → Frontend Module Test
+    → Backend Module Test
 ```
 
-すべてのBehaviorについてIntegration Aを作成するのではなく、
-Svelte / Wails / Go間の実際の境界接続を保証する価値のある
-代表的な経路のみIntegration Aとして確認する。
+Integration Testは、
+ScopeがFront + BackとなるBehaviorのResult Patternから
+対象を選定する。
 
-Phase 5のBehavior Mapは、
-別途 `behavior-map.md` に定義する。
+すべてのResult PatternをIntegration Test対象とするのではなく、
+通常のManual Integrationとして確認する価値があり、
+事前状態のFixture切り替えによって
+再現可能なResult Patternを対象とする。
+
+Integration Test対象および実施Priorityは、
+`behavior-map.md` に定義する。
 
 各StepではBehavior Mapを基に、
 実装対象となるBehaviorのTest Caseを実装直前に具体化する。
@@ -1239,42 +1393,43 @@ Behaviorを選択
        ↓
 Front / Backの関与を確認
        ↓
-必要なBを決定
+必要なModule Testを決定
        ↓
-B：RED
+Module Test：RED
        ↓
 実装
        │
        ├─ そのまま実装可能
        │      ↓
-       │   B：GREEN
+       │   Module Test：GREEN
        │
        └─ 小さな段階で確認したい
               ↓
-           C：RED
+           Logic / Development Step Test：RED
               ↓
            最小実装
               ↓
-           C：GREEN
+           Logic / Development Step Test：GREEN
               ↓
            次の段階
               ↓
-           Bへ戻る
+           Module Testへ戻る
               ↓
-           B：GREEN
+           Module Test：GREEN
        ↓
 必要ならRefactor
        ↓
-全テスト実行
+test.sh
        ↓
-代表経路の場合
+Integration Target = Yes の場合
        ↓
-Integration A
+Priorityに応じてManual Integration Test
 ```
 
-Cは、
+Logic / Development Step Testは、
 複雑なLogicを切り出す場合だけでなく、
-未知の技術要素を一段ずつ確認しながら実装するためにも利用できる。
+未知の技術要素を一段ずつ確認しながら
+実装するためにも利用できる。
 
 Phase 5では、
 
@@ -1291,52 +1446,114 @@ Test / Buildの実行基盤を整備する。
 
 ### 8.1 test.sh
 
+Backend / Frontendの
+通常のModule Testをまとめて実行する
+日常Testの統一入口とする。
+
 基本イメージを以下とする。
 
 ```text
 test.sh
-├─ Go tests
-└─ Svelte / TypeScript tests
+├─ backend-test.sh
+│    └─ Backend Module Test
+│
+└─ frontend-test.sh
+     └─ Frontend Module Test
 ```
+
+Backend / Frontendの両方がPASSした場合のみ、
+`test.sh` をPASSとする。
+
+いずれかがFAILした場合は、
+`test.sh` をFAILとする。
+
+各Testの詳細な実行方法および結果表示は、
+`backend-test.sh` / `frontend-test.sh` の責務とする。
+
+`test.sh` 自身では、
+Test分類やReporterを再構築しない。
+
+Logic / Development Step Testは
+通常の `test.sh` には含めない。
+
+Manual Integration Testも
+`test.sh` には含めない。
 
 TDD中に頻繁に実行するため、
 高速に完了することを重視する。
-
-Integration Testについては、
-実際のWails v3での自動化方式、実行時間、安定性を確認した上で、
-`test.sh`への組み込み方を決定する。
 
 ---
 
 ### 8.2 build.sh
 
-`build.sh` はTestをBuild Gateとして実行した上で、
+`build.sh` は、
+Frontend / Backend Module Testを
+Build Gateとして実行した上で、
 Wails ApplicationをBuildする。
 
 基本イメージを以下とする。
 
 ```text
 build.sh
-├─ Test
-│   ├─ Behavior / Logic Test
-│   └─ Integration Test
-│
-└─ Wails Application Build
-       ↓
-   ariadne-prototype.exe
+   ↓
+既存Build成果物を削除
+   ↓
+test.sh
+   ↓
+PASS ?
+   ├─ YES → Wails Application Build
+   │            ↓
+   │      ariadne-prototype.exe
+   │
+   └─ NO  → Buildせず終了
+             ↓
+          成果物なし
 ```
 
-`test.sh` にIntegration Testを含めるかどうかは、
-Integration Testの実装方式、実行時間、安定性を確認して決定する。
+Build開始前に、
+既存のBuild成果物を削除する。
 
-ただし `build.sh` によるRelease Buildの前には、
-Phase 5で必要なTestをすべて実行し、
-Integration Testの成功もBuild条件とする。
+`test.sh` がPASSした場合のみ
+Wails ApplicationをBuildする。
 
-Testを通過していない状態ではApplication Buildを行わない。
+`test.sh` がFAILした場合は、
+Wails ApplicationをBuildしない。
 
-Build後は生成されたWindows実行ファイルを実際に起動し、
-Applicationとして動作することを節目ごとに確認する。
+この場合、
+以前のBuildで生成された成果物も残さない。
+
+したがって、
+
+**TestがPASSしていない状態では、
+Build成果物が存在しない**
+
+ことをBuild Gateの原則とする。
+
+Build Gateには、
+
+- Backend Module Test
+- Frontend Module Test
+
+を含める。
+
+Logic / Development Step Testは
+Build Gateには含めない。
+
+Manual Integration Testも
+Build Gateには含めない。
+
+Manual Integration Testは、
+作業Branch上でModule Testおよび `test.sh` がPASSした後、
+Merge前に実施する開発運用上の確認とする。
+
+Build Gateの技術検証では、
+意図的にModule TestをREDにした状態で
+`build.sh` を実行し、
+
+- Wails Buildが実行されないこと
+- 既存Build成果物も残らないこと
+
+を確認する。
 
 ---
 
@@ -1434,58 +1651,106 @@ Front / Backの関与を明確にする。
 
 詳細は `behavior-map.md` に定義する。
 
-#### 2-2 Go Test Foundation
+#### 2-2 Go Test Foundation — COMPLETE
 
-Go Testを実際に動かしながら、
-Backend Testの基本構造を成立させる。
+Go Testを実行できるBackend Test基盤を構築した。
 
-最小のDummy Testを作成し、
-Go Testを実行できることを確認する。
+Backend Testの日常的な実行入口として
+`backend-test.sh` を作成した。
 
-#### 2-3 Frontend Test Foundation
+通常実行では
+Backend Module Testを実行する。
 
-Frontend Testを実際に動かしながら、
-Svelte / TypeScript Testの基本構造を成立させる。
+`--logic` 指定時は、
+Logic / Development Step Testも
+実行できる構成とした。
 
-Vitest + Svelte Testing Libraryを基本候補とし、
-最小のDummy Testを作成して実行できることを確認する。
+Test結果は、
+日常利用しやすいコンパクトな形式で表示する。
+
+Test FileはGo標準に従い、
+実装と同じPackage Directoryへ
+`xxx_test.go` として配置する。
+
+Backend Module Testは原則として
+external test packageから
+Service公開APIをTestする。
+
+File I/Oについては、
+`t.TempDir()` を利用して
+実File I/Oを行う方針とする。
+
+実際のFile I/O Testは、
+File Adapter実装時にBehavior実装と合わせて行う。
+
+#### 2-3 Frontend Test Foundation — COMPLETE
+
+Frontend Test基盤として
+Vitest + Svelte Testing Libraryを正式採用した。
+
+Frontend Testの日常的な実行入口として
+`frontend-test.sh` を作成した。
+
+Svelte Componentに対する
+Frontend Module Testを実行できる基盤を構築した。
+
+Test Fileは実装と同じ場所へ
+`Xxx.test.ts` として配置する。
+
+Go / BackendをMockし、
+Frontend側の振る舞いをTestできることを確認した。
+
+Test結果は日常利用向けに
+コンパクトに表示する。
+
+主な表示内容：
+
+- TestごとのPASS / FAIL
+- Total
+- Error Rate
+- 実行時間
+- Failure時のみErrors
+
+巨大なDOM、
+冗長なStack Trace、
+ANSI等のノイズは抑制する。
 
 #### 2-4 test.sh
 
-Go TestおよびFrontend Testを
-`test.sh` から一括実行できるようにする。
+Backend / Frontendの
+通常のModule Testを一括実行する
+`test.sh` を構築する。
 
-TDD中に繰り返し利用するため、
-日常的に高速に実行できるTestを対象とする。
+```text
+test.sh
+├─ backend-test.sh
+└─ frontend-test.sh
+```
+
+両方がPASSした場合のみ
+`test.sh` をPASSとする。
+
+Logic / Development Step Testおよび
+Manual Integration Testは含めない。
 
 #### 2-5 build.sh / Build Gate
 
-`build.sh` からTestを実行し、
-Test成功時のみWails ApplicationをBuildする。
+`build.sh` から `test.sh` を実行し、
+Test成功時のみ
+Wails ApplicationをBuildする。
+
+Build開始前に既存Build成果物を削除する。
 
 意図的にTestを失敗させ、
-TestがREDの場合にBuildが実行されないことを確認する。
 
-#### 2-6 Behavior / Logic Test 最小技術検証
+- TestがREDの場合にWails Buildが実行されないこと
+- 既存Build成果物も残らないこと
 
-B. Behavior Testを中心として、
-Phase 5で採用するTest方式を最小単位で技術検証する。
+を確認する。
 
-必要に応じて、
-C. Logic / Development Step Testについても
-小さな実装の足場として利用できることを確認する。
-
-#### 2-7 Integration Test 技術検証
-
-Svelte / Wails / Go間の実際の接続を確認する
-Integration Test方式を技術検証する。
-
-自動化方式、実行時間、安定性を確認した上で、
-`test.sh` およびRelease Build Gateへの組み込み方を決定する。
-
-詳細なTest Caseおよび
-実装途中で必要となるCは、
-Step 3以降の各Behavior実装時に具体化する。
+Logic / Development Step Testおよび
+Manual Integration Testは
+Build Gateには含めない。
 
 ---
 
