@@ -17,7 +17,13 @@
     </div>
 
     <nav class="primary-navigation" aria-label="Primary">
-      <button type="button" aria-current={currentPage === "task" ? "page" : undefined}> Task </button>
+      <button
+        type="button"
+        aria-current={currentPage === "task" ? "page" : undefined}
+        on:click={() => (currentPage = "task")}
+      >
+        Task
+      </button>
       <button
         type="button"
         aria-current={currentPage === "config" ? "page" : undefined}
