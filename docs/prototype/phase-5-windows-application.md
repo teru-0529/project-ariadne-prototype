@@ -1651,7 +1651,7 @@ Front / Backの関与を明確にする。
 
 詳細は `behavior-map.md` に定義する。
 
-#### 2-2 Go Test Foundation — COMPLETE
+#### 2-2 Go Test Foundation
 
 Go Testを実行できるBackend Test基盤を構築した。
 
@@ -1683,7 +1683,7 @@ File I/Oについては、
 実際のFile I/O Testは、
 File Adapter実装時にBehavior実装と合わせて行う。
 
-#### 2-3 Frontend Test Foundation — COMPLETE
+#### 2-3 Frontend Test Foundation
 
 Frontend Test基盤として
 Vitest + Svelte Testing Libraryを正式採用した。

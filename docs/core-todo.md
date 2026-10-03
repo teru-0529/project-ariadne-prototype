@@ -1,5 +1,16 @@
 # Core TODO
 
+Prototypeで方針・仕様を決定し、Coreで実装または最終判断する事項を管理する。
+
+## Core Start
+
+- [ ] Core TODOを棚卸しし、各項目を `[実装]` / `[検討]` に分類する
+- [ ] Core Backlogを棚卸しし、Coreで実施する項目をCore TODOへ移す
+- [ ] 棚卸し結果をもとにCoreの実装順序を決定する
+
+> `[実装]` / `[検討]` の分類はCore開始時に行う。
+> Prototype期間中は、Coreで実施することが決まっている事項を本TODOへ追加する。
+
 ## Source / Model
 
 ### Element Definition
@@ -122,22 +133,6 @@
 - [ ] GenerationをApplicationから実行できるようにする
 - [ ] Coreの内部実行時データおよび永続化方式の必要性を判断する
 - [ ] SQLite等の内部Databaseを採用するか判断する
-
-## Git Integration
-
-- [ ] ARIADNE ApplicationからGit操作を行う必要性を判断する
-- [ ] 必要な場合、status / diff / commit / push等の責務と実装方式を決定する
-
-## Future Feature
-
-### AI-assisted Editing
-
-- [ ] ARIADNE Sourceの登録・編集をAIで支援するAI Modeを検討する
-- [ ] 自然言語からElement / API / DDL Definitionの登録候補を生成する方式を検討する
-- [ ] AIの生成結果を直接正本へ反映せず、利用者が確認・修正してから確定する操作モデルを設計する
-- [ ] AI Provider / Model / API接続情報をARIADNEでどのように管理するか検討する
-- [ ] AI利用に必要な契約・認証・利用制約を整理する
-- [ ] GitHub Copilot等、既存の企業向けAI契約を利用可能か調査する
 
 ## Development Environment
 
