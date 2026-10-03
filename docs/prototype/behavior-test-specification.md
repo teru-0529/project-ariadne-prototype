@@ -36,6 +36,7 @@ Test Codeそのものの詳細設計を目的とはせず、Behaviorに対して
 - `List` / `Create` のどちらも選択されていない
 - Main Areaに `Select an operation.` が表示される
 - Task List取得処理は呼び出されない
+- Footerが表示される
 
 ### Backend Module Test
 

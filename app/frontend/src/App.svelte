@@ -1,30 +1,251 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { AppService } from "../bindings/ariadne/backend/services";
-
-  let appName = $state("");
-
-  onMount(async () => {
-    try {
-      appName = await AppService.GetAppName();
-    } catch (error) {
-      console.error("Error initializing AppService:", error);
-    }
-  });
+  // TODO: S01ではApplication Shellの初期状態表示のみ
 </script>
 
-<main class="container">
-  <h1 class="title">{appName}</h1>
-</main>
+<div class="application">
+  <header class="application-header">
+    <div class="brand">
+      <div class="brand-accent" aria-hidden="true">
+        <div class="brand-bar"></div>
+      </div>
+
+      <div class="brand-title">
+        <h1>PROJECT ARIADNE</h1>
+      </div>
+    </div>
+
+    <nav class="primary-navigation" aria-label="Primary">
+      <button type="button" aria-current="page">Task</button>
+      <button type="button">Config</button>
+    </nav>
+  </header>
+
+  <div class="workspace">
+    <aside class="side-navigation">
+      <nav aria-label="Task">
+        <button type="button">List</button>
+        <button type="button">Create</button>
+      </nav>
+    </aside>
+
+    <main class="main-area">
+      <p>Select an operation.</p>
+    </main>
+  </div>
+
+  <footer class="application-footer">
+    <p>&copy; 2026 PROJECT ARIADNE. All rights reserved.</p>
+  </footer>
+</div>
 
 <style>
-  :global(body) {
-    margin: 0;
-    font-family: sans-serif;
+  :global(*) {
+    box-sizing: border-box;
   }
 
-  main {
-    padding: 2rem;
-    color: white;
+  :global(html),
+  :global(body),
+  :global(#app) {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  :global(body) {
+    font-family: "Segoe UI", "Note Sans JP", sans-serif;
+  }
+
+  button {
+    font: inherit;
+  }
+
+  .application {
+    --color-background: #ffffff;
+    --color-surface: #f7f8fa;
+    --color-border: #d9dde5;
+    --color-text: #252a33;
+    --color-text-muted: #667085;
+    --color-accent: #315fba;
+    --color-footer: #263b5e;
+
+    display: grid;
+    grid-template-rows: 64px minmax(0, 1fr) 32px;
+
+    width: 100%;
+    height: 100%;
+
+    color: var(--color-text);
+    background: var(--color-background);
+  }
+
+  .application-header {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+
+    padding: 0 24px 0 0;
+
+    background: #ffffff;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: stretch;
+
+    height: 100%;
+  }
+
+  /* 左の薄い水色ブロック */
+  .brand-accent {
+    position: relative;
+
+    width: 48px;
+    margin: 0;
+
+    background: #dce8fb;
+  }
+
+  /* 濃いブルーの縦棒 */
+  .brand-bar {
+    position: absolute;
+
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 15px;
+
+    background: var(--color-accent);
+  }
+
+  .brand-title {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    margin-left: 12px;
+    padding-right: 180px;
+  }
+
+  .brand-title h1 {
+    margin: 0;
+
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* タイトル下の右へ伸びるライン */
+  .brand-bar::after {
+    position: absolute;
+    bottom: 4px;
+    left: 100%;
+
+    width: 360px;
+    height: 5px;
+
+    content: "";
+    background: linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) 55%, transparent 100%);
+  }
+
+  .primary-navigation {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .primary-navigation button {
+    position: relative;
+
+    min-width: 72px;
+    padding: 0 16px;
+
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 0;
+
+    cursor: pointer;
+  }
+
+  .primary-navigation button[aria-current="page"] {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .primary-navigation button[aria-current="page"]::after {
+    position: absolute;
+    right: 12px;
+    bottom: 0;
+    left: 12px;
+
+    height: 3px;
+
+    content: "";
+    background: var(--color-accent);
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .side-navigation {
+    padding: 12px 8px;
+
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+  }
+
+  .side-navigation nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .side-navigation button {
+    width: 100%;
+    padding: 7px 12px;
+
+    color: var(--color-text);
+    text-align: left;
+
+    background: transparent;
+    border: 0;
+    border-radius: 3px;
+
+    cursor: pointer;
+  }
+
+  .side-navigation button:hover {
+    background: #eceff4;
+  }
+
+  .main-area {
+    padding: 32px;
+
+    background: var(--color-background);
+  }
+
+  .main-area p {
+    margin: 0;
+
+    color: var(--color-text-muted);
+    font-size: 16px;
+  }
+
+  .application-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 16px;
+
+    color: #eef2f7;
+    background: var(--color-footer);
+
+    font-size: 12px;
   }
 </style>

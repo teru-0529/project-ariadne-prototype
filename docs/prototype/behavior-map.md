@@ -79,6 +79,7 @@ Result:
 - Task Pageを表示する
 - Task Side Navigationを表示する
 - Main Areaに `Select an operation.` を表示する
+- Footerを表示する
 - Task Listは取得しない
 
 Scope:

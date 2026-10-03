@@ -1,25 +1,35 @@
-import { vi, test, expect } from "vitest";
-import { render, screen } from "@testing-library/svelte";
+import { test, expect } from "vitest";
+import { render, screen, within } from "@testing-library/svelte";
 import App from "./App.svelte";
 
-// モックセットアップ
-vi.mock("../bindings/ariadne/backend/services", () => ({
-  AppService: {
-    GetAppName: vi.fn().mockResolvedValue("Project ARIADNE Prototype"),
-  },
-}));
-
 // テスト実行
-test("Display App Name", async () => {
+test("S01 Applicationを起動する", () => {
   render(App);
 
-  const heading = await screen.findByRole("heading", {
-    name: "Project ARIADNE Prototype",
-  });
+  // Header
+  expect(screen.getByRole("heading", { name: "PROJECT ARIADNE" })).toBeTruthy();
 
-  expect(heading).toBeTruthy();
-});
+  // Primary Navigation
+  const primaryNavigation = screen.getByRole("navigation", { name: "Primary" });
 
-test("Dummy Logic", () => {
-  expect(true).toBe(true);
+  const taskNavigation = within(primaryNavigation).getByRole("button", { name: "Task" });
+  const configNavigation = within(primaryNavigation).getByRole("button", { name: "Config" });
+
+  expect(taskNavigation.getAttribute("aria-current")).toBe("page");
+  expect(configNavigation.getAttribute("aria-current")).toBeNull();
+
+  // Task Side Navigation
+  const taskSideNavigation = screen.getByRole("navigation", { name: "Task" });
+
+  const listNavigation = within(taskSideNavigation).getByRole("button", { name: "List" });
+  const createNavigation = within(taskSideNavigation).getByRole("button", { name: "Create" });
+
+  expect(listNavigation.getAttribute("aria-current")).toBeNull();
+  expect(createNavigation.getAttribute("aria-current")).toBeNull();
+
+  // Main Area
+  expect(screen.getByText("Select an operation.")).toBeTruthy();
+
+  // Footer
+  expect(screen.getByRole("contentinfo")).toBeTruthy();
 });

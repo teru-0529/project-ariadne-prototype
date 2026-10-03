@@ -11,6 +11,12 @@ Core開始時に棚卸しを行い、実施すると決定した項目は `core-
 - [ ] Side Navigationを折りたたみ可能にし、Main Areaを広く利用できるようにする
 - [ ] Breadcrumb Navigationを導入し、Application内の現在位置を認識しやすくする
 - [ ] Focus時のVisual Feedbackを整備し、Keyboard操作を含めて現在FocusしているElementを認識しやすくする
+- [ ] Footerを設ける
+  - Application Versionを表示する
+  - Copyrightを表示する
+- [ ] Git Integrationを利用する場合、ログイン中のGit AccountをHeaderまたはFooterに表示する
+- [ ] 項目数が多い場合に備え、Side Navigation内をスクロール可能にする
+- [ ] Side Navigationの項目を絞り込むFilter機能を検討する
 
 ## AI-assisted Editing
 
@@ -25,3 +31,6 @@ Core開始時に棚卸しを行い、実施すると決定した項目は `core-
 
 - [ ] ARIADNE ApplicationからGit操作を行う必要性を検討する
 - [ ] Git Integrationを採用する場合、status / diff / commit / push等の責務と実装方式を検討する
+- [ ] ConfigからGit関連設定を行えるようにする
+  - Git Account / 認証等の設定
+  - 具体的な設定項目・認証方式はCoreで検討
