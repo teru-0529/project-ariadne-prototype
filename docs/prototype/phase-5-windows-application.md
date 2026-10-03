@@ -6,10 +6,12 @@
 
 ## 1. 目的
 
-Prototype Phase 5では、Svelte + Wails v3 + GoによるWindows Applicationを実装し、
-Project ARIADNEのWindows Applicationとしての技術的成立性を検証する。
+Prototype Phase 5では、Svelte + Wails v3 + GoによるWindows
+Applicationを実装し、 Project ARIADNEのWindows
+Applicationとしての技術的成立性を検証する。
 
-Phase 0で定義したとおり、Prototype ApplicationではTask管理アプリを題材として、
+Phase 0で定義したとおり、Prototype
+ApplicationではTask管理アプリを題材として、
 以下の一連の動作を実際に実装・確認する。
 
 - ローカルYAMLからTaskを読み込む
@@ -21,10 +23,13 @@ Phase 0で定義したとおり、Prototype ApplicationではTask管理アプリ
 - Svelte / Wails / Go間で正常系・異常系を適切に伝達する
 - Windows実行ファイルとしてBuildし、単体で起動・操作できることを確認する
 
-Phase 5は、Phase 2〜4で設計したElements / API / DDLをApplicationから操作するPhaseではない。
+Phase 5は、Phase 2〜4で設計したElements / API /
+DDLをApplicationから操作するPhaseではない。
 
-Elements / API / DDLについてはPrototypeではモデルおよび変換構造の設計検証までとし、
-それらを扱うApplication機能、Validator / Resolver / Generator等の実装はCoreで行う。
+Elements / API /
+DDLについてはPrototypeではモデルおよび変換構造の設計検証までとし、
+それらを扱うApplication機能、Validator / Resolver /
+Generator等の実装はCoreで行う。
 
 ---
 
@@ -42,11 +47,12 @@ Phase 5では、完成形を事前に詳細設計してから実装するので�
 - Prototypeでは内部Databaseを使用せず、Fileを使用する
 - 機能追加の節目ごとにBuildを行い、リリースモジュールとして実際に起動・操作できることを確認する
 - テストを通過していない状態ではBuildしない
-- `test.sh` / `build.sh` をPhase 5初期に整備し、その後の開発サイクルの基盤とする
+- `test.sh` / `build.sh` をPhase
+  5初期に整備し、その後の開発サイクルの基盤とする
 - 未知の技術要素については、一度に完成形まで実装せず、小さな単位で動作を確認しながら段階的に進める
 
-Phase 5では、動くApplicationを作ることだけでなく、
-Svelte / Wails / Go / Fileの責務を説明できる状態で実装することを重視する。
+Phase 5では、動くApplicationを作ることだけでなく、 Svelte / Wails / Go /
+Fileの責務を説明できる状態で実装することを重視する。
 
 ---
 
@@ -72,32 +78,32 @@ tasks.yaml
 
 Phase 5では **Go Service First** を採用する。
 
-Wails v3ではGo Serviceを起点としてFrontend向けBindingを生成する構造を基本とし、
+Wails v3ではGo
+Serviceを起点としてFrontend向けBindingを生成する構造を基本とし、
 Wails専用のController Interface / Adapter等は追加しない。
 
 Go Application ServiceはWailsから公開されるServiceである一方、
 Wailsに依存しない通常のGo Application Serviceとして実装する。
 
-WailsはGo Application ServiceをFrontendへ公開するApplication境界として利用し、
-Application Service自体にはWailsとの接続に関する責務を持たせない。
+WailsはGo Application
+ServiceをFrontendへ公開するApplication境界として利用し、 Application
+Service自体にはWailsとの接続に関する責務を持たせない。
 
-Persistenceについては、
-Application ServiceがFile / YAMLを直接認識しないようPersistence Portを設ける。
+Persistenceについては、 Application ServiceがFile /
+YAMLを直接認識しないようPersistence Portを設ける。
 
-File Persistence AdapterはPersistence Portを実装し、
-Taskの永続化をFile / YAMLとして実現する。
+File Persistence AdapterはPersistence Portを実装し、 Taskの永続化をFile
+/ YAMLとして実現する。
 
-この構造により、
-Application ServiceからPersistence技術を分離し、
-将来的にFile以外のPersistence方式を利用する場合にも
-Application Serviceの変更を最小化できる構造とする。
+この構造により、 Application ServiceからPersistence技術を分離し、
+将来的にFile以外のPersistence方式を利用する場合にも Application
+Serviceの変更を最小化できる構造とする。
 
 Wails Generated BindingはFramework管理のgenerated filesとして扱い、
 手動編集しない。
 
-FrontendはSvelte + TypeScript、
-BackendはGo、
-Desktop Application FrameworkはWails v3を使用する。
+FrontendはSvelte + TypeScript、 BackendはGo、 Desktop Application
+FrameworkはWails v3を使用する。
 
 TaskデータはローカルYAMLをSource of Truthとする。
 
@@ -127,14 +133,16 @@ SvelteはユーザーとのInteractionおよび画面状態を担当する。
 
 Frontend ValidationはUXのためのValidationとしてSvelte側で実行する。
 
-Focus Out時の単独項目Validation、
-Create / Modify Button押下時の全項目Validationおよび相関ValidationはSvelte側で実行する。
+Focus Out時の単独項目Validation、 Create / Modify
+Button押下時の全項目Validationおよび相関ValidationはSvelte側で実行する。
 
-Frontend Validationに失敗した場合はBackendを呼び出さず、対象Form FieldへErrorを表示する。
+Frontend Validationに失敗した場合はBackendを呼び出さず、対象Form
+FieldへErrorを表示する。
 
 #### Wails
 
-WailsはSvelteとGo Application Serviceを接続するApplication境界として利用する。
+WailsはSvelteとGo Application
+Serviceを接続するApplication境界として利用する。
 
 Wails Generated BindingはFramework管理のgenerated filesとして扱い、
 原則として手動編集しない。
@@ -155,12 +163,13 @@ Wails Application Boundary
                                Error Toast
 ```
 
-具体的なWails v3でのError Boundary実現方式は、Phase 5実装時に技術検証して決定する。 TODO:
+具体的なWails v3でのError Boundary実現方式は、Phase
+5実装時に技術検証して決定する。 TODO:
 
 #### Go Application Service
 
-Go Application Serviceは、
-Frontendから要求されるApplication Operationを実現する。
+Go Application Serviceは、 Frontendから要求されるApplication
+Operationを実現する。
 
 Prototypeでは以下を基本的なPublic Serviceとする。
 
@@ -180,14 +189,14 @@ Persistence Portを通じて永続化を要求する。
 
 PrototypeではBusiness TaskをそのままFrontendへ公開する。
 
-ただし、
-Application Serviceが外部へ公開する情報を決定する責務を持つものとし、
-Business ModelとFrontendへ公開するModelが常に同一であることをArchitecture上の前提とはしない。
+ただし、 Application
+Serviceが外部へ公開する情報を決定する責務を持つものとし、 Business
+ModelとFrontendへ公開するModelが常に同一であることをArchitecture上の前提とはしない。
 
 #### Persistence Port
 
-Persistence Portは、
-Application ServiceからPersistenceへ要求する操作を定義する。
+Persistence Portは、 Application
+ServiceからPersistenceへ要求する操作を定義する。
 
 Prototypeでは以下を基本とする。
 
@@ -206,8 +215,7 @@ Store(Task, StoreIntent)
 - `Store`
   - Taskを格納する
 
-`Store` ではApplication ServiceからPersistenceへ
-格納Intentを明示する。
+`Store` ではApplication ServiceからPersistenceへ 格納Intentを明示する。
 
 ```text
 Deposit
@@ -235,8 +243,8 @@ Criteria
 
 #### File Persistence Adapter
 
-File Persistence Adapterは、
-Persistence PortをFile / YAMLとして実現する。
+File Persistence Adapterは、 Persistence PortをFile /
+YAMLとして実現する。
 
 主な責務は以下とする。
 
@@ -250,14 +258,13 @@ Persistence PortをFile / YAMLとして実現する。
   - Temporary Fileへの全量Write
   - Canonical FileへのReplace
 
-Application Serviceは、
-ULID生成方式、Timestamp取得、YAML Format、
-File I/O等を認識しない。
+Application Serviceは、 ULID生成方式、Timestamp取得、YAML Format、 File
+I/O等を認識しない。
 
 ### 3.3 Frontend / Backend Data Boundary
 
-Prototypeでは、
-SvelteとGo Application Service間の基本Operationを以下とする。
+Prototypeでは、 SvelteとGo Application
+Service間の基本Operationを以下とする。
 
 ```text
 Svelte → Application Service
@@ -271,39 +278,47 @@ ModifyTask(ID, Properties)
 Application ServiceからSvelteへの返却は以下を基本とする。
 
 ```text
-ListTasks()       → []Task
+ListTasks()       → []TaskSummary
 GetTask(ID)       → Task
 CreateTask(...)   → storedTask
 ModifyTask(...)   → storedTask
 ```
 
-PrototypeではBusiness TaskをそのままFrontendへ公開する。
+単一Taskを扱うOperationではBusiness TaskをそのままFrontendへ公開する。
 
-ただし、
+Task Listでは、一覧表示に不要な `description` を公開せず、 以下の
+`TaskSummary` を使用する。
+
+```text
+TaskSummary
+├─ id
+├─ title
+├─ priority
+└─ status
+```
+
+`ListTasks()` はPersistence Portから取得した `[]Task` を `[]TaskSummary`
+へ変換して返却する。
+
 Business TaskとFrontend公開Modelが常に同一であることを
 Architecture上の制約とはしない。
 
-将来、Application Serviceが公開する情報を制御する必要が生じた場合は、
-Frontend公開用Modelを分離できるものとする。
-
 #### Properties
 
-Create / Modifyでは、
-SvelteからApplication Serviceへ `Properties` を渡す。
+Create / Modifyでは、 SvelteからApplication Serviceへ `Properties`
+を渡す。
 
 ```text
 CreateTask(Properties)
 ModifyTask(ID, Properties)
 ```
 
-`Properties` は、
-Taskへ与えるProperty値の集合を表す共通概念とする。
+`Properties` は、 Taskへ与えるProperty値の集合を表す共通概念とする。
 
 Create / ModifyというOperationの意味はService Method側が持ち、
 Properties自体へOperationの意味を持たせない。
 
-CreateではPropertiesを
-新しいTaskを成立させるための材料として使用する。
+CreateではPropertiesを 新しいTaskを成立させるための材料として使用する。
 
 ```text
 Properties
@@ -311,8 +326,7 @@ Properties
 newTask
 ```
 
-Modifyでは、
-Repositoryから取得した既存Taskへ
+Modifyでは、 Repositoryから取得した既存Taskへ
 指定されたPropertiesを適用する。
 
 ```text
@@ -341,16 +355,14 @@ Propertyごとに概念上以下の3状態を区別できる必要がある。
     → 指定値へ変更
 ```
 
-Svelte / Wails / Go間で
-この3状態をどのような型として表現するかは、
+Svelte / Wails / Go間で この3状態をどのような型として表現するかは、
 Phase 5実装時の技術検証課題とする。 TODO:
 
 Step 1では具体的な実装型を固定しない。
 
 ### 3.4 Error / Logging
 
-Application内部で発生したErrorは、
-発生箇所で握り潰さず、
+Application内部で発生したErrorは、 発生箇所で握り潰さず、
 原因情報を維持したままWails Application Boundaryまで伝達する。
 
 ```text
@@ -367,31 +379,41 @@ Wails Application Boundary
 例えばFile / YAMLに関する具体的な失敗は、
 Persistenceとして意味のあるErrorへ変換してよい。
 
-ただし、
-元の原因情報は失わないものとする。
+ただし、 元の原因情報は失わないものとする。
 
-Application Serviceの振る舞いが変わらないErrorについて、
-Application Serviceへ不要な詳細分類を公開しない。
+Application Serviceの振る舞いが変わらないErrorについて、 Application
+Serviceへ不要な詳細分類を公開しない。
 
-例えば以下はPersistence内部では異なる原因であるが、
-Application Serviceがそれらを区別して振る舞う必要がなければ
-同一のRead Failureとして扱ってよい。
+例えば以下はPersistence内部では異なる原因であるが、 Application
+Serviceがそれらを区別して振る舞う必要がなければ 同一のRead
+Failureとして扱ってよい。
 
 ```text
 File Read Failure
 YAML Parse Failure
 Invalid Format
-Unsupported Version
+Invalid Task Data
 ```
 
-一方、`Pick(ID)` で対象Taskが存在しないことは、
-Persistence Operationとして意味のある結果であるため
-Not Foundとして区別する。
+非対応Versionは、File自体の破損とは異なり、
+運用上発生し得る状態としてFrontendへ意味を分けて通知するため、
+`Unsupported Version` としてRead Failureから区別する。
+
+PersistenceからTaskを復元する際にTaskの成立条件を満たさない場合は、 Task
+Validation Failureを原因として保持したまま File Persistence
+AdapterでRead Failureへ変換する。
+
+一方、Create / ModifyでFrontend Validationを通過した入力が Application
+Service側のTask Validationで失敗した場合は、 想定外のApplication
+Errorとして扱う。
+
+一方、`Pick(ID)` で対象Taskが存在しないことは、 Persistence
+Operationとして意味のある結果であるため Not Foundとして区別する。
 
 #### FrontendへのError公開
 
-Wailsを経由してFrontendへ返却されたErrorは、
-Application Errorとして扱う。
+Wailsを経由してFrontendへ返却されたErrorは、 Application
+Errorとして扱う。
 
 ```text
 Internal Error
@@ -414,8 +436,7 @@ Core機能そのものに意味を持つ識別子とは区別する。
 
 本格的なApplication LoggingはPrototype Phase 5の必須実装とはしない。
 
-ただし、
-将来CoreでStructured Loggingを導入することを想定し、
+ただし、 将来CoreでStructured Loggingを導入することを想定し、
 PrototypeでもErrorの原因情報を失わない設計とする。
 
 Loggingでは以下を基本的な考え方とする。
@@ -431,8 +452,8 @@ Information / Debug
 
 Errorを各Layerで重複してLogすることは基本としない。
 
-具体的なLogger、出力先、Log Rotation等は
-Prototype Phase 5では設計・実装対象としない。
+具体的なLogger、出力先、Log Rotation等は Prototype Phase
+5では設計・実装対象としない。
 
 ---
 
@@ -490,8 +511,8 @@ Primary Navigationの選択によりMain Areaの表示対象を切り替える�
 
 Task選択時はTask Pageを表示し、Task用のSide Navigationを表示する。
 
-Config選択時はConfig Dummy Pageを表示し、
-Task用のSide Navigationは表示しない。
+Config選択時はConfig Dummy Pageを表示し、 Task用のSide
+Navigationは表示しない。
 
 ---
 
@@ -514,8 +535,21 @@ Prototypeでは以下を対象外とする。
 
 Taskは全件を一覧表示する。
 
-表示件数が一覧表示領域を超える場合は、
-Main Area内の一覧領域にスクロールバーを表示する。
+表示件数が一覧表示領域を超える場合は、 Main
+Area内の一覧領域にスクロールバーを表示する。
+
+Task ListのFrontend Module Testでは、 通常のTaskあり / 0件 /
+Errorに加えて、 画面高を超える件数のTaskを返却するCaseを設ける。
+
+自動Testでは全Taskが描画対象となっていることを保証し、
+実際のScroll可否およびLayout崩れは実機で確認する。
+
+一覧順序については、Backend Module TestでYAML Sequence順を維持して
+`ListTasks()` が返却することを保証し、 Frontend Module
+Testで返却された順序のまま表示することを保証する。
+
+順序違反はApplicationが実行時に検出するErrorではなく、
+正常動作の契約をTestで保証する対象として扱う。
 
 #### Create
 
@@ -534,27 +568,27 @@ Taskの新規登録画面を表示する。
 
 Configは将来的なApplication設定領域を想定する。
 
-例えばTask YAMLのPath等を設定する可能性があるが、
-Prototype Phase 5では設定機能そのものは実装しない。
+例えばTask YAMLのPath等を設定する可能性があるが、 Prototype Phase
+5では設定機能そのものは実装しない。
 
-ただし、Primary Navigationによる画面切替を検証するため、
-Dummy Config Pageは実装する。
+ただし、Primary Navigationによる画面切替を検証するため、 Dummy Config
+Pageは実装する。
 
 ---
 
 ### 4.5 Confirmation Modal
 
-Taskの登録・更新等、
-ユーザーによる最終確認が必要な操作ではConfirmation Modalを使用する。
+Taskの登録・更新等、 ユーザーによる最終確認が必要な操作ではConfirmation
+Modalを使用する。
 
 ModalはApplication処理の結果通知ではなく、
 ユーザーに意思決定を求めるUIとして扱う。
 
-登録・更新操作時には、
-Confirmation Modalを表示する前に必要なValidationを実行する。
+登録・更新操作時には、 Confirmation
+Modalを表示する前に必要なValidationを実行する。
 
-Validationに失敗した場合はConfirmation Modalを表示せず、
-対象Form FieldへValidation Errorを表示して入力内容の修正を求める。
+Validationに失敗した場合はConfirmation Modalを表示せず、 対象Form
+FieldへValidation Errorを表示して入力内容の修正を求める。
 
 Validationに成功した場合のみConfirmation Modalを表示する。
 
@@ -562,8 +596,7 @@ Validationに成功した場合のみConfirmation Modalを表示する。
 
 ### 4.6 Validation / Notification
 
-ErrorおよびApplicationからの通知は、
-内容に応じて表示方法を使い分ける。
+ErrorおよびApplicationからの通知は、 内容に応じて表示方法を使い分ける。
 
 基本的な考え方は以下とする。
 
@@ -592,8 +625,7 @@ Info Toast
 - 対象項目を視覚的に強調する
 - Error状態が認識できる程度の背景色・Border等を使用する
 
-Frontend Validationは、
-以下の2種類に分けて扱う。
+Frontend Validationは、 以下の2種類に分けて扱う。
 
 ```text
 Single Field Validation
@@ -603,14 +635,13 @@ Correlation Validation
     複数Fieldの関係によって判定するValidation
 ```
 
-Single Field Validationは、
-原則としてFocus Out時に対象Fieldについて実行する。
+Single Field Validationは、 原則としてFocus
+Out時に対象Fieldについて実行する。
 
-Create / Modify Button押下時には、
-Focus Outの有無にかかわらず全FieldのSingle Field Validationを再実行する。
+Create / Modify Button押下時には、 Focus
+Outの有無にかかわらず全FieldのSingle Field Validationを再実行する。
 
-Correlation Validationについては、
-Formごとに以下のModeを持つ。
+Correlation Validationについては、 Formごとに以下のModeを持つ。
 
 ```text
 INITIAL
@@ -620,26 +651,21 @@ ACTIVE
     全Correlation Validationを一度実行済み
 ```
 
-INITIALでは、
-Focus Out時にCorrelation Validationを実行しない。
+INITIALでは、 Focus Out時にCorrelation Validationを実行しない。
 
-Create / Modify Button押下時に、
-全Single Field ValidationがValidとなった場合のみ
-全Correlation Validationを実行する。
+Create / Modify Button押下時に、 全Single Field
+ValidationがValidとなった場合のみ 全Correlation Validationを実行する。
 
-全Correlation Validationを実際に実行した時点で、
-Correlation Validation ModeをACTIVEとする。
+全Correlation Validationを実際に実行した時点で、 Correlation Validation
+ModeをACTIVEとする。
 
-ACTIVEとなった後は、
-Focus OutしたFieldに関連するCorrelation Validationを再実行する。
+ACTIVEとなった後は、 Focus OutしたFieldに関連するCorrelation
+Validationを再実行する。
 
-ただし、
-Correlation Validationに関連するFieldが
-Single Field Validation上Validでない場合、
-そのCorrelation Ruleは評価しない。
+ただし、 Correlation Validationに関連するFieldが Single Field
+Validation上Validでない場合、 そのCorrelation Ruleは評価しない。
 
-その場合、
-当該Ruleに対応する既存Correlation ErrorはClearする。
+その場合、 当該Ruleに対応する既存Correlation ErrorはClearする。
 
 ```text
 Focus Out
@@ -685,49 +711,46 @@ Single Field Errorあり？
 
 1 Fieldに表示するValidation Messageは1つとする。
 
-Single Field ErrorとCorrelation Errorの双方が存在する場合は、
-Single Field Errorを優先して表示する。
+Single Field ErrorとCorrelation Errorの双方が存在する場合は、 Single
+Field Errorを優先して表示する。
 
-同一Fieldに複数のCorrelation Errorが存在する場合は、
-Validation Priorityにより表示するErrorを決定する。
+同一Fieldに複数のCorrelation Errorが存在する場合は、 Validation
+Priorityにより表示するErrorを決定する。
 
-Prototype Phase 5で使用する具体的なValidation Ruleおよび
-Validation Priorityについては、
-別途 `validation-priority.md` に定義する。
+Prototype Phase 5で使用する具体的なValidation Ruleおよび Validation
+Priorityについては、 別途 `validation-priority.md` に定義する。
 
 Frontend ValidationはSvelte側で実行する。
 
 Application Service側でもBusiness / Applicationの整合性を保証するため
-Validationを実施する場合があるが、
-Frontend Validationを正常に通過した入力が
-Application Service側でValidation Errorとなることは異常系として扱う。
+Validationを実施する場合があるが、 Frontend
+Validationを正常に通過した入力が Application Service側でValidation
+Errorとなることは異常系として扱う。
 
-その場合、
-Validation ErrorをFormへ戻すのではなくApplication Errorとして扱い、
-Wails経由でFrontendへ返却しError Toastで通知する。
+その場合、 Validation ErrorをFormへ戻すのではなくApplication
+Errorとして扱い、 Wails経由でFrontendへ返却しError Toastで通知する。
 
 #### Notification Toast
 
 入力項目の修正では解消できないApplication Errorおよび
-Application処理結果の通知には、
-画面右下のNotification Toastを使用する。
+Application処理結果の通知には、 画面右下のNotification Toastを使用する。
 
 Prototypeでは以下を基本とする。
 
 | Severity | 用途                              | 消去                        |
-| -------- | --------------------------------- | --------------------------- |
+| :------- | :-------------------------------- | :-------------------------- |
 | Error    | File I/O失敗等のApplication Error | ユーザーがCloseするまで表示 |
 | Info     | 登録・更新成功等の情報通知        | 一定時間後に自動消去        |
 
 Svelte上で検出したErrorのうち、
-ユーザーが入力内容を修正することで解消できるValidation Errorは
-Form Fieldへ表示する。
+ユーザーが入力内容を修正することで解消できるValidation Errorは Form
+Fieldへ表示する。
 
-入力項目の修正では解消できないFrontend上のApplication Errorは、
-Error Toastで通知する。
+入力項目の修正では解消できないFrontend上のApplication Errorは、 Error
+Toastで通知する。
 
-Wailsを経由してApplication Serviceから返却されたErrorは、
-Application ErrorとしてError Toastで通知する。
+Wailsを経由してApplication Serviceから返却されたErrorは、 Application
+ErrorとしてError Toastで通知する。
 
 ```text
 Svelte
@@ -747,8 +770,8 @@ Warning等、その他のSeverityは必要性が生じた場合に検討する�
 
 ## 5. Task Data
 
-Phase 5では、
-Business Logicが扱うTaskとPersistence上のTask表現を分離する。
+Phase 5では、 Business
+Logicが扱うTaskとPersistence上のTask表現を分離する。
 
 ### 5.1 Business Task
 
@@ -766,7 +789,7 @@ Task
 各Propertyは以下とする。
 
 | Property      | 内容                                     |
-| ------------- | ---------------------------------------- |
+| :------------ | :--------------------------------------- |
 | `id`          | ULID。TaskのIdentityとして利用する       |
 | `title`       | 必須。空文字・空白のみ不可。最大50文字   |
 | `description` | 任意。複数行可                           |
@@ -800,10 +823,36 @@ storedTask
 Application ServiceはTaskのIdentityとしてIDを認識・利用するが、
 IDの生成方式は認識しない。
 
+Taskの成立条件は `service` packageに一元化する。
+
+Taskを生成・復元する際は同一のTask Validationを利用し、 Validation
+Failure自体は「Taskとして成立しない」ことだけを表す。
+
+Validation FailureをApplication上どのErrorとして扱うかは、
+そのTaskを成立させようとした呼び出し元が決定する。
+
+```text
+File Persistence Adapter
+    Persistence Model
+        ↓
+    Task Validation
+        ↓ Failure
+    Read Failureとしてwrap
+
+Application Service Create / Modify
+    Properties
+        ↓
+    Task Validation
+        ↓ Failure
+    Unexpected Application Errorとして扱う
+```
+
+具体的なTask生成Function名や実装形式は、
+実装時にGoとして自然な形を選択する。
+
 ### 5.2 Persistence Task
 
-`tasks.yaml` 上ではBusiness TaskのPropertyに加えて、
-以下を保持する。
+`tasks.yaml` 上ではBusiness TaskのPropertyに加えて、 以下を保持する。
 
 ```text
 createdAt
@@ -854,10 +903,13 @@ Prototype Applicationが対応するVersionを `2.1` とし、
 3.0 → NG(Majorが異なる)
 ```
 
-同一MajorかつFile MinorがApplication対応Minor以下の場合のみ読み込み可能とする。
+同一MajorかつFile
+MinorがApplication対応Minor以下の場合のみ読み込み可能とする。
 
-`format` が異なる場合、
-または非対応Versionの場合はRead Errorとする。
+`format` が異なる場合はRead Failureとする。
+
+非対応Versionの場合は、 通常のRead Failureとは区別してUnsupported
+Versionとして扱う。
 
 Task 0件は以下で表現する。
 
@@ -874,8 +926,8 @@ tasks: []
 description: ""
 ```
 
-`description` に値がある場合は、
-1行の場合を含めLiteral Block `|` を使用する。
+`description` に値がある場合は、 1行の場合を含めLiteral Block `|`
+を使用する。
 
 複数行のdescriptionはRead / Write後も内容を維持する。
 
@@ -883,8 +935,7 @@ TaskのYAML Sequence順を一覧表示順として扱う。
 
 PrototypeではSortを行わない。
 
-CreateではTaskを末尾へ追加し、
-Modifyでは既存Taskの位置を維持する。
+CreateではTaskを末尾へ追加し、 Modifyでは既存Taskの位置を維持する。
 
 ### 5.4 File存在条件
 
@@ -892,8 +943,8 @@ Prototypeでは `tasks.yaml` が事前に存在することを前提とする。
 
 Applicationによる自動生成および初期化処理は実装しない。
 
-`tasks.yaml` が存在しない場合は、
-空のTask一覧として扱わずRead Errorとする。
+`tasks.yaml` が存在しない場合は、 空のTask一覧として扱わずRead
+Errorとする。
 
 ```text
 tasks.yamlあり
@@ -908,17 +959,14 @@ tasks.yamlなし
        → Read Error
 ```
 
-Project / Workspaceの初期化方式については、
-Coreで必要に応じて検討する。
+Project / Workspaceの初期化方式については、 Coreで必要に応じて検討する。
 
 ### 5.5 File Write
 
-Task群は1つのYAML Fileで管理し、
-全量Read / 全量Writeを基本とする。
+Task群は1つのYAML Fileで管理し、 全量Read / 全量Writeを基本とする。
 
-Write時はCanonical Fileへ直接書き込まず、
-Temporary Fileへ全量Writeした後、
-Canonical `tasks.yaml` を置き換える。
+Write時はCanonical Fileへ直接書き込まず、 Temporary
+Fileへ全量Writeした後、 Canonical `tasks.yaml` を置き換える。
 
 ```text
 Task Data
@@ -928,27 +976,26 @@ Temporary File
 Canonical tasks.yamlをReplace
 ```
 
-Temporary FileへのWriteに失敗した場合は、
-既存のCanonical Fileを維持する。
+Temporary FileへのWriteに失敗した場合は、 既存のCanonical
+Fileを維持する。
 
 Canonical FileのReplaceに失敗した場合はWrite Errorとする。
 
 Backup GenerationおよびCrash Recovery機構はPrototypeでは実装しない。
 
-Windows上でのFile Replaceの具体的な実現方式は、
-Phase 5実装時に技術検証する。TODO:
+Windows上でのFile Replaceの具体的な実現方式は、 Phase
+5実装時に技術検証する。TODO:
 
 ---
 
 ## 6. Test Strategy
 
-Phase 5では、テストを技術要素ごとではなく、
-保証する範囲によってA / B / C / Dに分類する。
+Phase 5では、テストを技術要素ごとではなく、 保証する範囲によってA / B /
+C / Dに分類する。
 
 基本戦略は **Module Test + Integration Test** とする。
 
-D. Logic / Development Step Testは、
-Module Testを適切な粒度に保つため、
+D. Logic / Development Step Testは、 Module Testを適切な粒度に保つため、
 または実装を小さな段階に分けて確認するための
 補助的なテストと位置付ける。
 
@@ -971,26 +1018,21 @@ File
 
 Mockを使用せず、実際のApplication経路で確認する。
 
-Project ARIADNEでは、
-Integration TestはManualでの実施を基本とする。
+Project ARIADNEでは、 Integration TestはManualでの実施を基本とする。
 
-全Behavior / 全Result Patternを確認するものではなく、
-Behavior MapのResult Pattern単位で
-Integration Test対象を選定する。
+全Behavior / 全Result Patternを確認するものではなく、 Behavior
+MapのResult Pattern単位で Integration Test対象を選定する。
 
-事前状態のFixture切り替えによって
-対象Result Patternを再現できるかどうかを
-選定時の判断材料とする。
+事前状態のFixture切り替えによって 対象Result
+Patternを再現できるかどうかを 選定時の判断材料とする。
 
-Test実行途中でYAMLを直接変更するなど、
-特殊な状態操作を必要とするResult Patternは、
-通常のIntegration Test対象とはしない。
+Test実行途中でYAMLを直接変更するなど、 特殊な状態操作を必要とするResult
+Patternは、 通常のIntegration Test対象とはしない。
 
-必要な場合は、
-特殊な異常系Testとして個別に確認方法を決定する。
+必要な場合は、 特殊な異常系Testとして個別に確認方法を決定する。
 
-Integration Test対象となるResult Patternには、
-Manual Testの実施優先度を定義する。
+Integration Test対象となるResult Patternには、 Manual
+Testの実施優先度を定義する。
 
 - HIGH
   - 原則として実施する
@@ -999,11 +1041,10 @@ Manual Testの実施優先度を定義する。
 - LOW
   - 通常は実施しない
 
-このPriorityは品質上の重要度ではなく、
-Manual Integration Testの実施判断の目安とする。
+このPriorityは品質上の重要度ではなく、 Manual Integration
+Testの実施判断の目安とする。
 
-Integration Testは
-dev環境で実施することを基本とする。
+Integration Testは dev環境で実施することを基本とする。
 
 推奨する実施位置は以下とする。
 
@@ -1023,37 +1064,29 @@ PASS
 Merge
 ```
 
-原則として、
-対象Behaviorの実装を行った作業Branch上、
+原則として、 対象Behaviorの実装を行った作業Branch上、
 Merge前、かつCleanな状態で実施する。
 
-Integration Test実施時には、
-対象コードを識別できるよう、
-Branch / Commit / Dirty状態等を
-Evidenceとして記録できるようにする。
+Integration Test実施時には、 対象コードを識別できるよう、 Branch /
+Commit / Dirty状態等を Evidenceとして記録できるようにする。
 
-事前状態のFixture切り替え、
-元YAMLの退避・復元、
-Evidence取得等の具体的な仕組みについては、
-実際のYAML Read / Write実装後に
-実体を確認した上で決定する。TODO:
+事前状態のFixture切り替え、 元YAMLの退避・復元、
+Evidence取得等の具体的な仕組みについては、 実際のYAML Read /
+Write実装後に 実体を確認した上で決定する。TODO:
 
-Build済みApplicationそのものの確認は、
-Integration Testの目的には含めない。
+Build済みApplicationそのものの確認は、 Integration
+Testの目的には含めない。
 
 ---
 
 ### 6.2 B. Frontend Module Test
 
-対象BehaviorのFrontend側の振る舞いを、
-Backendから切り離して保証する。
+対象BehaviorのFrontend側の振る舞いを、 Backendから切り離して保証する。
 
-Test対象は、
-対象Behaviorを開始できる
-公開されたSvelte Componentとする。
+Test対象は、 対象Behaviorを開始できる 公開されたSvelte Componentとする。
 
-Backendを利用するBehaviorではGo側をMockし、
-ユーザー操作に対するBackend Responseを再現する。
+Backendを利用するBehaviorではGo側をMockし、 ユーザー操作に対するBackend
+Responseを再現する。
 
 ```text
 User Action
@@ -1069,20 +1102,15 @@ Frontend Logic
 Screen / Toast / State
 ```
 
-Frontend Module Testでは、
-ユーザー操作と、
-それに対する表示・状態変化等の
-振る舞いを確認する。
+Frontend Module Testでは、 ユーザー操作と、
+それに対する表示・状態変化等の 振る舞いを確認する。
 
 子Component単位で網羅的にTestすることは目的とせず、
-BehaviorのFrontend側を外部から確認できる
-適切なComponent境界を選択する。
+BehaviorのFrontend側を外部から確認できる 適切なComponent境界を選択する。
 
-1 Behavior = 1 Component = 1 Test File
-とは規定しない。
+1 Behavior = 1 Component = 1 Test File とは規定しない。
 
-Frontend Testには
-Vitest + Svelte Testing Libraryを使用する。
+Frontend Testには Vitest + Svelte Testing Libraryを使用する。
 
 Test Fileは実装と同じ場所へ配置する。
 
@@ -1093,8 +1121,8 @@ TaskList.svelte
 TaskList.test.ts
 ```
 
-Frontend Module Testでは、
-Visual Designそのものは原則として自動Test対象としない。
+Frontend Module Testでは、 Visual
+Designそのものは原則として自動Test対象としない。
 
 対象外の例：
 
@@ -1107,18 +1135,13 @@ Visual Designそのものは原則として自動Test対象としない。
 
 これらは実機で確認する。
 
-一方、
-表示される / 表示されない、
-Validation Messageが表示される、
-Toastが表示される、
-画面状態が変化する等、
+一方、 表示される / 表示されない、 Validation Messageが表示される、
+Toastが表示される、 画面状態が変化する等、
 Behaviorとして意味を持つUI状態はTest対象とする。
 
-Frontend Testの日常的な実行入口は
-`frontend-test.sh` とする。
+Frontend Testの日常的な実行入口は `frontend-test.sh` とする。
 
-Test結果は日常利用しやすいよう
-コンパクトに表示する。
+Test結果は日常利用しやすいよう コンパクトに表示する。
 
 主な表示内容：
 
@@ -1128,16 +1151,13 @@ Test結果は日常利用しやすいよう
 - 実行時間
 - Failure時のみErrors
 
-巨大なDOM、
-冗長なStack Trace、
-ANSI等のノイズは抑制する。
+巨大なDOM、 冗長なStack Trace、 ANSI等のノイズは抑制する。
 
 ---
 
 ### 6.3 C. Backend Module Test
 
-対象BehaviorのBackend側の振る舞いを、
-Serviceの公開APIから保証する。
+対象BehaviorのBackend側の振る舞いを、 Serviceの公開APIから保証する。
 
 ```text
 Input
@@ -1149,31 +1169,24 @@ Persistence Port / File Adapter
 Expected Result
 ```
 
-File I/Oの有無にかかわらず、
-Backend Module Testは
+File I/Oの有無にかかわらず、 Backend Module Testは
 Serviceの公開APIをTest境界とする。
 
 Service内部の関数構成は原則として意識しない。
 
-Test Fileは実装と同じPackage Directoryへ
-`xxx_test.go` として配置する。
+Test Fileは実装と同じPackage Directoryへ `xxx_test.go` として配置する。
 
-Backend Module Testでは原則として
-external test packageを使用し、
+Backend Module Testでは原則として external test packageを使用し、
 privateな実装へTestが入り込まないようにする。
 
-File I/Oを伴うBehaviorでは、
-File SystemをMockすることを基本とはせず、
-`t.TempDir()` 等を利用して
-実際のFile I/Oを行う。
+File I/Oを伴うBehaviorでは、 File SystemをMockすることを基本とはせず、
+`t.TempDir()` 等を利用して 実際のFile I/Oを行う。
 
-このためFile Persistence Adapterは、
-対象となるWorkspace / Root Directoryを
-内部で固定・探索するのではなく、
+このためFile Persistence Adapterは、 対象となるWorkspace / Root
+Directoryを 内部で固定・探索するのではなく、
 外部から与えられる設計とする。
 
-ProductionとTestでは、
-同じFile Adapterへ異なるDirectoryを与える。
+ProductionとTestでは、 同じFile Adapterへ異なるDirectoryを与える。
 
 ```text
 Production
@@ -1183,19 +1196,34 @@ Test
   → t.TempDir()
 ```
 
-Writeの確認は、
-先に成立しているRead機能を利用して読み戻し、
+Read FailureはApplication上1つのResult Patternであっても、 Backend
+Module Testでは原因となる状態ごとに複数のTest Caseを設けてよい。
+
+例えば以下を対象とする。
+
+- `tasks.yaml` が存在しない
+- YAML Parseに失敗する
+- `format` が不正
+- Task DataがTaskの成立条件を満たさない
+
+非対応VersionはRead Failureとは別のApplication ErrorとしてTestする。
+
+これらは `t.TempDir()` 上にTest用のFile状態を構築し、 Service Public
+APIから期待するApplication Errorとなることを確認する。
+
+パターン数が過大になるLogicのみ、 必要に応じてD. Logic / Development
+Step Testへ切り出す。
+
+Writeの確認は、 先に成立しているRead機能を利用して読み戻し、
 Domain上の結果を確認することを基本とする。
 
 これはWrite実装がRead実装へ依存するという意味ではなく、
-Testの実施順序として
-Read機能 / Testが先に成立していることを前提とする。
+Testの実施順序として Read機能 / Testが先に成立していることを前提とする。
 
-YAML文字列そのものの直接比較は、
-Backend Module Testの基本方針とはしない。
+YAML文字列そのものの直接比較は、 Backend Module
+Testの基本方針とはしない。
 
-Backend Testの日常的な実行入口は
-`backend-test.sh` とする。
+Backend Testの日常的な実行入口は `backend-test.sh` とする。
 
 通常実行ではBackend Module Testを実行する。
 
@@ -1209,8 +1237,7 @@ Dを利用する主な目的は以下の2つとする。
 
 #### 1. Logicの独立保証
 
-Frontend / Backend Module Testだけでは
-パターン数が過大になる場合、
+Frontend / Backend Module Testだけでは パターン数が過大になる場合、
 複雑な内部Logicを切り出して直接Testする。
 
 例えば、
@@ -1223,14 +1250,12 @@ Frontend / Backend Module Testだけでは
 
 等を対象とする。
 
-Module Testで十分に保証できる場合は、
-Logic Testを追加する必要はない。
+Module Testで十分に保証できる場合は、 Logic Testを追加する必要はない。
 
 #### 2. 段階的な実装確認
 
-未知の技術要素を含むBehaviorについて、
-最終的なModule Testまで一度に実装せず、
-小さな技術単位で動作を確認しながら
+未知の技術要素を含むBehaviorについて、 最終的なModule
+Testまで一度に実装せず、 小さな技術単位で動作を確認しながら
 段階的に進めたい場合にも利用してよい。
 
 例えばTask YAML Loadでは、
@@ -1247,31 +1272,24 @@ Logic Testを追加する必要はない。
 
 のように進めることができる。
 
-Development Stepとして作成したDは、
-上位のModule Testが成立した後、
+Development Stepとして作成したDは、 上位のModule Testが成立した後、
 継続して保持する価値がなければ削除してよい。
 
-内部Logicを直接保証する価値がある場合は
-継続して保持する。
+内部Logicを直接保証する価値がある場合は 継続して保持する。
 
-Dを利用する場合でも、
-実装内部を網羅的にTestすることを目的とはしない。
+Dを利用する場合でも、 実装内部を網羅的にTestすることを目的とはしない。
 
-Logic Test専用のDirectoryや
-特別なFile命名規則は設けない。
+Logic Test専用のDirectoryや 特別なFile命名規則は設けない。
 
-Goでは通常のTestと同様に
-実装と同じPackage Directoryへ
-`xxx_test.go` として配置する。
+Goでは通常のTestと同様に 実装と同じPackage Directoryへ `xxx_test.go`
+として配置する。
 
-privateなLogicを直接Testする必要がある場合は、
-internal test packageを使用してよい。
+privateなLogicを直接Testする必要がある場合は、 internal test
+packageを使用してよい。
 
-Logic Testであることは
-各Test自身のskipによって明示する。
+Logic Testであることは 各Test自身のskipによって明示する。
 
-通常の `backend-test.sh` では実行せず、
-必要な場合のみ
+通常の `backend-test.sh` では実行せず、 必要な場合のみ
 
 ```text
 backend-test.sh --logic
@@ -1279,8 +1297,7 @@ backend-test.sh --logic
 
 によって実行する。
 
-Logic / Development Step Testは
-`test.sh` およびBuild Gateには含めない。
+Logic / Development Step Testは `test.sh` およびBuild Gateには含めない。
 
 ---
 
@@ -1335,18 +1352,17 @@ D. Logic / Development Step Test
 
 ## 7. TDD Development Cycle
 
-Phase 5では、
-実装開始前にPhase全体の主要なUse Case / Behaviorを
+Phase 5では、 実装開始前にPhase全体の主要なUse Case / Behaviorを
 Behavior Mapとして整理する。
 
-Behavior MapはPhase 5で実現する振る舞いの全体像を把握するためのものであり、
-詳細なTest Caseを事前にすべて定義するものではない。
+Behavior MapはPhase
+5で実現する振る舞いの全体像を把握するためのものであり、 詳細なTest
+Caseを事前にすべて定義するものではない。
 
-Behavior Mapでは、
-ユーザーによる1つのActionをBehaviorの基本単位とする。
+Behavior Mapでは、 ユーザーによる1つのActionをBehaviorの基本単位とする。
 
-同一Actionに対して結果が分岐する場合は、
-Behaviorを分割せずResult Patternとして整理する。
+同一Actionに対して結果が分岐する場合は、 Behaviorを分割せずResult
+Patternとして整理する。
 
 基本形式は以下とする。
 
@@ -1359,8 +1375,7 @@ Behavior
 └─ Scope    : Front / Back
 ```
 
-各Behaviorでは、
-Frontend / Backendの関与をScopeとして整理する。
+各Behaviorでは、 Frontend / Backendの関与をScopeとして整理する。
 
 ```text
 Front
@@ -1371,20 +1386,18 @@ Front + Back
     → Backend Module Test
 ```
 
-Integration Testは、
-ScopeがFront + BackとなるBehaviorのResult Patternから
-対象を選定する。
+Integration Testは、 ScopeがFront + BackとなるBehaviorのResult
+Patternから 対象を選定する。
 
 すべてのResult PatternをIntegration Test対象とするのではなく、
 通常のManual Integrationとして確認する価値があり、
-事前状態のFixture切り替えによって
-再現可能なResult Patternを対象とする。
+事前状態のFixture切り替えによって 再現可能なResult Patternを対象とする。
 
-Integration Test対象および実施Priorityは、
-`behavior-map.md` に定義する。
+Integration Test対象および実施Priorityは、 `behavior-map.md`
+に定義する。
 
-各StepではBehavior Mapを基に、
-実装対象となるBehaviorのTest Caseを実装直前に具体化する。
+各StepではBehavior Mapを基に、 実装対象となるBehaviorのTest
+Caseを実装直前に具体化する。
 
 基本的なDevelopment Cycleは以下とする。
 
@@ -1426,10 +1439,8 @@ Integration Target = Yes の場合
 Priorityに応じてManual Integration Test
 ```
 
-Logic / Development Step Testは、
-複雑なLogicを切り出す場合だけでなく、
-未知の技術要素を一段ずつ確認しながら
-実装するためにも利用できる。
+Logic / Development Step Testは、 複雑なLogicを切り出す場合だけでなく、
+未知の技術要素を一段ずつ確認しながら 実装するためにも利用できる。
 
 Phase 5では、
 
@@ -1441,13 +1452,11 @@ Phase 5では、
 
 ## 8. test.sh / build.sh
 
-Phase 5の機能実装開始前に、
-Test / Buildの実行基盤を整備する。
+Phase 5の機能実装開始前に、 Test / Buildの実行基盤を整備する。
 
 ### 8.1 test.sh
 
-Backend / Frontendの
-通常のModule Testをまとめて実行する
+Backend / Frontendの 通常のModule Testをまとめて実行する
 日常Testの統一入口とする。
 
 基本イメージを以下とする。
@@ -1461,35 +1470,27 @@ test.sh
      └─ Frontend Module Test
 ```
 
-Backend / Frontendの両方がPASSした場合のみ、
-`test.sh` をPASSとする。
+Backend / Frontendの両方がPASSした場合のみ、 `test.sh` をPASSとする。
 
-いずれかがFAILした場合は、
-`test.sh` をFAILとする。
+いずれかがFAILした場合は、 `test.sh` をFAILとする。
 
-各Testの詳細な実行方法および結果表示は、
-`backend-test.sh` / `frontend-test.sh` の責務とする。
+各Testの詳細な実行方法および結果表示は、 `backend-test.sh` /
+`frontend-test.sh` の責務とする。
 
-`test.sh` 自身では、
-Test分類やReporterを再構築しない。
+`test.sh` 自身では、 Test分類やReporterを再構築しない。
 
-Logic / Development Step Testは
-通常の `test.sh` には含めない。
+Logic / Development Step Testは 通常の `test.sh` には含めない。
 
-Manual Integration Testも
-`test.sh` には含めない。
+Manual Integration Testも `test.sh` には含めない。
 
-TDD中に頻繁に実行するため、
-高速に完了することを重視する。
+TDD中に頻繁に実行するため、 高速に完了することを重視する。
 
 ---
 
 ### 8.2 build.sh
 
-`build.sh` は、
-Frontend / Backend Module Testを
-Build Gateとして実行した上で、
-Wails ApplicationをBuildする。
+`build.sh` は、 Frontend / Backend Module Testを Build
+Gateとして実行した上で、 Wails ApplicationをBuildする。
 
 基本イメージを以下とする。
 
@@ -1510,23 +1511,16 @@ PASS ?
           成果物なし
 ```
 
-Build開始前に、
-既存のBuild成果物を削除する。
+Build開始前に、 既存のBuild成果物を削除する。
 
-`test.sh` がPASSした場合のみ
-Wails ApplicationをBuildする。
+`test.sh` がPASSした場合のみ Wails ApplicationをBuildする。
 
-`test.sh` がFAILした場合は、
-Wails ApplicationをBuildしない。
+`test.sh` がFAILした場合は、 Wails ApplicationをBuildしない。
 
-この場合、
-以前のBuildで生成された成果物も残さない。
+この場合、 以前のBuildで生成された成果物も残さない。
 
 したがって、
-
-**TestがPASSしていない状態では、
-Build成果物が存在しない**
-
+**TestがPASSしていない状態では、 Build成果物が存在しない**
 ことをBuild Gateの原則とする。
 
 Build Gateには、
@@ -1536,18 +1530,14 @@ Build Gateには、
 
 を含める。
 
-Logic / Development Step Testは
-Build Gateには含めない。
+Logic / Development Step Testは Build Gateには含めない。
 
-Manual Integration Testも
-Build Gateには含めない。
+Manual Integration Testも Build Gateには含めない。
 
-Manual Integration Testは、
-作業Branch上でModule Testおよび `test.sh` がPASSした後、
-Merge前に実施する開発運用上の確認とする。
+Manual Integration Testは、 作業Branch上でModule Testおよび `test.sh`
+がPASSした後、 Merge前に実施する開発運用上の確認とする。
 
-Build Gateの技術検証では、
-意図的にModule TestをREDにした状態で
+Build Gateの技術検証では、 意図的にModule TestをREDにした状態で
 `build.sh` を実行し、
 
 - Wails Buildが実行されないこと
@@ -1561,21 +1551,21 @@ Build Gateの技術検証では、
 
 Phase 5は以下のStepで進める。
 
-各Stepでは、
-事前に詳細設計を完成させることよりも、
+各Stepでは、 事前に詳細設計を完成させることよりも、
 必要な設計判断を行いながら小さく実装・検証することを優先する。
 
 ---
 
 ### Step 1：Application Architecture / Task Data
 
-Svelte / Wails / Go / Fileの責務境界と、
-Applicationが扱うTask Dataの基本仕様を整理する。
+Svelte / Wails / Go / Fileの責務境界と、 Applicationが扱うTask
+Dataの基本仕様を整理する。
 
 Step 1では以下を確定した。
 
 - Go Service FirstによるApplication Architecture
-- Svelte / Wails / Application Service / Persistence Port / File Persistence Adapterの責務境界
+- Svelte / Wails / Application Service / Persistence Port / File
+  Persistence Adapterの責務境界
 - Application ServiceのPublic Operation
   - `ListTasks`
   - `GetTask`
@@ -1600,9 +1590,8 @@ Step 1では以下を確定した。
 
 以下は実装時の技術検証課題とする。
 
-- Modify Propertiesの
-  `未指定 / null / value`
-  をSvelte / Wails / Go間で表現する方式
+- Modify Propertiesの `未指定 / null / value` をSvelte / Wails /
+  Go間で表現する方式
 - Wails v3におけるApplication Error Boundaryの具体的な実現方式
 - Windows上でのSafe File Replace方式
 - Integration Testの具体的な自動化方式
@@ -1613,13 +1602,11 @@ Step 1では以下を確定した。
 
 Phase 5全体で使用するTest / Build基盤を構築する。
 
-機能実装を開始する前に、
-Behavior Mapによって保証対象を整理した上で、
-Go / FrontendそれぞれのTest Foundationを
-最小のDummy Testを実際に動かしながら構築する。
+機能実装を開始する前に、 Behavior Mapによって保証対象を整理した上で、 Go
+/ FrontendそれぞれのTest Foundationを 最小のDummy
+Testを実際に動かしながら構築する。
 
-その後、
-日常的なTest実行およびBuild Gateを成立させる。
+その後、 日常的なTest実行およびBuild Gateを成立させる。
 
 主な実施順序：
 
@@ -1646,8 +1633,7 @@ Step 3以降で実現する主要なBehaviorを整理する。
 Behaviorはユーザーによる1つのActionを基本単位とし、
 同一Actionに対する結果の分岐はResult Patternとして整理する。
 
-各Behaviorについて、
-Front / Backの関与を明確にする。
+各Behaviorについて、 Front / Backの関与を明確にする。
 
 詳細は `behavior-map.md` に定義する。
 
@@ -1655,53 +1641,40 @@ Front / Backの関与を明確にする。
 
 Go Testを実行できるBackend Test基盤を構築した。
 
-Backend Testの日常的な実行入口として
-`backend-test.sh` を作成した。
+Backend Testの日常的な実行入口として `backend-test.sh` を作成した。
 
-通常実行では
-Backend Module Testを実行する。
+通常実行では Backend Module Testを実行する。
 
-`--logic` 指定時は、
-Logic / Development Step Testも
+`--logic` 指定時は、 Logic / Development Step Testも
 実行できる構成とした。
 
-Test結果は、
-日常利用しやすいコンパクトな形式で表示する。
+Test結果は、 日常利用しやすいコンパクトな形式で表示する。
 
-Test FileはGo標準に従い、
-実装と同じPackage Directoryへ
-`xxx_test.go` として配置する。
+Test FileはGo標準に従い、 実装と同じPackage Directoryへ `xxx_test.go`
+として配置する。
 
-Backend Module Testは原則として
-external test packageから
+Backend Module Testは原則として external test packageから
 Service公開APIをTestする。
 
-File I/Oについては、
-`t.TempDir()` を利用して
-実File I/Oを行う方針とする。
+File I/Oについては、 `t.TempDir()` を利用して 実File
+I/Oを行う方針とする。
 
-実際のFile I/O Testは、
-File Adapter実装時にBehavior実装と合わせて行う。
+実際のFile I/O Testは、 File Adapter実装時にBehavior実装と合わせて行う。
 
 #### 2-3 Frontend Test Foundation
 
-Frontend Test基盤として
-Vitest + Svelte Testing Libraryを正式採用した。
+Frontend Test基盤として Vitest + Svelte Testing Libraryを正式採用した。
 
-Frontend Testの日常的な実行入口として
-`frontend-test.sh` を作成した。
+Frontend Testの日常的な実行入口として `frontend-test.sh` を作成した。
 
-Svelte Componentに対する
-Frontend Module Testを実行できる基盤を構築した。
+Svelte Componentに対する Frontend Module
+Testを実行できる基盤を構築した。
 
-Test Fileは実装と同じ場所へ
-`Xxx.test.ts` として配置する。
+Test Fileは実装と同じ場所へ `Xxx.test.ts` として配置する。
 
-Go / BackendをMockし、
-Frontend側の振る舞いをTestできることを確認した。
+Go / BackendをMockし、 Frontend側の振る舞いをTestできることを確認した。
 
-Test結果は日常利用向けに
-コンパクトに表示する。
+Test結果は日常利用向けに コンパクトに表示する。
 
 主な表示内容：
 
@@ -1711,15 +1684,12 @@ Test結果は日常利用向けに
 - 実行時間
 - Failure時のみErrors
 
-巨大なDOM、
-冗長なStack Trace、
-ANSI等のノイズは抑制する。
+巨大なDOM、 冗長なStack Trace、 ANSI等のノイズは抑制する。
 
 #### 2-4 test.sh
 
-Backend / Frontendの
-通常のModule Testを一括実行する
-`test.sh` を構築する。
+Backend / Frontendの 通常のModule Testを一括実行する `test.sh`
+を構築する。
 
 ```text
 test.sh
@@ -1727,17 +1697,14 @@ test.sh
 └─ frontend-test.sh
 ```
 
-両方がPASSした場合のみ
-`test.sh` をPASSとする。
+両方がPASSした場合のみ `test.sh` をPASSとする。
 
-Logic / Development Step Testおよび
-Manual Integration Testは含めない。
+Logic / Development Step Testおよび Manual Integration Testは含めない。
 
 #### 2-5 build.sh / Build Gate
 
-`build.sh` から `test.sh` を実行し、
-Test成功時のみ
-Wails ApplicationをBuildする。
+`build.sh` から `test.sh` を実行し、 Test成功時のみ Wails
+ApplicationをBuildする。
 
 Build開始前に既存Build成果物を削除する。
 
@@ -1748,9 +1715,8 @@ Build開始前に既存Build成果物を削除する。
 
 を確認する。
 
-Logic / Development Step Testおよび
-Manual Integration Testは
-Build Gateには含めない。
+Logic / Development Step Testおよび Manual Integration Testは Build
+Gateには含めない。
 
 ---
 
@@ -1777,8 +1743,8 @@ Applicationの基本的な画面構造を構築する。
 このStepでは各業務機能を完成させることを目的とせず、
 後続Stepで機能を追加できるApplication Shellを成立させる。
 
-Primary Navigationについては、
-Task / Configの選択によるPage切替をBehavior Testで確認する。
+Primary Navigationについては、 Task /
+Configの選択によるPage切替をBehavior Testで確認する。
 
 ---
 
@@ -1795,11 +1761,10 @@ Step開始時にTask List画面の簡易画面設計を行う。
 - スクロール方法
 - Error表示
 
-詳細な画面設計書は作成せず、
-実装に必要なUI構造を決定する。
+詳細な画面設計書は作成せず、 実装に必要なUI構造を決定する。
 
-Task YAMLを読み込み、
-Task一覧として画面へ表示するVertical Sliceを構築する。
+Task YAMLを読み込み、 Task一覧として画面へ表示するVertical
+Sliceを構築する。
 
 ```text
 tasks.yaml
@@ -1818,8 +1783,8 @@ Task List
 ```
 
 また、Task一覧からTaskを選択した場合は、
-一覧表示時に取得したTaskをそのまま編集対象として使用せず、
-`GetTask(ID)` により対象Taskを改めて取得する。
+一覧表示時に取得したTaskをそのまま編集対象として使用せず、 `GetTask(ID)`
+により対象Taskを改めて取得する。
 
 ```text
 Task選択
@@ -1857,17 +1822,13 @@ Task Edit
 
 PrototypeではSort / Filter / Search / Paginationは実装しない。
 
-`tasks.yaml` が存在しない場合は自動生成せず、
-Read Errorとして扱う。
+`tasks.yaml` が存在しない場合は自動生成せず、 Read Errorとして扱う。
 
-このError Caseにより、
-File → Go → Wails → Svelte → Notificationまでの
+このError Caseにより、 File → Go → Wails → Svelte → Notificationまでの
 Error伝達経路も検証する。
 
-Task YAML Loadについては、
-必要に応じてCを足場として利用し、
-File Read → YAML Parse → Task Model変換等を
-小さな単位で確認しながら実装する。
+Task YAML Loadについては、 必要に応じてCを足場として利用し、 File Read →
+YAML Parse → Task Model変換等を 小さな単位で確認しながら実装する。
 
 ---
 
@@ -1884,8 +1845,8 @@ Step開始時にTask Create画面の簡易画面設計を行う。
 - Confirmation Modal
 - Notification
 
-Taskの新規作成を、
-入力からFileへの保存まで一つのUse Caseとして実装する。
+Taskの新規作成を、 入力からFileへの保存まで一つのUse
+Caseとして実装する。
 
 ```text
 Create
@@ -1921,7 +1882,8 @@ Info Toast
   - Correlation Validation Mode = INITIAL
   - Create Button = Disabled
 - Focus Out時のSingle Field Validation
-- Correlation Validation Mode = ACTIVE後の関連Correlation Validation再実行
+- Correlation Validation Mode = ACTIVE後の関連Correlation
+  Validation再実行
 - Create操作時の全Single Field Validation
 - 全Single Field Validation成功後の全Correlation Validation
 - Validation ErrorのField表示
@@ -1943,8 +1905,7 @@ Info Toast
   - Correlation Validation Mode = INITIAL
   - Create Button = Disabled
 
-正常系と、
-Create Use Case内で発生する異常系を同じStepで検証する。
+正常系と、 Create Use Case内で発生する異常系を同じStepで検証する。
 
 ---
 
@@ -1961,8 +1922,8 @@ Step開始時にTask Edit画面の簡易画面設計を行う。
 - Confirmation Modal
 - Notification
 
-既存Taskの編集を、
-Task選択からFileへの保存まで一つのUse Caseとして実装する。
+既存Taskの編集を、 Task選択からFileへの保存まで一つのUse
+Caseとして実装する。
 
 ```text
 Task List
@@ -1999,13 +1960,15 @@ Info Toast
 - Original Valuesへ戻したFieldをNot Changedとして扱う
 - Changed Fieldsがない場合はModify ButtonをDisabledとする
 - Focus Out時のSingle Field Validation
-- Correlation Validation Mode = ACTIVE後の関連Correlation Validation再実行
+- Correlation Validation Mode = ACTIVE後の関連Correlation
+  Validation再実行
 - Modify操作時の全Single Field Validation
 - 全Single Field Validation成功後の全Correlation Validation
 - Validation ErrorのField表示
 - Validation成功時のConfirmation Modal表示
 - Cancel時のCurrent Values / Original Values / Changed Fields維持
-- Changed FieldsのみをPropertiesとして `ModifyTask(ID, Properties)` へ渡す
+- Changed FieldsのみをPropertiesとして `ModifyTask(ID, Properties)`
+  へ渡す
 - Application ServiceでのTask Validation
 - `Store(..., Replace)` による永続化
 - File Persistence Adapterによる `createdAt` 維持
@@ -2024,8 +1987,7 @@ Info Toast
   - Correlation Validation Mode = INITIAL
   - Modify Button = Disabled
 
-正常系と、
-Edit Use Case内で発生する異常系を同じStepで検証する。
+正常系と、 Edit Use Case内で発生する異常系を同じStepで検証する。
 
 ---
 
@@ -2034,9 +1996,8 @@ Edit Use Case内で発生する異常系を同じStepで検証する。
 Phase 5で構築したApplicationをWindows実行ファイルとしてBuildし、
 Prototypeとしての成立性を最終確認する。
 
-Release Build前には、
-Behavior / Logic TestおよびIntegration Testを実行し、
-すべて成功していることを確認する。
+Release Build前には、 Behavior / Logic TestおよびIntegration
+Testを実行し、 すべて成功していることを確認する。
 
 最終的なVertical Sliceは以下とする。
 
@@ -2106,11 +2067,11 @@ PrototypeではApplicationとして操作可能であり、
 
 Application全体の暫定Visual DesignはStep 3で適用する。
 
-Task List / Create / Editの具体的な画面構成は、
-Step 4〜6の各Step開始時に簡易設計する。
+Task List / Create / Editの具体的な画面構成は、 Step
+4〜6の各Step開始時に簡易設計する。
 
-色、余白、Typography、Component Design等の
-詳細なDesign SystemはCoreで必要に応じて検討する。
+色、余白、Typography、Component Design等の 詳細なDesign
+SystemはCoreで必要に応じて検討する。
 
 ---
 
@@ -2118,15 +2079,14 @@ Step 4〜6の各Step開始時に簡易設計する。
 
 将来的に、ApplicationからAIを利用した登録・編集支援を行う可能性がある。
 
-Application Shellとしては、
-Task / Config等の機能Navigationとは別に、
-AI Modeを起動する入口を配置できる構造を妨げないものとする。
+Application Shellとしては、 Task / Config等の機能Navigationとは別に、 AI
+Modeを起動する入口を配置できる構造を妨げないものとする。
 
 AIは「何を扱うか」を表すApplication機能ではなく、
 既存機能を別の操作方法から利用する支援機能として位置付けることを想定する。
 
-ただし、AI Mode、Prompt UI、AI API連携等は
-Prototype Phase 5では一切実装しない。
+ただし、AI Mode、Prompt UI、AI API連携等は Prototype Phase
+5では一切実装しない。
 
 ---
 
@@ -2152,15 +2112,14 @@ Phase 5では以下を対象外とする。
 - 詳細なDesign System
 - GitHub ActionsによるCI/CD
 
-Phase 5では、
-Svelte + Wails + Go + FileによるWindows Applicationとしての成立性確認に集中する。
+Phase 5では、 Svelte + Wails + Go + FileによるWindows
+Applicationとしての成立性確認に集中する。
 
 ---
 
 ## 13. Phase 5 Completion Criteria
 
-以下をすべて満たした時点で、
-Prototype Phase 5をCOMPLETEとする。
+以下をすべて満たした時点で、 Prototype Phase 5をCOMPLETEとする。
 
 - Svelte / Wails / Go / Fileの責務境界を説明できる
 - Task Modelおよび `tasks.yaml` Formatが確定している
@@ -2174,8 +2133,10 @@ Prototype Phase 5をCOMPLETEとする。
 - Application再起動後に保存内容を復元できる
 - Primary NavigationによりTask / Config Dummy Pageを切り替えられる
 - Focus Out時にSingle Field Validationを実行できる
-- Correlation Validation Mode = INITIAL / ACTIVEに応じて相関Validationを適切なタイミングで実行できる
-- Create / Modify Button押下時に全Single Field Validationおよび必要なCorrelation Validationを実行できる
+- Correlation Validation Mode = INITIAL /
+  ACTIVEに応じて相関Validationを適切なタイミングで実行できる
+- Create / Modify Button押下時に全Single Field
+  Validationおよび必要なCorrelation Validationを実行できる
 - Validation Errorを対象Form Field付近へ適切な優先順位で表示できる
 - Application ErrorをError Toastとして通知できる
 - Info Toastが動作する

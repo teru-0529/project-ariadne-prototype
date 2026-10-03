@@ -2,14 +2,13 @@
 
 ## 1. Purpose
 
-Behavior Mapは、
-Prototype Phase 5においてTDDで保証するBehaviorを整理するためのMapとする。
+Behavior Mapは、 Prototype Phase
+5においてTDDで保証するBehaviorを整理するためのMapとする。
 
-Behaviorは原則として、
-1つのユーザーActionを基本単位とする。
+Behaviorは原則として、 1つのユーザーActionを基本単位とする。
 
-同じActionに対して結果が分岐する場合は、
-Behaviorを分割せずResult Patternとして整理する。
+同じActionに対して結果が分岐する場合は、 Behaviorを分割せずResult
+Patternとして整理する。
 
 基本形式：
 
@@ -22,8 +21,7 @@ Behavior
 └─ Scope    : Front / Back
 ```
 
-Integration Testについては、
-Scopeが `Front + Back` のBehaviorについて
+Integration Testについては、 Scopeが `Front + Back` のBehaviorについて
 Result Pattern単位で対象を定義する。
 
 Integration Test対象となるResult Patternには、
@@ -45,8 +43,7 @@ Integration Test:
 
 とし、Priorityは定義しない。
 
-Priorityは、
-Manual Integration Testの実施判断の目安とする。
+Priorityは、 Manual Integration Testの実施判断の目安とする。
 
 - HIGH
   - 原則として実施する
@@ -57,8 +54,7 @@ Manual Integration Testの実施判断の目安とする。
 
 Priorityは品質上の重要度を表すものではない。
 
-Scopeが `Front` のBehaviorには、
-Integration Test情報を定義しない。
+Scopeが `Front` のBehaviorには、 Integration Test情報を定義しない。
 
 ---
 
@@ -100,8 +96,7 @@ Result:
 
 - Config Dummy Pageを表示する
 - Task Side Navigationを表示しない
-- Main Areaに
-  `Configuration is not available in this prototype.`
+- Main Areaに `Configuration is not available in this prototype.`
   を表示する
 
 Scope:
@@ -176,6 +171,16 @@ Integration Test:
 - Target: Yes
 - Priority: MID
 
+#### Unsupported Version
+
+- Task Listを表示できない
+- 非対応VersionであることをError Toastで通知する
+
+Integration Test:
+
+- Target: Yes
+- Priority: MID
+
 Scope:
 
 - Front + Back
@@ -183,8 +188,10 @@ Scope:
 Note:
 
 - 正常なReadではInfo Toastを表示しない
-- File Read / YAML Parse / Format / Version等、
+- File Read / YAML Parse / Format / Invalid Task Data等、
   Application上の振る舞いが同じ原因はRead Failureとして扱う
+- Unsupported Versionは運用上発生し得る状態としてRead
+  Failureと区別する
 
 ### L02 Taskを選択する
 
@@ -232,8 +239,8 @@ Scope:
 
 Note:
 
-- Listで取得済みのTaskをそのままEditへ渡さず、
-  GetTask / Pickによって再取得する
+- Listで取得済みのTaskをそのままEditへ渡さず、 GetTask /
+  Pickによって再取得する
 - Not FoundとRead FailureはApplication上の意味が異なるため、
   別Patternとして扱う
 
@@ -298,7 +305,6 @@ Process:
    - 最初のErrorで対象Fieldの評価を終了する
    - ValidならSingle Field ErrorをClear
    - Invalidなら最初のErrorをSet
-
 2. Correlation Validation ModeがACTIVEの場合
    - 対象Fieldに関連する相関Validationを再実行する
    - 関連Fieldがすべて単項目ValidなRuleのみ評価する
@@ -306,7 +312,6 @@ Process:
    - ValidならCorrelation ErrorをClear
    - InvalidならCorrelation ErrorをSet
    - 評価不能なら対応するCorrelation ErrorをClear
-
 3. Create Buttonの状態を更新する
 
 Disabled:
@@ -327,8 +332,9 @@ Note:
 
 - INITIALではFocus Out時に相関Validationを行わない
 - 1 Fieldに表示するValidation Messageは1つ
-- 表示優先順位はSingle Field Error > Correlation Error
-- 複数Correlation Errorが同一Fieldに該当する場合はRule Priorityで決定する
+- 表示優先順位はSingle Field Error \> Correlation Error
+- 複数Correlation Errorが同一Fieldに該当する場合はRule
+  Priorityで決定する
 
 ### C03 Create Buttonを押す
 
@@ -346,11 +352,9 @@ Process:
 1. 全Fieldの単項目Validationを実行する
    - Fieldごとに最初のErrorまで評価
    - Single Field ErrorをSet / Clear
-
 2. Single Field Errorが存在する場合
    - 相関Validationは実行しない
    - Correlation Validation Modeは変更しない
-
 3. Single Field Errorが存在しない場合
    - 全相関Validationを実行する
    - Correlation ErrorをSet / Clearする
@@ -388,8 +392,7 @@ Scope:
 
 Note:
 
-- INITIAL → ACTIVEは、
-  全単項目ValidationがValidとなり、
+- INITIAL → ACTIVEは、 全単項目ValidationがValidとなり、
   全相関Validationを実際に実行した時点で行う
 - Buttonを押しただけではACTIVEにしない
 - 相関Validationは最初のErrorで終了せず全Ruleを評価する
@@ -472,8 +475,8 @@ Scope:
 
 Note:
 
-- Service側Validation Error等の想定外Errorは
-  Common Application Error Handlingで扱う
+- Service側Validation Error等の想定外Errorは Common Application Error
+  Handlingで扱う
 
 ---
 
@@ -508,7 +511,6 @@ Process:
    - 最初のErrorで終了
    - ValidならSingle Field ErrorをClear
    - InvalidならSingle Field ErrorをSet
-
 2. Correlation Validation ModeがACTIVEの場合
    - 対象Fieldに関連する相関Validationを再実行
    - 関連Fieldがすべて単項目ValidなRuleのみ評価
@@ -516,12 +518,9 @@ Process:
    - ValidならCorrelation ErrorをClear
    - InvalidならCorrelation ErrorをSet
    - 評価不能ならCorrelation ErrorをClear
-
-3. Original ValuesとCurrent Valuesを比較し、
-   Changed Fieldsを更新する
+3. Original ValuesとCurrent Valuesを比較し、 Changed Fieldsを更新する
    - Originalと異なるField → Changed
    - Originalへ戻したField → Not Changed
-
 4. Modify Buttonの状態を更新する
 
 Disabled:
@@ -582,11 +581,9 @@ Process:
 1. 全Fieldの単項目Validationを実行する
    - Fieldごとに最初のErrorまで評価
    - Single Field ErrorをSet / Clear
-
 2. Single Field Errorが存在する場合
    - 相関Validationは実行しない
    - Correlation Validation Modeは変更しない
-
 3. Single Field Errorが存在しない場合
    - 全相関Validationを実行する
    - Correlation ErrorをSet / Clear
@@ -659,8 +656,8 @@ Action:
 
 Process:
 
-- Changed FieldsだけをPropertiesとして
-  ModifyTask(ID, Properties)へ渡す
+- Changed FieldsだけをPropertiesとして ModifyTask(ID,
+  Properties)へ渡す
 - Backendは既存Taskへ指定Propertiesを反映する
 
 Result / Pattern:
@@ -747,13 +744,14 @@ Behavior Map作成時は、以下の項目がBehavior / Patternとして
 網羅されていることを確認する。
 
 | 領域        | 確認項目                                          | Behavior              |
-| ----------- | ------------------------------------------------- | --------------------- |
+| :---------- | :------------------------------------------------ | :-------------------- |
 | Application | Application起動                                   | S01                   |
 | Navigation  | Task → Config                                     | S02                   |
 | Navigation  | Config → Task                                     | S03                   |
 | List        | Task一覧取得・表示                                | L01                   |
 | List        | Task 0件                                          | L01                   |
 | List        | Read Failure                                      | L01                   |
+| List        | Unsupported Version                               | L01                   |
 | List        | Task選択・再取得                                  | L02                   |
 | List        | 選択Task Not Found                                | L02                   |
 | List        | 選択Task Read Failure                             | L02                   |

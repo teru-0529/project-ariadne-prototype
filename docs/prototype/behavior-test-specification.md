@@ -30,9 +30,9 @@ Behavior間にこの依存がある場合は、各BehaviorのTest Specification�
 
 ### Frontend Module Test
 
-#### Given
+#### When
 
-- Applicationを初期状態でRenderする
+- Applicationを立ち上げる
 
 #### Expected
 
