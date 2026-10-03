@@ -1,5 +1,7 @@
 <script lang="ts">
-  // TODO: S01ではApplication Shellの初期状態表示のみ
+  type PrimaryPage = "task" | "config";
+
+  let currentPage: PrimaryPage = "task";
 </script>
 
 <div class="application">
@@ -15,22 +17,34 @@
     </div>
 
     <nav class="primary-navigation" aria-label="Primary">
-      <button type="button" aria-current="page">Task</button>
-      <button type="button">Config</button>
+      <button type="button" aria-current={currentPage === "task" ? "page" : undefined}> Task </button>
+      <button
+        type="button"
+        aria-current={currentPage === "config" ? "page" : undefined}
+        on:click={() => (currentPage = "config")}
+      >
+        Config
+      </button>
     </nav>
   </header>
 
   <div class="workspace">
-    <aside class="side-navigation">
-      <nav aria-label="Task">
-        <button type="button">List</button>
-        <button type="button">Create</button>
-      </nav>
-    </aside>
+    {#if currentPage === "task"}
+      <aside class="side-navigation">
+        <nav aria-label="Task">
+          <button type="button">List</button>
+          <button type="button">Create</button>
+        </nav>
+      </aside>
 
-    <main class="main-area">
-      <p>Select an operation.</p>
-    </main>
+      <main class="main-area">
+        <p>Select an operation.</p>
+      </main>
+    {:else}
+      <main class="main-area config-main">
+        <p>Configuration is not available in this prototype.</p>
+      </main>
+    {/if}
   </div>
 
   <footer class="application-footer">
@@ -234,6 +248,10 @@
 
     color: var(--color-text-muted);
     font-size: 16px;
+  }
+
+  .config-main {
+    grid-column: 1 / -1;
   }
 
   .application-footer {

@@ -48,7 +48,38 @@ N/A
 
 ---
 
-## 3. Note
+## 3. S02 Configを選択する
+
+### Frontend Module Test
+
+#### Given
+
+- Task Pageが表示されている
+- Primary Navigationで `Task` が選択されている
+
+#### When
+
+- Primary Navigationの `Config` を選択する
+
+#### Expected
+
+- `Task` の選択状態が解除される
+- `Config` が選択状態になる
+- Config Dummy Pageが表示される
+- Task Side Navigationが表示されない
+- Main Areaに `Configuration is not available in this prototype.` が表示される
+
+### Backend Module Test
+
+N/A
+
+### Integration Test
+
+N/A
+
+---
+
+## 4. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
