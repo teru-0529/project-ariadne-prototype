@@ -56,12 +56,12 @@ tasks:
 		t.Fatalf("Tasks = %d, want 2", len(got.Tasks))
 	}
 
-	if got.Tasks[0].Title != "Task C" {
-		t.Errorf("Tasks[0].Title = %q, want %q", got.Tasks[0].Title, "Task C")
+	if *got.Tasks[0].Title != "Task C" {
+		t.Errorf("Tasks[0].Title = %q, want %q", *got.Tasks[0].Title, "Task C")
 	}
 
-	if got.Tasks[1].Title != "Task A" {
-		t.Errorf("Tasks[1].Title = %q, want %q", got.Tasks[1].Title, "Task A")
+	if *got.Tasks[1].Title != "Task A" {
+		t.Errorf("Tasks[1].Title = %q, want %q", *got.Tasks[1].Title, "Task A")
 	}
 }
 
@@ -111,7 +111,7 @@ tasks:
 		t.Fatalf("Tasks = %d, want 1", len(got.Tasks))
 	}
 
-	if got.Tasks[0].Title != "Task A" {
-		t.Errorf("Tasks[0].Title = %q, want %q", got.Tasks[0].Title, "Task A")
+	if *got.Tasks[0].Title != "Task A" {
+		t.Errorf("Tasks[0].Title = %q, want %q", *got.Tasks[0].Title, "Task A")
 	}
 }

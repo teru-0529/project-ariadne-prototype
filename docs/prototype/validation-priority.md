@@ -19,6 +19,12 @@ Required
 Max Length 50
 ```
 
+Required判定では前後の空白を除いた値を使用する。
+空白のみの場合はRequired Errorとする。
+
+ValidationのためにTrimした値で、
+入力値そのものを置き換えない。
+
 Required Errorの場合は、
 Max Length Validationを実行しない。
 

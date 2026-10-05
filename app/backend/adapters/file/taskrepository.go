@@ -31,10 +31,10 @@ func (r *TaskRepository) Retrieve() ([]*services.Task, error) {
 	}
 
 	var tasks []*services.Task
-	for _, pt := range dataset.Tasks {
+	for i, pt := range dataset.Tasks {
 		task, err := pt.toTask()
 		if err != nil {
-			return nil, err //TODO: エラー処理wrap候補
+			return nil, fmt.Errorf("%w: tasks[%d]: %w", services.ErrReadFailure, i, err)
 		}
 		tasks = append(tasks, task)
 	}
@@ -67,7 +67,12 @@ func (r *TaskRepository) readYAML() (*taskDataset, error) {
 		})
 	}
 
-	return parseYAML(data)
+	dataset, err := parseYAML(data)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", services.ErrReadFailure, err)
+	}
+
+	return dataset, nil
 }
 
 var headerPattern = regexp.MustCompile(

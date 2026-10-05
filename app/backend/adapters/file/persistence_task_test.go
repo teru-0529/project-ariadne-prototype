@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 // TEST:
 func Test_PersistenceTask_To_Task_Success(t *testing.T) {
 	if !*testutil.Logic {
@@ -13,13 +17,13 @@ func Test_PersistenceTask_To_Task_Success(t *testing.T) {
 
 	// INFO: GIVEN
 	source := persistenceTask{
-		ID:          "01J9C0000000000000000000000",
-		Title:       "Task A",
-		Description: "Description A",
-		Priority:    3,
-		Status:      "DOING",
-		CreatedAt:   "2026-10-04T09:00:00+09:00",
-		UpdatedAt:   "2026-10-04T11:00:00+09:00",
+		ID:          ptr("01M46599N791CM7QP2YN9KK94K"),
+		Title:       ptr("Task A"),
+		Description: ptr("Description A"),
+		Priority:    ptr(3),
+		Status:      ptr("DOING"),
+		CreatedAt:   ptr("2026-10-04T09:00:00+09:00"),
+		UpdatedAt:   ptr("2026-10-04T11:00:00+09:00"),
 	}
 
 	// INFO: ACTION
@@ -30,23 +34,23 @@ func Test_PersistenceTask_To_Task_Success(t *testing.T) {
 		t.Fatalf("toTask() returned error: %v", err)
 	}
 
-	if got.ID != source.ID {
-		t.Errorf("ID = %q, want %q", got.ID, source.ID)
+	if got.ID != *source.ID {
+		t.Errorf("ID = %q, want %q", got.ID, *source.ID)
 	}
 
-	if got.Title != source.Title {
-		t.Errorf("Title = %q, want %q", got.Title, source.Title)
+	if got.Title != *source.Title {
+		t.Errorf("Title = %q, want %q", got.Title, *source.Title)
 	}
 
-	if got.Description != source.Description {
-		t.Errorf("Description = %q, want %q", got.Description, source.Description)
+	if *got.Description != *source.Description {
+		t.Errorf("Description = %q, want %q", *got.Description, *source.Description)
 	}
 
-	if got.Priority != source.Priority {
-		t.Errorf("Priority = %d, want %d", got.Priority, source.Priority)
+	if got.Priority != *source.Priority {
+		t.Errorf("Priority = %d, want %d", got.Priority, *source.Priority)
 	}
 
-	if got.Status != source.Status {
-		t.Errorf("Status = %q, want %q", got.Status, source.Status)
+	if got.Status != *source.Status {
+		t.Errorf("Status = %q, want %q", got.Status, *source.Status)
 	}
 }

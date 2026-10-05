@@ -15,15 +15,15 @@ format: ariadne-tasks
 version: "2.1"
 
 tasks:
-  - id: "01J9C0000000000000000000000"
+  - id: "01M465B5JK59B98Q8AXTJ6HSDR"
     title: "Task C"
-    description: ""
+    description: "重要度5の場合は説明必須"
     priority: 5
     status: TODO
     createdAt: "2026-10-04T09:00:00+09:00"
     updatedAt: "2026-10-04T09:00:00+09:00"
 
-  - id: "01J9C0000000000000000000001"
+  - id: "01M465BRVCYNR0H09A30JE03PW"
     title: "Task A"
     description: ""
     priority: 1
@@ -31,7 +31,7 @@ tasks:
     createdAt: "2026-10-04T09:00:00+09:00"
     updatedAt: "2026-10-04T09:00:00+09:00"
 
-  - id: "01J9C0000000000000000000002"
+  - id: "01M465BRVCDDWKHCTF84YK2QQD"
     title: "Task B"
     description: ""
     priority: 3
@@ -60,19 +60,19 @@ tasks:
 
 	want := []services.TaskSummary{
 		{
-			ID:       "01J9C0000000000000000000000",
+			ID:       "01M465B5JK59B98Q8AXTJ6HSDR",
 			Title:    "Task C",
 			Priority: 5,
 			Status:   "TODO",
 		},
 		{
-			ID:       "01J9C0000000000000000000001",
+			ID:       "01M465BRVCYNR0H09A30JE03PW",
 			Title:    "Task A",
 			Priority: 1,
 			Status:   "DOING",
 		},
 		{
-			ID:       "01J9C0000000000000000000002",
+			ID:       "01M465BRVCDDWKHCTF84YK2QQD",
 			Title:    "Task B",
 			Priority: 3,
 			Status:   "DONE",

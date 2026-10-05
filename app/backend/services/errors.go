@@ -42,3 +42,13 @@ func (e *UnsupportedMinorVersionError) Error() string {
 		e.Minor,
 	)
 }
+
+// INFO: タスク項目のバリデーションに失敗した場合に返されるエラー
+type ModelValidationError struct {
+	Detail string
+}
+
+// FUNCTION: ModelValidationErrorのエラーメッセージを返す関数
+func (e *ModelValidationError) Error() string {
+	return fmt.Sprintf("invalid model: %s", e.Detail)
+}
