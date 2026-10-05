@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"ariadne/backend/services"
+	"ariadne/backend/tests/testutil"
 	"testing"
 )
 
@@ -19,7 +20,7 @@ func Test_Display_App_Name(t *testing.T) {
 
 func Test_Small_Logic(t *testing.T) {
 	// INFO: ダミーテスト（D：Logicテスト相当）
-	if !*logic {
+	if !*testutil.Logic {
 		t.SkipNow()
 	}
 }

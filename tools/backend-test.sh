@@ -79,7 +79,7 @@ while IFS= read -r line; do
 
     # INFO: 詳細情報
     if [[ "${line}" =~ ^[[:space:]]+(.+\.go:[[:digit:]]+:.+) ]]; then
-        printf "  ${GRAY}⇂${RESET} ${GRAY}${BASH_REMATCH[1]}${RESET}\n"
+        printf "  ${GRAY}⇂${RESET} ${GRAY}%s${RESET}\n" "${BASH_REMATCH[1]}"
         continue
     fi
 
