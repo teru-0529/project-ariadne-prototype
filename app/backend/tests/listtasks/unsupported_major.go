@@ -34,8 +34,12 @@ tasks:
 		t.Fatalf("ListTasks() error = %v, want *services.UnsupportedMajorVersionError", err)
 	}
 
-	if versionErr.Major != 3 {
-		t.Errorf("Major = %d, want 3", versionErr.Major)
+	if versionErr.ActualMajor != 3 {
+		t.Errorf("ActualMajor = %d, want 3", versionErr.ActualMajor)
+	}
+
+	if versionErr.SupportedMajor != 2 {
+		t.Errorf("SupportedMajor = %d, want 2", versionErr.SupportedMajor)
 	}
 
 	if errors.Is(err, services.ErrReadFailure) {

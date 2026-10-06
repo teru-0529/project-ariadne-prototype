@@ -2,9 +2,13 @@ package main
 
 import (
 	"embed"
+	"os"
+	"path/filepath"
 
 	"log"
 
+	"ariadne/backend/adapters/file"
+	"ariadne/backend/adapters/wails"
 	"ariadne/backend/services"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -22,6 +26,16 @@ var assets embed.FS
 // It initializes the application, creates the main window, and runs the application.
 func main() {
 
+	// INFO: tasks.yaml のDirを設定（環境変数から取得、設定がない場合はexeファイルと同じDir）
+	dataDir := os.Getenv("ARIADNE_DATA_DIR")
+	if dataDir == "" {
+		exePath, err := os.Executable()
+		if err != nil {
+			log.Fatal(err)
+		}
+		dataDir = filepath.Dir(exePath)
+	}
+
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -37,6 +51,12 @@ func main() {
 			application.NewService(&services.AppService{}),
 		},
 	})
+
+	// INFO: taskservice 追加
+	taskrepository := file.NewTaskRepository(dataDir)
+	taskservice := services.NewTaskService(taskrepository)
+	taskboundary := wails.NewTaskBoundary(taskservice, app.Logger)
+	app.RegisterService(application.NewService(taskboundary))
 
 	// Create a new window with the necessary options.
 	// 'Title' is the title of the window.

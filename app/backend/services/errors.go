@@ -20,12 +20,13 @@ func (e *FormatError) Error() string {
 
 // INFO: サポートされていないメジャーバージョンのYAMLフォーマットが読み込まれた場合に返されるエラー
 type UnsupportedMajorVersionError struct {
-	Major int
+	ActualMajor    int
+	SupportedMajor int
 }
 
 // FUNCTION: UnsupportedMajorVersionErrorのエラーメッセージを返す関数
 func (e *UnsupportedMajorVersionError) Error() string {
-	return fmt.Sprintf("unsupported major version: %d", e.Major)
+	return fmt.Sprintf("unsupported major version: actual=%d, supported=%d", e.ActualMajor, e.SupportedMajor)
 }
 
 // INFO: サポートされていないマイナーバージョンのYAMLフォーマットが読み込まれた場合に返されるエラー

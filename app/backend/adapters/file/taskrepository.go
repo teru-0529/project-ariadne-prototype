@@ -56,7 +56,8 @@ func (r *TaskRepository) readYAML() (*taskDataset, error) {
 
 	if major != supportedMajorVersion {
 		return nil, &services.UnsupportedMajorVersionError{
-			Major: major,
+			ActualMajor:    major,
+			SupportedMajor: supportedMajorVersion,
 		}
 	}
 
