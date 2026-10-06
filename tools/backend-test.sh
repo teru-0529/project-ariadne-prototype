@@ -54,6 +54,12 @@ ng=0
 
 while IFS= read -r line; do
 
+    # INFO: Build Errorの可能性を通知
+    if [[ "${line}" =~ ^#[[:space:]]+ ]]; then
+        echo " 🔴 Potential Build Error"
+        break
+    fi
+
     # INFO: Test開始行削除
     if [[ "${line}" =~ ^===\ RUN[[:space:]]+ ]]; then
         continue
