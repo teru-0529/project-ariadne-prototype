@@ -1,4 +1,6 @@
 <script lang="ts">
+  import TaskManagement from "./features/task/TaskManagement.svelte";
+
   type PrimaryPage = "task" | "config";
 
   let currentPage: PrimaryPage = "task";
@@ -36,18 +38,9 @@
 
   <div class="workspace">
     {#if currentPage === "task"}
-      <aside class="side-navigation">
-        <nav aria-label="Task">
-          <button type="button">List</button>
-          <button type="button">Create</button>
-        </nav>
-      </aside>
-
-      <main class="main-area">
-        <p>Select an operation.</p>
-      </main>
+      <TaskManagement />
     {:else}
-      <main class="main-area config-main">
+      <main class="main-area">
         <p>Configuration is not available in this prototype.</p>
       </main>
     {/if}
@@ -207,57 +200,18 @@
   }
 
   .workspace {
-    display: grid;
-    grid-template-columns: 200px minmax(0, 1fr);
     min-height: 0;
-  }
-
-  .side-navigation {
-    padding: 12px 8px;
-
-    background: var(--color-surface);
-    border-right: 1px solid var(--color-border);
-  }
-
-  .side-navigation nav {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .side-navigation button {
-    width: 100%;
-    padding: 7px 12px;
-
-    color: var(--color-text);
-    text-align: left;
-
-    background: transparent;
-    border: 0;
-    border-radius: 3px;
-
-    cursor: pointer;
-  }
-
-  .side-navigation button:hover {
-    background: #eceff4;
   }
 
   .main-area {
     padding: 32px;
-
     background: var(--color-background);
   }
 
   .main-area p {
     margin: 0;
-
     color: var(--color-text-muted);
     font-size: 16px;
-  }
-
-  .config-main {
-    grid-column: 1 / -1;
   }
 
   .application-footer {
