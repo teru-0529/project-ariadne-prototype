@@ -92,6 +92,9 @@
   }
 
   .application-header {
+    min-width: 0;
+    overflow-x: clip;
+
     display: flex;
     align-items: stretch;
     justify-content: space-between;
@@ -148,6 +151,7 @@
     font-size: 24px;
     font-weight: 600;
     letter-spacing: 0.02em;
+    white-space: nowrap;
   }
 
   /* タイトル下の右へ伸びるライン */
@@ -200,6 +204,7 @@
   }
 
   .workspace {
+    min-width: 0;
     min-height: 0;
   }
 

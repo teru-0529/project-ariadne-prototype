@@ -1,0 +1,174 @@
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { TaskBoundary } from "../../../bindings/ariadne/backend/adapters/wails";
+  import type { TaskSummary } from "../../../bindings/ariadne/backend/services/publish";
+
+  import Tooltip from "../../components/Tooltip.svelte";
+
+  let tasks: TaskSummary[] = [];
+
+  onMount(async () => {
+    const result = await TaskBoundary.ListTasks();
+    tasks = result ?? [];
+  });
+</script>
+
+<div class="task-list">
+  <div class="task-list-header">
+    <h2>Task 一覧</h2>
+    <span class="task-count">全 {tasks.length} 件</span>
+  </div>
+
+  <table>
+    <colgroup>
+      <col />
+      <col style="width: 150px;" />
+      <col style="width: 130px;" />
+    </colgroup>
+
+    <thead>
+      <tr>
+        <th>タイトル</th>
+        <th>優先度</th>
+        <th>ステータス</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {#each tasks as task}
+        <tr data-status={task.Status}>
+          <td>
+            <Tooltip text={task.Title} />
+            <div class="task-id">{task.ID}</div>
+          </td>
+          <td class="priority">
+            <span class="priority-filled">{"★".repeat(task.Priority)}</span><span class="priority-empty"
+              >{"☆".repeat(5 - task.Priority)}</span
+            >
+          </td>
+          <td>
+            <span class="status-badge" data-status={task.Status}>
+              {task.Status}
+            </span>
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .task-list {
+    width: 100%;
+  }
+
+  .task-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .task-list-header h2 {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 600;
+  }
+
+  .task-count {
+    font-size: 0.75em;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  table {
+    width: 100%;
+    min-width: 430px;
+    table-layout: fixed;
+    border-collapse: collapse;
+    border: 1px solid #d8dde5;
+  }
+
+  th,
+  td {
+    padding: 4px 10px;
+    border-bottom: 1px solid #d8dde5;
+    font-size: 12px;
+    vertical-align: middle;
+  }
+
+  th {
+    background: #f4f6f8;
+    text-align: center;
+  }
+
+  tr[data-status="DONE"] {
+    background: #e5e7eb;
+  }
+
+  td:first-child {
+    text-align: left;
+  }
+
+  td:nth-child(2),
+  td:nth-child(3) {
+    text-align: center;
+  }
+
+  .task-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .task-id {
+    margin-top: 2px;
+    font-size: 0.7em;
+    color: #929baa;
+  }
+
+  .priority {
+    font-size: 16px;
+    line-height: 1;
+    transform: translateY(-1px);
+  }
+
+  .priority-filled {
+    color: #dc8a18;
+  }
+
+  .priority-empty {
+    color: #aeb8c5;
+  }
+
+  .status-badge {
+    display: inline-block;
+    min-width: 52px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  .status-badge[data-status="TODO"] {
+    background: #eee4cc;
+    color: #80652d;
+  }
+
+  .status-badge[data-status="DOING"] {
+    background: #dbeafe;
+    color: #2563eb;
+  }
+
+  .status-badge[data-status="DONE"] {
+    background: #d1d5db;
+    color: #4b5563;
+  }
+
+  tbody tr:hover {
+    outline: 1px solid #4f7fd3;
+    outline-offset: -1px;
+  }
+</style>

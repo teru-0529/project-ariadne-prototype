@@ -6,12 +6,14 @@
 
   export let label: string;
   export let items: NavigationItem[];
+  export let current: string | null;
+  export let onSelect: (value: string) => void;
 </script>
 
 <aside class="side-navigation">
   <nav aria-label={label}>
     {#each items as item}
-      <button type="button">
+      <button type="button" aria-pressed={current === item.value} on:click={() => onSelect(item.value)}>
         {item.label}
       </button>
     {/each}
@@ -48,5 +50,15 @@
 
   .side-navigation button:hover {
     background: #eceff4;
+  }
+
+  .side-navigation button[aria-pressed="true"] {
+    color: var(--color-primary);
+    background: #e8eef9;
+    font-weight: 600;
+  }
+
+  .side-navigation button[aria-pressed="true"]:hover {
+    background: #dce6f7;
   }
 </style>
