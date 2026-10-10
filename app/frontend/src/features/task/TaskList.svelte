@@ -1,22 +1,16 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { TaskBoundary } from "../../../bindings/ariadne/backend/adapters/wails";
-  import type { TaskSummary } from "../../../bindings/ariadne/backend/services/publish";
+  import { TaskContext, TaskScreen } from "./TaskContext";
 
   import Tooltip from "../../components/Tooltip.svelte";
 
-  let tasks: TaskSummary[] = [];
-
-  onMount(async () => {
-    const result = await TaskBoundary.ListTasks();
-    tasks = result ?? [];
-  });
+  export let context: TaskContext;
+  const tasks = context.getData(TaskScreen.List, "taskList");
 </script>
 
 <div class="task-list">
   <div class="task-list-header">
     <h2>Task 一覧</h2>
-    <span class="task-count">全 {tasks.length} 件</span>
+    <span class="task-count">全 {tasks?.length ?? 0} 件</span><!--FIXME: 美しくない？ -->
   </div>
 
   <div class="task-table-scroll">
@@ -36,7 +30,7 @@
       </thead>
 
       <tbody>
-        {#each tasks as task}
+        {#each tasks ?? [] as task}<!--FIXME: 美しくない？ -->
           <tr data-status={task.Status}>
             <td>
               <Tooltip text={task.Title} />

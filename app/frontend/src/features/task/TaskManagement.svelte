@@ -2,12 +2,19 @@
   import SideNavigation from "../../components/SideNavigation.svelte";
   import TaskList from "./TaskList.svelte";
 
-  const navigationItems = [
-    { value: "list", label: "List" },
-    { value: "create", label: "Create" },
+  import { TaskScreen, TaskContext } from "./TaskContext";
+
+  // INFO: Side Navigation に渡すリスト
+  const navigationItems: { value: TaskScreen; label: string }[] = [
+    { value: TaskScreen.List, label: "List" },
+    { value: TaskScreen.Create, label: "Create" },
   ];
 
-  let currentTaskOperation: string | null = null;
+  // INFO: 選択中の画面
+  let currentTaskOperation: TaskScreen | null = null;
+
+  // INFO: タスクコンテキスト
+  let context = new TaskContext();
 </script>
 
 <div class="feature-area with-side-navigation">
@@ -15,16 +22,25 @@
     label="Task"
     items={navigationItems}
     current={currentTaskOperation}
-    onSelect={(value) => {
-      currentTaskOperation = value;
+    onSelect={async (value) => {
+      // INFO: value が navigationItems に存在すること
+      if (!navigationItems.some((item) => item.value === value)) {
+        console.error("TaskManagement: Invalid screen", value);
+        throw new Error("予期しないエラーが発生しました。");
+      }
+      const screen = value as TaskScreen;
+
+      await context.prepare(screen);
+      context.commit(screen);
+      currentTaskOperation = screen;
     }}
   />
 
   <main class="main-area">
-    {#if currentTaskOperation === "list"}
-      <TaskList />
-      <!-- {:else if currentTaskOperation === "create"}
-      <p>Create Task.</p> -->
+    {#if currentTaskOperation === TaskScreen.List}
+      <TaskList {context} />
+    {:else if currentTaskOperation === TaskScreen.Create}
+      <p>Create Task.</p>
     {:else}
       <p>Select an operation.</p>
     {/if}
