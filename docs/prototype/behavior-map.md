@@ -21,6 +21,8 @@ Behavior
 └─ Scope    : Front / Back
 ```
 
+### Integration Test
+
 Integration Testについては、 Scopeが `Front + Back` のBehaviorについて
 Result Pattern単位で対象を定義する。
 
@@ -55,6 +57,17 @@ Priorityは、 Manual Integration Testの実施判断の目安とする。
 Priorityは品質上の重要度を表すものではない。
 
 Scopeが `Front` のBehaviorには、 Integration Test情報を定義しない。
+
+### Navigation Policy
+
+- 画面遷移に先立ち、遷移先の表示に必要な準備を行う。
+- 準備が成功した場合にのみ、画面遷移を確定する。
+- 準備に失敗した場合は、現在の画面とSide Navigationの選択状態を維持する。
+- 準備に失敗した場合は、Error Toastで通知する。
+- 遷移先の画面では準備済みのデータを利用し、同じデータを再取得しない。
+
+準備にはBackendからのデータ取得を含むが、すべての画面遷移で
+Backend呼び出しが必要になるわけではない。
 
 ---
 
@@ -98,6 +111,7 @@ Result:
 - Task Side Navigationを表示しない
 - Main Areaに `Configuration is not available in this prototype.`
   を表示する
+- Task Featureの画面状態・取得データを破棄する
 
 Scope:
 
@@ -123,6 +137,11 @@ Result:
 Scope:
 
 - Front
+
+Note:
+
+- Task Featureは初期状態から開始する
+- 前回のTask Featureの画面状態・取得データは引き継がない
 
 ---
 
@@ -163,8 +182,10 @@ Integration Test:
 
 #### Read Failure
 
-- Task Listを表示できない
-- Error Toastを表示する
+- Task Listを取得できない
+- Main Areaは遷移前の画面を維持する
+- Side Navigationの選択状態を維持する
+- Read FailureのError Toastを表示する
 
 Integration Test:
 
@@ -173,7 +194,9 @@ Integration Test:
 
 #### Unsupported Version
 
-- Task Listを表示できない
+- Task Listを取得できない
+- Main Areaは遷移前の画面を維持する
+- Side Navigationの選択状態を維持する
 - 非対応VersionであることをError Toastで通知する
 
 Integration Test:
@@ -218,6 +241,8 @@ Integration Test:
 #### Not Found
 
 - 選択されたTaskが存在しない
+- Task List画面を維持する
+- Side NavigationのList選択状態を維持する
 - Error Toastを表示する
 
 Integration Test:
@@ -227,6 +252,8 @@ Integration Test:
 #### Read Failure
 
 - Taskを取得できない
+- Task List画面を維持する
+- Side NavigationのList選択状態を維持する
 - Error Toastを表示する
 
 Integration Test:

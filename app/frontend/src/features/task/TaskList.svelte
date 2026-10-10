@@ -19,47 +19,57 @@
     <span class="task-count">全 {tasks.length} 件</span>
   </div>
 
-  <table>
-    <colgroup>
-      <col />
-      <col style="width: 150px;" />
-      <col style="width: 130px;" />
-    </colgroup>
+  <div class="task-table-scroll">
+    <table>
+      <colgroup>
+        <col />
+        <col style="width: 150px;" />
+        <col style="width: 130px;" />
+      </colgroup>
 
-    <thead>
-      <tr>
-        <th>タイトル</th>
-        <th>優先度</th>
-        <th>ステータス</th>
-      </tr>
-    </thead>
-
-    <tbody>
-      {#each tasks as task}
-        <tr data-status={task.Status}>
-          <td>
-            <Tooltip text={task.Title} />
-            <div class="task-id">{task.ID}</div>
-          </td>
-          <td class="priority">
-            <span class="priority-filled">{"★".repeat(task.Priority)}</span><span class="priority-empty"
-              >{"☆".repeat(5 - task.Priority)}</span
-            >
-          </td>
-          <td>
-            <span class="status-badge" data-status={task.Status}>
-              {task.Status}
-            </span>
-          </td>
+      <thead>
+        <tr>
+          <th>タイトル</th>
+          <th>優先度</th>
+          <th>ステータス</th>
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+
+      <tbody>
+        {#each tasks as task}
+          <tr data-status={task.Status}>
+            <td>
+              <Tooltip text={task.Title} />
+              <div class="task-id">{task.ID}</div>
+            </td>
+            <td class="priority">
+              <span class="priority-filled">{"★".repeat(task.Priority)}</span><span class="priority-empty"
+                >{"☆".repeat(5 - task.Priority)}</span
+              >
+            </td>
+            <td>
+              <span class="status-badge" data-status={task.Status}>
+                {task.Status}
+              </span>
+            </td>
+          </tr>
+        {:else}
+          <tr class="empty-row">
+            <td colspan="3">No tasks.</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <style>
   .task-list {
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    height: 100%;
+    min-height: 0;
   }
 
   .task-list-header {
@@ -81,6 +91,12 @@
     white-space: nowrap;
   }
 
+  .task-table-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
   table {
     width: 100%;
     min-width: 430px;
@@ -98,6 +114,9 @@
   }
 
   th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     background: #f4f6f8;
     text-align: center;
   }
@@ -115,10 +134,10 @@
     text-align: center;
   }
 
-  .task-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .empty-row td {
+    height: 120px;
+    text-align: center;
+    color: var(--color-text-muted);
   }
 
   .task-id {

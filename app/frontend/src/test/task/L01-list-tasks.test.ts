@@ -46,11 +46,11 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
   // Task Side Navigation
   expect(listNavigation.getAttribute("aria-pressed")).toBe("true");
 
-  // main Area -Header
+  // main Area - Header
   expect(screen.getByRole("heading", { name: "Task 一覧" })).toBeTruthy();
   expect(screen.getByText("全 3 件")).toBeTruthy();
 
-  // main Area -Table
+  // main Area - Table
   const taskList = await screen.findByRole("table");
   const rows = within(taskList).getAllByRole("row");
   expect(rows).toHaveLength(4); // Header + 3 Tasks
@@ -84,4 +84,43 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
   expect(thirdRowCells[1].textContent).toBe("★★★☆☆");
   expect(thirdRowCells[2].textContent).toBe("DONE");
   expect(rows[3].getAttribute("data-status")).toBe("DONE");
+});
+
+// TEST:
+test("L01 Task一覧を表示する - Success Empty", async () => {
+  // INFO: GIVEN
+  vi.mocked(TaskBoundary.ListTasks).mockResolvedValue([]);
+
+  render(App);
+
+  // Task Side Navigation
+  const listNavigation = screen.getByRole("button", { name: "List" });
+
+  // INFO: ACTION
+  await fireEvent.click(listNavigation);
+
+  // INFO: VERIFY
+  // Task Side Navigation
+  expect(listNavigation.getAttribute("aria-pressed")).toBe("true");
+
+  // Main Area - Header
+  expect(screen.getByRole("heading", { name: "Task 一覧" })).toBeTruthy();
+  expect(screen.getByText("全 0 件")).toBeTruthy();
+
+  // Main Area - Table
+  const taskList = await screen.findByRole("table");
+  const rows = within(taskList).getAllByRole("row");
+  expect(rows).toHaveLength(2); // Header + No tasks. row
+
+  const columnHeaders = within(taskList).getAllByRole("columnheader");
+  expect(columnHeaders).toHaveLength(3);
+  expect(columnHeaders[0].textContent).toBe("タイトル");
+  expect(columnHeaders[1].textContent).toBe("優先度");
+  expect(columnHeaders[2].textContent).toBe("ステータス");
+
+  expect(within(taskList).getByText("No tasks.")).toBeTruthy();
+  expect(within(taskList).queryByText("TODO")).toBeNull();
+  expect(within(taskList).queryByText("DOING")).toBeNull();
+  expect(within(taskList).queryByText("DONE")).toBeNull();
+  expect(screen.queryByRole("alert")).toBeNull();
 });

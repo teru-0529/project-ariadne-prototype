@@ -68,6 +68,8 @@ func main() {
 		// Window sized to the golden ratio (1000 / 618 ≈ 1.618).
 		Width:            1000,
 		Height:           618,
+		MinWidth:         500,
+		MinHeight:        400,
 		BackgroundColour: application.NewRGB(6, 7, 15),
 		URL:              "/",
 	})

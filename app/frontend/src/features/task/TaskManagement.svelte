@@ -45,7 +45,8 @@
 
   .main-area {
     min-width: 0;
-    overflow-x: auto;
+    min-height: 0;
+    overflow: hidden;
 
     padding: 12px 20px 20px;
     background: var(--color-background);
