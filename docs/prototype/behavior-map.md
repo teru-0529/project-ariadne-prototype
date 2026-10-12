@@ -58,17 +58,6 @@ Priorityは品質上の重要度を表すものではない。
 
 Scopeが `Front` のBehaviorには、 Integration Test情報を定義しない。
 
-### Navigation Policy
-
-- 画面遷移に先立ち、遷移先の表示に必要な準備を行う。
-- 準備が成功した場合にのみ、画面遷移を確定する。
-- 準備に失敗した場合は、現在の画面とSide Navigationの選択状態を維持する。
-- 準備に失敗した場合は、Error Toastで通知する。
-- 遷移先の画面では準備済みのデータを利用し、同じデータを再取得しない。
-
-準備にはBackendからのデータ取得を含むが、すべての画面遷移で
-Backend呼び出しが必要になるわけではない。
-
 ---
 
 ## 2. Application Shell
@@ -321,6 +310,12 @@ Start:
 
 - Task Create画面で入力中
 
+Validation State:
+
+- Single Field Error
+- Correlation Error
+- Correlation Validation Mode = INITIAL / ACTIVE
+
 Action:
 
 - 入力項目からFocus Outする
@@ -358,10 +353,7 @@ Scope:
 Note:
 
 - INITIALではFocus Out時に相関Validationを行わない
-- 1 Fieldに表示するValidation Messageは1つ
-- 表示優先順位はSingle Field Error \> Correlation Error
-- 複数Correlation Errorが同一Fieldに該当する場合はRule
-  Priorityで決定する
+- Validation Errorの表示は、`phase-5-windows-application.md` Section 4.6 のError Message Priorityに従う
 
 ### C03 Create Buttonを押す
 
@@ -525,7 +517,7 @@ Validation State:
 
 - Single Field Error
 - Correlation Error
-- Correlation Validation Mode = INITIAL
+- Correlation Validation Mode = INITIAL / ACTIVE
 
 Action:
 
@@ -770,52 +762,51 @@ Note:
 Behavior Map作成時は、以下の項目がBehavior / Patternとして
 網羅されていることを確認する。
 
-| 領域        | 確認項目                                          | Behavior              |
-| :---------- | :------------------------------------------------ | :-------------------- |
-| Application | Application起動                                   | S01                   |
-| Navigation  | Task → Config                                     | S02                   |
-| Navigation  | Config → Task                                     | S03                   |
-| List        | Task一覧取得・表示                                | L01                   |
-| List        | Task 0件                                          | L01                   |
-| List        | Read Failure                                      | L01                   |
-| List        | Unsupported Version                               | L01                   |
-| List        | Task選択・再取得                                  | L02                   |
-| List        | 選択Task Not Found                                | L02                   |
-| List        | 選択Task Read Failure                             | L02                   |
-| Create      | Create画面初期表示                                | C01                   |
-| Create      | 初期値設定                                        | C01                   |
-| Create      | 初期Create Button Disabled                        | C01                   |
-| Validation  | Focus Out時の単項目Validation                     | C02 / M01             |
-| Validation  | Single Field Error Set / Clear                    | C02 / M01             |
-| Validation  | ACTIVE後の相関Validation再実行                    | C02 / M01             |
-| Validation  | INITIALでは相関Validationを遅延                   | C02 / M01             |
-| Validation  | Button押下時の全単項目Validation                  | C03 / M02             |
-| Validation  | Single Field Error時は相関Validationを実行しない  | C03 / M02             |
-| Validation  | 全相関Validation                                  | C03 / M02             |
-| Validation  | Correlation Validation Mode INITIAL → ACTIVE      | C03 / M02             |
-| Validation  | 1 Fieldに表示するValidation Messageは1つ          | Common                |
-| Validation  | Single Field ErrorをCorrelation Errorより優先表示 | Common                |
-| Correlation | priority = 5 の場合 description必須               | C02 / C03 / M01 / M02 |
-| Create      | Confirmation Modal表示                            | C03                   |
-| Create      | Confirmation Modal Cancel                         | C04                   |
-| Create      | Confirm / Deposit                                 | C05                   |
-| Create      | Write Failure                                     | C05                   |
-| Create      | Success時Info Toast                               | C05                   |
-| Create      | Success後Form Reset                               | C05                   |
-| Edit        | Original Values / Current Values管理              | M01                   |
-| Edit        | Changed Fields判定                                | M01                   |
-| Edit        | Original Valuesへ戻した場合Not Changed            | M01                   |
-| Edit        | 変更なしの場合Modify Button Disabled              | M01                   |
-| Edit        | 変更ありの場合Modify Button Enabled               | M01                   |
-| Edit        | Confirmation Modal表示                            | M02                   |
-| Edit        | Confirmation Modal Cancel                         | M03                   |
-| Edit        | Changed FieldsのみPropertiesへ連携                | M04                   |
-| Edit        | Confirm / Replace                                 | M04                   |
-| Edit        | 更新対象Task Not Found                            | M04                   |
-| Edit        | Read Failure                                      | M04                   |
-| Edit        | Write Failure                                     | M04                   |
-| Edit        | Success時Info Toast                               | M04                   |
-| Edit        | Success後Edit Baseline Reset                      | M04                   |
-| Error       | Application ErrorをError Toastで表示              | Common                |
-| Read        | 正常ReadではInfo Toastを表示しない                | L01 / L02             |
-| Write       | 正常WriteではInfo Toastを表示する                 | C05 / M04             |
+| 領域        | 確認項目                                             | Behavior              |
+| :---------- | :--------------------------------------------------- | :-------------------- |
+| Application | Application起動                                      | S01                   |
+| Navigation  | Task → Config                                        | S02                   |
+| Navigation  | Config → Task                                        | S03                   |
+| List        | Task一覧取得・表示                                   | L01                   |
+| List        | Task 0件                                             | L01                   |
+| List        | Read Failure                                         | L01                   |
+| List        | Unsupported Version                                  | L01                   |
+| List        | Task選択・再取得                                     | L02                   |
+| List        | 選択Task Not Found                                   | L02                   |
+| List        | 選択Task Read Failure                                | L02                   |
+| Create      | Create画面初期表示                                   | C01                   |
+| Create      | 初期値設定                                           | C01                   |
+| Create      | 初期Create Button Disabled                           | C01                   |
+| Validation  | Focus Out時の単項目Validation                        | C02 / M01             |
+| Validation  | Single Field Error Set / Clear                       | C02 / M01             |
+| Validation  | ACTIVE後の相関Validation再実行                       | C02 / M01             |
+| Validation  | INITIALでは相関Validationを遅延                      | C02 / M01             |
+| Validation  | Button押下時の全単項目Validation                     | C03 / M02             |
+| Validation  | Single Field Error時は相関Validationを実行しない     | C03 / M02             |
+| Validation  | 全相関Validation                                     | C03 / M02             |
+| Validation  | Correlation Validation Mode INITIAL → ACTIVE         | C03 / M02             |
+| Validation  | Validation Priorityに従ったError Messageの選択・表示 | Common                |
+| Correlation | priority = 5 の場合 description必須                  | C02 / C03 / M01 / M02 |
+| Create      | Confirmation Modal表示                               | C03                   |
+| Create      | Confirmation Modal Cancel                            | C04                   |
+| Create      | Confirm / Deposit                                    | C05                   |
+| Create      | Write Failure                                        | C05                   |
+| Create      | Success時Info Toast                                  | C05                   |
+| Create      | Success後Form Reset                                  | C05                   |
+| Edit        | Original Values / Current Values管理                 | M01                   |
+| Edit        | Changed Fields判定                                   | M01                   |
+| Edit        | Original Valuesへ戻した場合Not Changed               | M01                   |
+| Edit        | 変更なしの場合Modify Button Disabled                 | M01                   |
+| Edit        | 変更ありの場合Modify Button Enabled                  | M01                   |
+| Edit        | Confirmation Modal表示                               | M02                   |
+| Edit        | Confirmation Modal Cancel                            | M03                   |
+| Edit        | Changed FieldsのみPropertiesへ連携                   | M04                   |
+| Edit        | Confirm / Replace                                    | M04                   |
+| Edit        | 更新対象Task Not Found                               | M04                   |
+| Edit        | Read Failure                                         | M04                   |
+| Edit        | Write Failure                                        | M04                   |
+| Edit        | Success時Info Toast                                  | M04                   |
+| Edit        | Success後Edit Baseline Reset                         | M04                   |
+| Error       | Application ErrorをError Toastで表示                 | Common                |
+| Read        | 正常ReadではInfo Toastを表示しない                   | L01 / L02             |
+| Write       | 正常WriteではInfo Toastを表示する                    | C05 / M04             |

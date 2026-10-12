@@ -133,6 +133,30 @@ Prototypeで方針・仕様を決定し、Coreで実装または最終判断す�
 - [ ] GenerationをApplicationから実行できるようにする
 - [ ] Coreの内部実行時データおよび永続化方式の必要性を判断する
 - [ ] SQLite等の内部Databaseを採用するか判断する
+- [ ] Excelライクな編集UIを設計・実装する
+  - 表示Mode / 編集Modeの切替
+  - Cell単位・複数Cellの選択と編集
+- [ ] Excelとのコピー＆ペーストを実現する
+  - ARIADNE → Excelへのコピー
+  - Excel → ARIADNEへの貼り付け
+  - 複数Cellのデータ受け渡し方式を技術検証する
+- [ ] Task機能の初期Navigation Stateおよび初期データ取得の要否・タイミングを決定する
+- [ ] 未保存変更がある画面からのNavigation時に、離脱確認を実装する
+  - 未保存変更がある場合はConfirmation Modalを表示する
+  - Cancel時は現在画面と入力内容を維持する
+  - Confirm時は変更を破棄して遷移する
+  - 未保存変更がない場合は確認せず遷移する
+  - Primary Navigation / Feature内Navigationの双方を対象とする
+
+- [ ] Application全体に共通する振る舞いを整理し、設計・テスト方針を決定する
+  - 共通化する振る舞いと、その責務境界を整理する
+  - 共通の振る舞いをBehavior Mapで独立したBehaviorとして定義するか、各FeatureのBehaviorに含めるかを決定する
+  - 共通機能のテストと各Featureから利用する際のテストについて、保証範囲と重複を整理する
+
+## Application Logging
+
+- [ ] Logger / Log出力先 / Log Format / Log Rotationの方式を決定する
+- [ ] Frontend / BackendのLogging責務に基づく実装方式を決定する
 
 ## Development Environment
 
@@ -150,3 +174,8 @@ Prototypeで方針・仕様を決定し、Coreで実装または最終判断す�
 - [ ] `ariadne generate openapi` を実装する
 - [ ] `ariadne generate ddl` を実装する
 - [ ] `ariadne version` を実装する
+
+## Project / Workspace Initialization
+
+- [ ] Project / Workspaceの初期化方式を決定する
+- [ ] ARIADNE Sourceが存在しない場合の作成・初期化方針を決定する
