@@ -13,7 +13,7 @@ vi.mock("../../../bindings/ariadne/backend/adapters/wails", () => ({
 // TEST:
 test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
   // INFO: GIVEN
-  vi.mocked(TaskBoundary.ListTasks).mockResolvedValue([
+  const value = [
     {
       ID: "01M465B5JK59B98Q8AXTJ6HSDR",
       Title: "Grandit API仕様の調査と整理、および既存システムとの連携方法の検討",
@@ -32,8 +32,9 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
       Priority: 3,
       Status: "DONE",
     },
-  ]);
+  ];
 
+  vi.mocked(TaskBoundary.ListTasks).mockResolvedValue(value);
   render(App);
 
   // Task Side Navigation
@@ -90,7 +91,6 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
 test("L01 Task一覧を表示する - Success Empty", async () => {
   // INFO: GIVEN
   vi.mocked(TaskBoundary.ListTasks).mockResolvedValue([]);
-
   render(App);
 
   // Task Side Navigation
@@ -123,4 +123,68 @@ test("L01 Task一覧を表示する - Success Empty", async () => {
   expect(within(taskList).queryByText("DOING")).toBeNull();
   expect(within(taskList).queryByText("DONE")).toBeNull();
   expect(screen.queryByRole("alert")).toBeNull();
+});
+
+// TEST:
+test("L01 Task一覧を表示する - Read Failure", async () => {
+  // INFO: GIVEN
+  const error = new Error("Task Listの読み込みに失敗しました。", {
+    cause: {
+      Processed: true,
+      Message: "Task Listの読み込みに失敗しました。",
+    },
+  });
+
+  vi.mocked(TaskBoundary.ListTasks).mockRejectedValue(error);
+  render(App);
+
+  // Task Side Navigation
+  const listNavigation = screen.getByRole("button", { name: "List" });
+
+  // INFO: ACTION
+  await fireEvent.click(listNavigation);
+
+  // INFO: VERIFY
+  // Task Side Navigation（未選択状態）
+  expect(listNavigation.getAttribute("aria-pressed")).toBe("false");
+
+  // Main Area（遷移しない）
+  expect(screen.getByText("Select an operation.")).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Task 一覧" })).toBeNull();
+
+  // Error Toast
+  const errorToast = await screen.findByRole("alert");
+  expect(errorToast.textContent).toContain("Task Listの読み込みに失敗しました。");
+});
+
+// TEST:
+test("L01 Task一覧を表示する - Unsupported Major Version", async () => {
+  // INFO: GIVEN
+  const error = new Error("データのバージョン 3.x には対応していません。対応バージョンは 2.x です。", {
+    cause: {
+      Processed: true,
+      Message: "データのバージョン 3.x には対応していません。対応バージョンは 2.x です。",
+    },
+  });
+
+  vi.mocked(TaskBoundary.ListTasks).mockRejectedValue(error);
+  render(App);
+
+  // Task Side Navigation
+  const listNavigation = screen.getByRole("button", { name: "List" });
+
+  // INFO: ACTION
+  await fireEvent.click(listNavigation);
+
+  // INFO: VERIFY
+  // Task Side Navigation（未選択状態）
+  expect(listNavigation.getAttribute("aria-pressed")).toBe("false");
+
+  // Main Area（遷移しない）
+  expect(screen.getByText("Select an operation.")).toBeTruthy();
+  expect(screen.queryByRole("heading", { name: "Task 一覧" })).toBeNull();
+
+  // Error Toast
+  const errorToast = await screen.findByRole("alert");
+  expect(errorToast.textContent).toContain("データのバージョン 3.x には対応していません。対応バージョンは 2.x です。");
 });

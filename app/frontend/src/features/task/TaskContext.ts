@@ -1,4 +1,5 @@
 import { TaskListStore } from "./stores/TaskListStore";
+import { createProcessedError } from "../../lib/errors/ProcessedError";
 
 // INFO: 画面識別
 export const TaskScreen = {
@@ -30,8 +31,7 @@ export class TaskContext {
   // TODO: Backend引数パラメーター
   async prepare(screen: TaskScreen): Promise<void> {
     if (this.prepared !== null) {
-      console.error("TaskContext: Prepared already exists");
-      throw new Error("予期しないエラーが発生しました。");
+      throw createProcessedError("TaskContext: Prepared already exists");
     }
 
     if (screen === TaskScreen.List) {
@@ -54,13 +54,11 @@ export class TaskContext {
   // FUNCTION: 遷移確定
   commit(screen: TaskScreen): void {
     if (this.prepared === null) {
-      console.error("TaskContext: Prepared does not exist");
-      throw new Error("予期しないエラーが発生しました。");
+      throw createProcessedError("TaskContext: Prepared does not exist");
     }
 
     if (this.prepared.screen !== screen) {
-      console.error("TaskContext: Prepared screen mismatch");
-      throw new Error("予期しないエラーが発生しました。");
+      throw createProcessedError("TaskContext: Prepared screen mismatch");
     }
 
     this.active = this.prepared;
@@ -70,15 +68,13 @@ export class TaskContext {
   // FUNCTION: データ取得
   getData(screen: TaskScreen, key: StoreKey) {
     if (this.active === null || this.active.screen !== screen) {
-      console.error("TaskContext: Active screen mismatch");
-      throw new Error("予期しないエラーが発生しました。");
+      throw createProcessedError("TaskContext: Active screen mismatch");
     }
 
     const store = this.active.stores[key];
 
     if (store === undefined) {
-      console.error("TaskContext: Store does not exist", key);
-      throw new Error("予期しないエラーが発生しました。");
+      throw createProcessedError(`TaskContext: Store does not exist (${key})`);
     }
 
     return store.getData();

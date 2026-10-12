@@ -1,9 +1,70 @@
 <script lang="ts">
   import TaskManagement from "./features/task/TaskManagement.svelte";
+  import Toast from "./components/Toast.svelte";
 
+  // INFO: Primary Navigation のリスト
   type PrimaryPage = "task" | "config";
 
+  // INFO: 選択中のPrimaryページ
   let currentPage: PrimaryPage = "task";
+
+  // INFO: Toast
+  type ToastState = {
+    type: "error" | "success";
+    message: string;
+  };
+
+  // INFO: Toast表示状態
+  let toast: ToastState | null = null;
+
+  // INFO: Toastのタイマー（Success用）
+  let successTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // FUNCTION: エラーToast
+  function notifyError(message: string): void {
+    if (successTimer !== null) {
+      clearTimeout(successTimer);
+      successTimer = null;
+    }
+
+    toast = {
+      type: "error",
+      message,
+    };
+  }
+
+  // FUNCTION: 完了Toast
+  function notifySuccess(message: string): void {
+    if (successTimer !== null) {
+      clearTimeout(successTimer);
+    }
+
+    toast = {
+      type: "success",
+      message,
+    };
+
+    successTimer = setTimeout(() => {
+      toast = null;
+      successTimer = null;
+    }, 3000);
+  }
+
+  // FUNCTION: Toast削除（Toast以外の部分をクリックしたときに削除）
+  function handleWindowClick(event: MouseEvent): void {
+    const target = event.target;
+
+    if (target instanceof Element && target.closest(".toast")) {
+      return;
+    }
+
+    if (successTimer !== null) {
+      clearTimeout(successTimer);
+      successTimer = null;
+    }
+
+    toast = null;
+  }
 </script>
 
 <div class="application">
@@ -38,7 +99,7 @@
 
   <div class="workspace">
     {#if currentPage === "task"}
-      <TaskManagement />
+      <TaskManagement onError={notifyError} />
     {:else}
       <main class="main-area">
         <p>Configuration is not available in this prototype.</p>
@@ -50,6 +111,14 @@
     <p>&copy; 2026 PROJECT ARIADNE. All rights reserved.</p>
   </footer>
 </div>
+
+<!-- INFO: Toast -->
+{#if toast !== null}
+  <Toast type={toast.type} message={toast.message} />
+{/if}
+
+<!-- INFO: Windowクリック時の動き -->
+<svelte:window on:click={handleWindowClick} />
 
 <style>
   :global(*) {

@@ -38,18 +38,23 @@ func (b *TaskBoundary) ListTasks() ([]publish.TaskSummary, error) {
 
 // FUNCTION: 公開エラーに変換する
 func toPublicError(err error) error {
+	var message string
+
 	var versionErr *services.UnsupportedMajorVersionError
 	if errors.As(err, &versionErr) {
-		return fmt.Errorf(
+		message = fmt.Sprintf(
 			"データのバージョン %d.x には対応していません。対応バージョンは %d.x です。",
 			versionErr.ActualMajor,
 			versionErr.SupportedMajor,
 		)
+	} else if errors.Is(err, services.ErrReadFailure) {
+		message = "タスクを読み込めませんでした。"
+	} else {
+		message = "予期しないエラーが発生しました。"
 	}
 
-	if errors.Is(err, services.ErrReadFailure) {
-		return errors.New("タスクを読み込めませんでした。")
+	return &PublicError{
+		Processed: true,
+		Message:   message,
 	}
-
-	return errors.New("予期しないエラーが発生しました。")
 }

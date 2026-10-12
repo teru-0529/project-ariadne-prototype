@@ -3,14 +3,17 @@
 
   import Tooltip from "../../components/Tooltip.svelte";
 
+  // INFO: タスクコンテキスト
   export let context: TaskContext;
-  const tasks = context.getData(TaskScreen.List, "taskList");
+
+  // INFO: タスク一覧（表示元データ）
+  const tasks = context.getData(TaskScreen.List, "taskList") ?? [];
 </script>
 
 <div class="task-list">
   <div class="task-list-header">
     <h2>Task 一覧</h2>
-    <span class="task-count">全 {tasks?.length ?? 0} 件</span><!--FIXME: 美しくない？ -->
+    <span class="task-count">全 {tasks.length} 件</span>
   </div>
 
   <div class="task-table-scroll">
@@ -30,7 +33,7 @@
       </thead>
 
       <tbody>
-        {#each tasks ?? [] as task}<!--FIXME: 美しくない？ -->
+        {#each tasks as task}
           <tr data-status={task.Status}>
             <td>
               <Tooltip text={task.Title} />

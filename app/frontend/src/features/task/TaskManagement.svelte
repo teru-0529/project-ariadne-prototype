@@ -3,6 +3,9 @@
   import TaskList from "./TaskList.svelte";
 
   import { TaskScreen, TaskContext } from "./TaskContext";
+  import { toErrorMessage } from "../../lib/errors/ProcessedError";
+
+  export let onError: (message: string) => void;
 
   // INFO: Side Navigation に渡すリスト
   const navigationItems: { value: TaskScreen; label: string }[] = [
@@ -10,31 +13,46 @@
     { value: TaskScreen.Create, label: "Create" },
   ];
 
+  // INFO: 画面遷移中
+  let isNavigating = false;
+
   // INFO: 選択中の画面
   let currentTaskOperation: TaskScreen | null = null;
 
   // INFO: タスクコンテキスト
   let context = new TaskContext();
-</script>
 
-<div class="feature-area with-side-navigation">
-  <SideNavigation
-    label="Task"
-    items={navigationItems}
-    current={currentTaskOperation}
-    onSelect={async (value) => {
-      // INFO: value が navigationItems に存在すること
+  // FUNCTION: 画面遷移
+  async function navigate(value: string): Promise<void> {
+    // INFO: 二重操作防止
+    if (isNavigating) {
+      return;
+    }
+
+    isNavigating = true;
+
+    try {
+      // INFO: 選択された画面の検証
       if (!navigationItems.some((item) => item.value === value)) {
         console.error("TaskManagement: Invalid screen", value);
         throw new Error("予期しないエラーが発生しました。");
       }
+
       const screen = value as TaskScreen;
 
       await context.prepare(screen);
       context.commit(screen);
       currentTaskOperation = screen;
-    }}
-  />
+    } catch (error) {
+      onError(toErrorMessage(error));
+    } finally {
+      isNavigating = false;
+    }
+  }
+</script>
+
+<div class="feature-area with-side-navigation">
+  <SideNavigation label="Task" items={navigationItems} current={currentTaskOperation} onSelect={navigate} />
 
   <main class="main-area">
     {#if currentTaskOperation === TaskScreen.List}
