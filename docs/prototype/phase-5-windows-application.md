@@ -339,9 +339,9 @@ type PublicError struct {
 
 Application Error Codeは設けない。
 
-通常Errorに加えて、Backendで発生したpanicについてもWails Boundaryで捕捉し、Unexpected Application Errorとして公開用Errorへ変換する方針とする。
+Prototypeでは、Wails Boundaryによるpanicの捕捉・回復処理は実装しない。
 
-panic捕捉の実装・技術検証についてはSection 3.5.2で定義する。
+通常のBackend Errorについては、Wails Boundaryで公開用Errorへ変換する。
 
 #### 3.3.4 Wails Error Conversion
 
@@ -647,7 +647,9 @@ FrontendとBackendでは、これらの原則を実現する仕組みが異な�
 | 公開用Message   | `toErrorMessage` で決定         | Wails Boundaryで決定             |
 | Logging         | 未処理Errorを検出した箇所で記録 | 原則としてWails Boundaryで記録   |
 
-BackendからFrontendへ返却するErrorは、通常Errorとpanicの双方について、原則としてWails Boundaryで公開用に処理する。
+BackendからFrontendへ返却する通常のErrorは、原則としてWails Boundaryで公開用に処理する。
+
+panicの捕捉・回復はPrototypeの保証対象外とする。
 
 Frontendでは、公開用に処理済みであることを確認できないErrorへの対応を、防御的なFallbackとして設ける。
 
@@ -720,15 +722,13 @@ Persistence ModelからBusiness Modelへ復元する際にTask Validationが失�
 
 ##### Panic Recovery
 
-Backendで発生したpanicは、Wails Boundaryで捕捉し、Unexpected Application Errorとして扱う。
+Prototypeでは、Wails Boundaryによるpanicの捕捉・回復処理を実装しない。
 
-Wails Boundaryは、panicの診断情報を記録した上で、内部情報を含まない共通Messageを持つ `PublicError` に変換する。
+通常のErrorは、Error Chainを維持してWails Boundaryまで伝達し、LoggingおよびPublicErrorへの変換を行う。
 
-これにより、BackendからFrontendへ返却されるErrorは、原則として公開用に処理済みであることを保証する。
+Backendで発生したpanicについては、Wails Runtimeを通じてFrontendへErrorとして伝播し、Frontend側で未処理Errorとして扱う。
 
-ただし、Goの `recover` は同一Goroutine内のpanicを対象とする。別Goroutineで発生したpanicや、プロセスを継続できない致命的な障害については、この仕組みで捕捉できることを保証しない。
-
-Wails Boundaryにおけるpanic捕捉の共通化・リファクタリング、およびWails Runtimeを通じた `PublicError` の伝達について、ドキュメント整備完了後、Integration Test実施前にPrototypeで技術検証する。TODO:
+Frontendでは、Section 3.5.3に定義するFallback処理により、内部情報を公開せず、共通の予期しないError Messageを表示する。
 
 #### 3.5.3 Frontend Error Handling
 
