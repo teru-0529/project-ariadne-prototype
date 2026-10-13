@@ -379,17 +379,16 @@ Wails BoundaryにおけるError変換・伝搬は、テストの保証範囲を�
 | Backend Module Test           | Application Serviceの公開APIからBackend Errorの分類を検証 |
 | Logic / Development Step Test | Wails BoundaryにおけるPublicErrorへの変換処理             |
 | Frontend Module Test          | Wails変換後のErrorを受け取った際のFrontendの振る舞い      |
-| Integration Test              | 実際のWails Runtimeを通じたError変換・伝搬                |
 
 Wails BoundaryのError変換処理は、Backend Module Testの対象に含めず、Logic / Development Step Testで補助的に検証する。
 
 Frontend Module Testでは、Wails Runtimeによる変換後のError形状をMockで再現する。
 
-Wails Runtimeによる実際のError変換・伝搬はMockでは保証できないため、代表的なErrorを使用したIntegration Testで確認する。
+Wails Runtimeによる実際のError変換・伝搬は、
+Frontend Module TestのMockだけでは保証できない。
 
-Errorの種類ごとにWails Runtimeの変換を網羅的に再検証するのではなく、共通の変換機構として保証する。
-
-具体的なTest CaseとIntegration Test対象は、Behavior MapおよびTest Specificationで管理する。
+そのため、Applicationの実機確認時に、
+代表的なErrorの伝搬とFrontendでの表示を確認する。
 
 ---
 
@@ -1366,10 +1365,10 @@ Windows上でのFile Replaceの具体的な実現方式は、 Phase
 
 ## 6. Test Strategy
 
-PROJECT ARIADNE では、テストを技術要素ごとではなく、 保証する範囲によってA / B /
+PROJECT ARIADNE では、テストを技術要素ごとではなく、 保証する範囲によって B /
 C / Dに分類する。
 
-基本戦略は **Module Test + Integration Test** とする。
+基本戦略は **Frontend / Backend Module Test** とする。
 
 D. Logic / Development Step Testは、 Module Testを適切な粒度に保つため、
 または実装を小さな段階に分けて確認するための
@@ -1377,88 +1376,7 @@ D. Logic / Development Step Testは、 Module Testを適切な粒度に保つた
 
 ---
 
-### 6.1 A. Integration Test
-
-Svelte / Wails / Go / File間の
-実際のApplication経路が結合した状態で成立することを保証する。
-
-```text
-Svelte
-  ↓
-Wails generated binding / runtime
-  ↓
-Go
-  ↓
-File
-```
-
-Svelte / Wails / Go / File間のApplication経路はMockせず、
-実際のApplicationを通じて確認する。
-
-Test Dataおよび事前状態の準備にはFixtureを使用してよい。
-
-Project ARIADNEでは、 Integration TestはManualでの実施を基本とする。
-
-全Behavior / 全Result Patternを確認するものではなく、 Behavior
-MapのResult Pattern単位で Integration Test対象を選定する。
-
-事前状態のFixture切り替えによって 対象Result
-Patternを再現できるかどうかを 選定時の判断材料とする。
-
-Test実行途中でYAMLを直接変更するなど、 特殊な状態操作を必要とするResult
-Patternは、 通常のIntegration Test対象とはしない。
-
-必要な場合は、 特殊な異常系Testとして個別に確認方法を決定する。
-
-Integration Test対象となるResult Patternには、 Manual
-Testの実施優先度を定義する。
-
-- HIGH
-  - 原則として実施する
-- MID
-  - 変更内容・影響範囲に応じて実施する
-- LOW
-  - 通常は実施しない
-
-このPriorityは品質上の重要度ではなく、 Manual Integration
-Testの実施判断の目安とする。
-
-Integration Testは dev環境で実施することを基本とする。
-
-推奨する実施位置は以下とする。
-
-```text
-作業Branch
-   ↓
-実装
-   ↓
-Frontend / Backend Module Test
-   ↓
-test.sh PASS
-   ↓
-Manual Integration Test
-   ↓
-PASS
-   ↓
-Merge
-```
-
-原則として、 対象Behaviorの実装を行った作業Branch上、
-Merge前、かつCleanな状態で実施する。
-
-Integration Test実施時には、 対象コードを識別できるよう、 Branch /
-Commit / Dirty状態等を Evidenceとして記録できるようにする。
-
-事前状態のFixture切り替え、 元YAMLの退避・復元、
-Evidence取得等の具体的な仕組みについては、 実際のYAML Read /
-Write実装後に 実体を確認した上で決定する。TODO:
-
-Build済みApplicationそのものの確認は、 Integration
-Testの目的には含めない。
-
----
-
-### 6.2 B. Frontend Module Test
+### 6.1 B. Frontend Module Test
 
 対象BehaviorのFrontend側の振る舞いを、 Backendから切り離して保証する。
 
@@ -1535,7 +1453,7 @@ Test結果は日常利用しやすいよう コンパクトに表示する。
 
 ---
 
-### 6.3 C. Backend Module Test
+### 6.2 C. Backend Module Test
 
 対象BehaviorのBackend側の振る舞いを、 Serviceの公開APIから保証する。
 
@@ -1619,7 +1537,7 @@ Wails PublicErrorへの変換はBackend Module Testの対象外とする。
 
 ---
 
-### 6.4 D. Logic / Development Step Test
+### 6.3 D. Logic / Development Step Test
 
 Dは必要な場合のみ使用する。
 
@@ -1692,18 +1610,9 @@ Logic / Development Step Testは `test.sh` およびBuild Gateには含めない
 
 ---
 
-### 6.5 A / B / C / Dの関係
+### 6.4 B / C / Dの関係
 
 ```text
-A. Integration Test
-────────────────────────
-Svelte → Wails → Go → File
-
-実Application経路を保証
-Manual
-選定したResult Patternのみ
-
-
 B. Frontend Module Test
 ────────────────────────
        ★ TDDの主戦場 ★
@@ -1777,16 +1686,6 @@ Front + Back
     → Backend Module Test
 ```
 
-Integration Testは、 ScopeがFront + BackとなるBehaviorのResult
-Patternから 対象を選定する。
-
-すべてのResult PatternをIntegration Test対象とするのではなく、
-通常のManual Integrationとして確認する価値があり、
-事前状態のFixture切り替えによって 再現可能なResult Patternを対象とする。
-
-Integration Test対象および実施Priorityは、 `behavior-map.md`
-に定義する。
-
 各StepではBehavior Mapを基に、 実装対象となるBehaviorのTest
 Caseを実装直前に具体化する。
 
@@ -1826,16 +1725,12 @@ Module Test：RED
 必要ならRefactor
        ↓
 test.sh
-       ↓
-Integration Target = Yes の場合
-       ↓
-Priorityに応じてManual Integration Test
 ```
 
 Logic / Development Step Testは、 複雑なLogicを切り出す場合だけでなく、
 未知の技術要素を一段ずつ確認しながら 実装するためにも利用できる。
 
-prototype では、
+Prototype では、
 
 「ここまで動いた。じゃあ次。」
 
@@ -1873,8 +1768,6 @@ Backend / Frontendの両方がPASSした場合のみ、 `test.sh` をPASSとす�
 `test.sh` 自身では、 Test分類やReporterを再構築しない。
 
 Logic / Development Step Testは 通常の `test.sh` には含めない。
-
-Manual Integration Testも `test.sh` には含めない。
 
 TDD中に頻繁に実行するため、 高速に完了することを重視する。
 
@@ -1923,11 +1816,6 @@ Build Gateには、
 を含める。
 
 Logic / Development Step Testは Build Gateには含めない。
-
-Manual Integration Testも Build Gateには含めない。
-
-Manual Integration Testは、 作業Branch上でModule Testおよび `test.sh`
-がPASSした後、 Merge前に実施する開発運用上の確認とする。
 
 Build Gateの技術検証では、 意図的にModule TestをREDにした状態で
 `build.sh` を実行し、
@@ -1993,7 +1881,6 @@ Step 1では以下を確定した。
   Go間で表現する方式
 - Wails v3におけるApplication Error Boundaryの具体的な実現方式
 - Windows上でのSafe File Replace方式
-- Integration TestにおけるFixture切替、事前状態の準備・復元、Evidence取得の具体的な方式
 
 ---
 
@@ -2021,8 +1908,6 @@ Testを実際に動かしながら構築する。
 2-5 build.sh / Build Gate
     ↓
 2-6 Behavior / Logic Test 最小技術検証
-    ↓
-2-7 Integration Test 技術検証
 ```
 
 #### 2-1 Behavior Map
@@ -2098,7 +1983,7 @@ test.sh
 
 両方がPASSした場合のみ `test.sh` をPASSとする。
 
-Logic / Development Step Testおよび Manual Integration Testは含めない。
+Logic / Development Step Testは含めない。
 
 #### 2-5 build.sh / Build Gate
 
@@ -2114,7 +1999,7 @@ Build開始前に既存Build成果物を削除する。
 
 を確認する。
 
-Logic / Development Step Testおよび Manual Integration Testは Build
+Logic / Development Step Testは Build
 Gateには含めない。
 
 ---
@@ -2402,8 +2287,6 @@ Backend Module Testでは、Service Public APIを境界として、実File I/O�
 
 必要に応じてD. Logic / Development Step Testを使用し、未検証の技術要素を小さな段階で確認する。
 
-Integration TestはBehavior Mapで選定したResult Patternを対象とし、SvelteからYAML Fileまでの実Application経路を確認する。
-
 正常系と、Create Use Case内で発生する異常系を同じStepで実装・検証する。
 
 ---
@@ -2617,8 +2500,6 @@ Backend Module Testでは、Service Public APIを境界として、実File I/O�
 
 必要に応じてD. Logic / Development Step Testを使用する。
 
-Integration TestはBehavior Mapで選定したResult Patternを対象とし、Task選択から保存後の再取得までの実Application経路を確認する。
-
 正常系と、Edit Use Case内で発生する異常系を同じStepで実装・検証する。
 
 ---
@@ -2628,8 +2509,7 @@ Integration TestはBehavior Mapで選定したResult Patternを対象とし、Ta
 PROJECT ARIADNE で構築したApplicationをWindows実行ファイルとしてBuildし、
 Prototypeとしての成立性を最終確認する。
 
-Release Build前には、Backend / Frontend Module Testおよび
-PROJECT ARIADNE の最終確認対象となるManual Integration Testを実施し、
+Release Build前には、Backend / Frontend Module Testを実施し、
 すべて成功していることを確認する。
 
 D. Logic / Development Step Testは補助的なTestであり、
@@ -2673,7 +2553,6 @@ Read
 
 - Backend Module Test成功
 - Frontend Module Test成功
-- 最終確認対象のManual Integration Test成功
 - Release Build成功
 - `ariadne-prototype.exe` 単体起動
 - Task List表示
@@ -2683,10 +2562,6 @@ Read
 - Application再起動
 - 保存内容の復元
 - 主要Error Caseの実機確認
-
-最終確認では、対象BuildおよびTest実施時の
-Branch / Commit / Dirty状態を識別できるようにし、
-確認結果をEvidenceとして残す。
 
 ---
 
@@ -2785,9 +2660,7 @@ Applicationとしての成立性確認に集中する。
 - Phase 5の主要BehaviorがBehavior Mapとして整理されている
 - Use CaseごとにFront / Backの関与を整理できる
 - Behavior Testを中心とした自動テストが成立する
-- 必要に応じてCをLogic保証または段階的な実装確認に利用できる
-- 代表的なSvelte ↔ Wails ↔ GoのIntegrationを自動テストで確認できる
+- 必要に応じてDをLogic保証または段階的な実装確認に利用できる
 - `test.sh` により日常的なTestを実行できる
-- Release Build前にIntegration Testを含む必要なTestがすべて実行される
 - Test成功後に `build.sh` からWindows ApplicationをBuildできる
 - `ariadne-prototype.exe` を単体起動し、一連のTask操作を実行できる

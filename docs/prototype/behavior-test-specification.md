@@ -10,7 +10,6 @@ Behaviorそのものの定義は `behavior-map.md` を正本とする。
 
 - Frontend Module Test
 - Backend Module Test
-- Integration Test
 
 Test Codeそのものの詳細設計を目的とはせず、Behaviorに対して何をTestするかを明確にすることを目的とする。
 
@@ -60,10 +59,6 @@ Behavior間にこの依存がある場合は、各BehaviorのTest Specification�
 
 N/A
 
-### Integration Test
-
-N/A
-
 ---
 
 ## 3. S02 Configを選択する
@@ -87,10 +82,6 @@ N/A
 - Main Areaに `Configuration is not available in this prototype.` が表示される
 
 ### Backend Module Test
-
-N/A
-
-### Integration Test
 
 N/A
 
@@ -125,10 +116,6 @@ N/A
 - Task List取得処理は呼び出されない
 
 ### Backend Module Test
-
-N/A
-
-### Integration Test
 
 N/A
 
@@ -174,9 +161,7 @@ N/A
 - `description` はTaskSummaryに含まれない
 - `tasks.yaml` に保存されている順序でTaskSummaryが返される
 
-#### Integration Test
-
-対象とする。
+---
 
 ### Result Pattern: Success - Empty
 
@@ -213,9 +198,7 @@ N/A
 - 空のTaskSummary一覧が返される
 - Errorは返されない
 
-#### Integration Test
-
-対象とする。
+---
 
 ### Result Pattern: Read Failure
 
@@ -265,9 +248,7 @@ Task Validationの各Validation PatternはLogic Test（D）で保証する。
 
 - Read Failureが返される
 
-#### Integration Test
-
-対象とする。
+---
 
 ### Result Pattern: Unsupported Major Version
 
@@ -302,10 +283,6 @@ Task Validationの各Validation PatternはLogic Test（D）で保証する。
 ##### Expected
 
 - YAML本文のParse / Format Failureではなく、Unsupported Major Versionが返される
-
-#### Integration Test
-
-対象とする。
 
 ---
 
