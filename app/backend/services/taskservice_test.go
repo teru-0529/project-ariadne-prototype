@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"ariadne/backend/tests/gettask"
 	"ariadne/backend/tests/listtasks"
 	"testing"
 )
@@ -48,4 +49,19 @@ func Test_ListTasks_ReadFailure_format_Dataset(t *testing.T) {
 // TEST:
 func Test_ListTasks_ReadFailure_invalid_model(t *testing.T) {
 	listtasks.ReadFailureInvalidModel(t)
+}
+
+// TEST:
+func Test_GetTask_Success(t *testing.T) {
+	gettask.Success(t)
+}
+
+// TEST:
+func Test_GetTask_NotFound(t *testing.T) {
+	gettask.NotFound(t)
+}
+
+// TEST:
+func Test_GetTask_ReadFailure(t *testing.T) {
+	gettask.ReadFailure(t)
 }

@@ -33,3 +33,24 @@ func (s *TaskService) ListTasks() ([]publish.TaskSummary, error) {
 
 	return summaries, nil
 }
+
+// FUNCTION: IDを指定してTaskを取得する関数
+func (s *TaskService) GetTask(id string) (*publish.Task, error) {
+	task, err := s.repo.Pick(id)
+	if err != nil {
+		return nil, err
+	}
+
+	description := ""
+	if task.Description != nil {
+		description = *task.Description
+	}
+
+	return &publish.Task{
+		ID:          task.ID,
+		Title:       task.Title,
+		Description: description,
+		Priority:    task.Priority,
+		Status:      task.Status,
+	}, nil
+}

@@ -8,6 +8,16 @@ import (
 // INFO: YAMLフォーマット読み込みに失敗した場合に返されるエラー
 var ErrReadFailure = errors.New("read failure")
 
+// INFO: キーに該当するデータがYAMLに存在しない場合に返されるエラー
+type NotFoundError struct {
+	Key string
+}
+
+// FUNCTION: NotFoundErrorのエラーメッセージを返す関数
+func (e *NotFoundError) Error() string {
+	return fmt.Sprintf("not found: key=%s", e.Key)
+}
+
 // INFO: YAMLフォーマットが不正な場合に返されるエラー
 type FormatError struct {
 	Detail string

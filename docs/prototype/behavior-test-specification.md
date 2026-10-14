@@ -286,7 +286,131 @@ Task Validationの各Validation PatternはLogic Test（D）で保証する。
 
 ---
 
-## 6. Note
+## 6. L02 Taskを選択する
+
+### Result Pattern: Success
+
+#### Frontend Module Test
+
+##### Dependency
+
+- L01 `Task Listを表示する`
+
+##### Given
+
+- Task一覧画面で、複数のTaskが参照可能な状態である
+- Backendから選択対象のTaskがIDを指定して取得できる状態である
+- Backendから取得する対象Taskの内容を、Task List取得時点の内容から変更する
+
+##### When
+
+- Task Listから対象のTaskを選択する
+
+##### Expected
+
+- Task List画面からTask詳細画面へ遷移する
+- Task詳細画面が参照モードで表示される
+- Backendから再取得したTaskの内容が表示される
+- Task Side Navigationの `List` 選択状態が維持される
+
+#### Backend Module Test
+
+##### Given
+
+- `tasks.yaml` に異なるIDを持つ複数のTaskが保存されている
+
+##### When
+
+- 保存されているTaskのIDを指定して `GetTask(ID)` を呼び出す
+
+##### Expected
+
+- 指定IDに一致するTaskがPublic Modelとして返される
+- 返されたTaskの各項目が、保存されている対象Taskの内容と一致する
+
+---
+
+### Result Pattern: Not Found
+
+#### Frontend Module Test
+
+##### Dependency
+
+- L01 `Task Listを表示する`
+
+##### Given
+
+- Task一覧画面で、複数のTaskが参照可能な状態である
+- Backendから選択対象のTaskをIDで取得すると、Not FoundのPublic Errorが返る状態である
+
+##### When
+
+- Task Listから対象のTaskを選択する
+
+##### Expected
+
+- Task List画面が維持される
+- Task Side Navigationの `List` 選択状態が維持される
+- Not FoundのError Toastが表示される
+
+#### Backend Module Test
+
+##### Given
+
+- `tasks.yaml` に複数のTaskが保存されている
+- 指定するIDに一致するTaskは保存されていない
+
+##### When
+
+- 保存されていないTaskのIDを指定して `GetTask(ID)` を呼び出す
+
+##### Expected
+
+- Not Foundが返される
+
+---
+
+### Result Pattern: Read Failure
+
+#### Frontend Module Test
+
+##### Dependency
+
+- L01 `Task Listを表示する`
+
+##### Given
+
+- Task一覧画面で、複数のTaskが参照可能な状態である
+- Backendから選択対象のTaskをIDで取得すると、Read FailureのPublic Errorが返る状態である
+
+##### When
+
+- Task Listから対象のTaskを選択する
+
+##### Expected
+
+- Task List画面が維持される
+- Task Side Navigationの `List` 選択状態が維持される
+- Read FailureのError Toastが表示される
+
+#### Backend Module Test
+
+##### Given
+
+- Task取得時にRead Failureが発生する状態である
+- Read Failureは代表1ケースを対象とする
+
+##### When
+
+- `GetTask(ID)` を呼び出す
+
+##### Expected
+
+- Read Failureが返される
+
+---
+
+## 7. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 

@@ -47,9 +47,6 @@ func main() {
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
 		},
-		Services: []application.Service{
-			application.NewService(&services.AppService{}),
-		},
 	})
 
 	// INFO: taskservice 追加

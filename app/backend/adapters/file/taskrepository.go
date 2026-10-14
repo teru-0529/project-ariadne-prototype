@@ -42,6 +42,22 @@ func (r *TaskRepository) Retrieve() ([]*services.Task, error) {
 	return tasks, nil
 }
 
+// FUNCTION: IDを指定してTaskを取得する関数
+func (r *TaskRepository) Pick(id string) (*services.Task, error) {
+	tasks, err := r.Retrieve()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, task := range tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+
+	return nil, &services.NotFoundError{Key: id}
+}
+
 // FUNCTION: ディレクトリからYAML形式のタスクデータを読み込む関数
 func (r *TaskRepository) readYAML() (*taskDataset, error) {
 	data, err := os.ReadFile(filepath.Join(r.dir, "tasks.yaml"))

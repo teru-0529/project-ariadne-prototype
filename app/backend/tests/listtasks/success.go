@@ -18,7 +18,8 @@ version: "2.1"
 tasks:
   - id: "01M465B5JK59B98Q8AXTJ6HSDR"
     title: "Task C"
-    description: "重要度5の場合は説明必須"
+    description: |
+      "重要度5の場合は説明必須"
     priority: 5
     status: TODO
     createdAt: "2026-10-04T09:00:00+09:00"
