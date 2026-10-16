@@ -2041,7 +2041,7 @@ Step開始時にTask List画面の簡易画面設計を行う。
 - 表示項目
 - 一覧領域
 - Task選択方法
-- Editへの遷移
+- 参照モードへの遷移
 - スクロール方法
 - Error表示
 
@@ -2094,7 +2094,7 @@ Wails Boundary
     ↓
 Svelte
     ↓
-Task Edit
+Task Detail（参照モード）
 ```
 
 主な実施事項：
@@ -2104,7 +2104,7 @@ Task Edit
 - Wails経由でのFrontend呼び出し
 - Task List表示
 - Task選択
-- Task Edit画面への遷移
+- Task参照画面への遷移
 - Task 0件時の正常動作
 - `tasks.yaml` 不存在時のRead Error
 - Backend ErrorのFrontendへの伝達

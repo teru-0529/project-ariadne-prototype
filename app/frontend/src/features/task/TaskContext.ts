@@ -35,6 +35,7 @@ export class TaskContext {
     }
 
     if (screen === TaskScreen.List) {
+      // INFO: ListTask
       const store = await TaskListStore.create();
 
       this.prepared = {
