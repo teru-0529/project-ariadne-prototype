@@ -5,13 +5,16 @@
     key: string;
     header: string;
     cell: Snippet<[T]>;
-    width?: string;
+    width?: `${number}px`;
     align?: "left" | "center" | "right";
   };
 
+  export let minWidth: `${number}px` | undefined = undefined;
   export let data: T[];
   export let getKey: (item: T) => string | number;
   export let columns: Column<T>[];
+  export let getRowVariant: ((item: T) => "muted" | undefined) | undefined = undefined;
+  export let onRowActivate: ((item: T) => void) | undefined = undefined;
 </script>
 
 <div class="list-table">
@@ -20,7 +23,7 @@
   </div>
 
   <div class="table-scroll">
-    <table>
+    <table style:min-width={minWidth}>
       <colgroup>
         {#each columns as column (column.key)}
           <col style:width={column.width} />
@@ -37,7 +40,17 @@
 
       <tbody>
         {#each data as item (getKey(item))}
-          <tr>
+          <tr
+            data-variant={getRowVariant?.(item)}
+            class:interactive={onRowActivate !== undefined}
+            tabindex={onRowActivate ? 0 : undefined}
+            onclick={() => onRowActivate?.(item)}
+            onkeydown={(event) => {
+              if (event.key === "Enter") {
+                onRowActivate?.(item);
+              }
+            }}
+          >
             {#each columns as column (column.key)}
               <td style:text-align={column.align ?? "left"}>
                 {@render column.cell(item)}
@@ -46,8 +59,7 @@
           </tr>
         {:else}
           <tr class="empty-row">
-            <!-- TODO: L02-⑥ 空データ時の表示文言・指定方法 -->
-            <td colspan={columns.length}>No tasks.</td>
+            <td colspan={columns.length}>データがありません</td>
           </tr>
         {/each}
       </tbody>
@@ -57,20 +69,20 @@
 
 <style>
   .list-table {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
     height: 100%;
+    min-width: 0;
     min-height: 0;
   }
 
-  /* TODO: L02-⑥ ページタイトル・件数表示・トグルとの配置関係 */
   .list-table-header {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    margin-bottom: 6px;
-    min-height: 19px;
+    margin-bottom: 0px;
+    min-height: 15px;
   }
 
   .list-count {
@@ -80,17 +92,18 @@
   }
 
   .table-scroll {
-    flex: 1;
+    min-width: 0;
     min-height: 0;
     overflow: auto;
   }
 
   table {
     width: 100%;
-    min-width: 430px; /* TODO: L02-⑥ 最小幅・横スクロールの扱い */
     table-layout: fixed;
-    border-collapse: collapse;
-    border: 1px solid #d8dde5;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-left: 1px solid #d8dde5;
+    border-right: 1px solid #d8dde5;
   }
 
   th,
@@ -102,30 +115,40 @@
   }
 
   th {
-    position: sticky; /* TODO: L02-⑦ ヘッダー固定方式 */
+    position: sticky;
     top: 0;
     z-index: 1;
-    background: #f4f6f8;
+    background: #e9edf3;
     text-align: center;
+
+    box-shadow: inset 0 1px 0 #e3e5ea;
   }
 
   .empty-row td {
     height: 120px;
-    text-align: center !important; /* TODO: L02-⑥ 空データ行の表示・スタイル優先順位 */
+    text-align: center;
     color: var(--color-text-muted);
   }
 
-  /* TODO: L02-④ hoverと選択状態の関係 */
-  tbody tr:hover {
-    outline: 1px solid #4f7fd3;
-    outline-offset: -1px;
+  /* INFO: muted：mutedタグのある行を、背景色で示す */
+  tbody tr[data-variant="muted"] {
+    background: #e5e7eb;
   }
 
-  /*
-  * TODO: L02-⑤ 条件付き行装飾の正式設計時に置き換える。
-  * TEMP: Task固有のstatus-badgeを利用してDONE行を判定する。
-  */
-  tbody tr:has(:global(.status-badge[data-status="DONE"])) {
-    background: #e5e7eb;
+  /* INFO: Hover：操作可能な行だけ、背景色で示す */
+  tbody tr.interactive:hover {
+    background: #edf4ff;
+    cursor: pointer;
+  }
+
+  /* INFO:  muted + Hover */
+  tbody tr.interactive[data-variant="muted"]:hover {
+    background: #dbe5f3;
+  }
+
+  /* INFO:  Focus：操作可能な行だけ、青い輪郭で示す */
+  tbody tr.interactive:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: -2px;
   }
 </style>

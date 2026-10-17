@@ -1,7 +1,8 @@
 <script lang="ts">
   import { TaskContext, TaskScreen } from "./TaskContext";
-  import Tooltip from "../../components/Tooltip.svelte";
+  import AriadnePage from "../../components/AriadnePage.svelte";
   import AriadneListTable from "../../components/AriadneListTable.svelte";
+  import Tooltip from "../../components/Tooltip.svelte";
 
   import type { TaskSummary } from "../../../bindings/ariadne/backend/services/publish";
 
@@ -10,6 +11,11 @@
 
   // INFO: タスク一覧（表示元データ）
   const tasks = context.getData(TaskScreen.List, "taskList") ?? [];
+
+  // TODO: ダミー実装（行選択時のふるまい）
+  function handleRowActivate(task: TaskSummary) {
+    window.alert(`Task選択（仮実装）\n${task.Title}\nID: ${task.ID}`);
+  }
 </script>
 
 {#snippet titleCell(task: TaskSummary)}
@@ -32,12 +38,9 @@
   </span>
 {/snippet}
 
-<div class="task-list">
-  <div class="task-list-header">
-    <h2>Task 一覧</h2>
-  </div>
-
+<AriadnePage title="Task 一覧">
   <AriadneListTable
+    minWidth="430px"
     data={tasks}
     getKey={(task: TaskSummary) => task.ID}
     columns={[
@@ -61,31 +64,12 @@
         align: "center",
       },
     ]}
+    getRowVariant={(task: TaskSummary) => (task.Status === "DONE" ? "muted" : undefined)}
+    onRowActivate={handleRowActivate}
   />
-</div>
+</AriadnePage>
 
 <style>
-  .task-list {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-  }
-
-  .task-list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-
-  .task-list-header h2 {
-    margin: 0;
-    font-size: 1em;
-    font-weight: 600;
-  }
-
   .task-id {
     margin-top: 2px;
     font-size: 0.7em;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import SideNavigation from "../../components/SideNavigation.svelte";
-  import TaskList from "./TaskList.svelte";
+  import TaskListPage from "./TaskListPage.svelte";
 
   import { TaskScreen, TaskContext } from "./TaskContext";
   import { toErrorMessage } from "../../lib/errors/ProcessedError";
@@ -56,8 +56,9 @@
 
   <main class="main-area">
     {#if currentTaskOperation === TaskScreen.List}
-      <TaskList {context} />
+      <TaskListPage {context} />
     {:else if currentTaskOperation === TaskScreen.Create}
+      <!-- TODO: Createのダミー実装  -->
       <p>Create Task.</p>
     {:else}
       <p>Select an operation.</p>
@@ -80,15 +81,13 @@
   .main-area {
     min-width: 0;
     min-height: 0;
-    overflow: hidden;
-
-    padding: 12px 20px 20px;
     background: var(--color-background);
   }
 
   .main-area p {
-    margin: 0;
     color: var(--color-text-muted);
-    font-size: 16px;
+    font-size: 14px;
+    margin: 0;
+    padding: 8px 16px 16px;
   }
 </style>

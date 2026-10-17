@@ -70,6 +70,7 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
   expect(within(firstRowCells[0]).getByText("01M465B5JK59B98Q8AXTJ6HSDR")).toBeTruthy();
   expect(firstRowCells[1].textContent).toBe("★★★★★");
   expect(firstRowCells[2].textContent).toBe("TODO");
+  expect(rows[1].getAttribute("data-variant")).toBeNull();
 
   const secondRowCells = within(rows[2]).getAllByRole("cell");
   expect(secondRowCells).toHaveLength(3);
@@ -77,6 +78,7 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
   expect(within(secondRowCells[0]).getByText("01M465BRVCYNR0H09A30JE03PW")).toBeTruthy();
   expect(secondRowCells[1].textContent).toBe("★☆☆☆☆");
   expect(secondRowCells[2].textContent).toBe("DOING");
+  expect(rows[2].getAttribute("data-variant")).toBeNull();
 
   const thirdRowCells = within(rows[3]).getAllByRole("cell");
   expect(thirdRowCells).toHaveLength(3);
@@ -84,10 +86,7 @@ test("L01 Task一覧を表示する - Success Tasks Exist", async () => {
   expect(within(thirdRowCells[0]).getByText("01M465BRVCDDWKHCTF84YK2QQD")).toBeTruthy();
   expect(thirdRowCells[1].textContent).toBe("★★★☆☆");
   expect(thirdRowCells[2].textContent).toBe("DONE");
-  // TODO: L02-⑤ 条件付き行装飾の正式設計時にテスト方法を再検討する。
-  // TEMP: DONE行の装飾条件となるステータスバッジの属性を検証する。
-  expect(within(rows[3]).getByText("DONE").getAttribute("data-status")).toBe("DONE");
-  // expect(rows[3].getAttribute("data-status")).toBe("DONE");
+  expect(rows[3].getAttribute("data-variant")).toBe("muted");
 });
 
 // TEST:
@@ -122,7 +121,7 @@ test("L01 Task一覧を表示する - Success Empty", async () => {
   expect(columnHeaders[1].textContent).toBe("優先度");
   expect(columnHeaders[2].textContent).toBe("ステータス");
 
-  expect(within(taskList).getByText("No tasks.")).toBeTruthy();
+  expect(within(taskList).getByText("データがありません")).toBeTruthy();
   expect(within(taskList).queryByText("TODO")).toBeNull();
   expect(within(taskList).queryByText("DOING")).toBeNull();
   expect(within(taskList).queryByText("DONE")).toBeNull();
