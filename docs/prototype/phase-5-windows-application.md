@@ -414,11 +414,20 @@ flowchart TD
     Task["TaskManagement.svelte"]
     Config["Config Dummy Page"]
     Footer["Footer"]
+    Toast["AriadneToast.svelte"]
+    Side["AriadneSideNavigation.svelte"]
 
-    Side["SideNavigation.svelte"]
-    Main["Main Area"]
-    List["TaskList.svelte"]
-    Toast["Toast.svelte"]
+    ListPage["TaskListPage.svelte"]
+    DetailPage["TaskDetailPage.svelte"]
+
+    ListFrame["AriadnePage"]
+    DetailFrame["AriadnePage"]
+
+    DetailView["TaskDetailView.svelte"]
+
+    Table["AriadneListTable.svelte"]
+    Field["Field Components"]
+    Toggle["AriadneToggle.svelte"]
 
     App --> Header
     App --> Task
@@ -426,34 +435,112 @@ flowchart TD
     App --> Footer
     App --> Toast
 
-    Task --> Main
-    Main --> List
+    Task -.-> Side
+    Task --> ListPage
+    Task --> DetailPage
 
-    Task -.->|共通Componentを利用| Side
+    ListPage --> ListFrame
+    DetailPage --> DetailFrame
+
+    ListFrame -->|Contents| Table
+    DetailFrame -->|Contents| DetailView
+
+    DetailView --> Field
+
+    DetailPage -.-> Toggle
 ```
 
-実線はComponentの構成関係を示す。
+実線は主要なComponentの構成関係を示す。
 
-破線は共通Componentの利用関係を示す。`SideNavigation.svelte` はTask専用ではなく、他の機能からも利用できる共通Componentとして実装する。
+破線は共通Componentの利用関係を示す。共通Componentは特定の機能に依存せず、他の機能からも利用できる構造とする。
+
+図では主要なComponentのみを示し、すべての内部Componentや利用関係を網羅しない。
 
 各Componentの責務は以下とする。
 
-| Component       | Responsibility                                               |
-| --------------- | ------------------------------------------------------------ |
-| App             | Application全体の構成、Primary Navigation、Toast Stateの管理 |
-| TaskManagement  | Task機能内のNavigationとMain Areaの管理                      |
-| SideNavigation  | 渡されたNavigation項目の表示と、ユーザー操作の通知           |
-| TaskList        | Task一覧の表示                                               |
-| Toast           | Notificationの表示                                           |
-| Header / Footer | Application共通情報の表示                                    |
+| Component             | Responsibility                                                   |
+| --------------------- | ---------------------------------------------------------------- |
+| App                   | Application全体の構成、Primary Navigation、Toast Stateの管理     |
+| TaskManagement        | Task機能内のNavigation操作の受付、画面遷移の制御、表示画面の切替 |
+| AriadneSideNavigation | 渡されたNavigation項目の表示と、ユーザー操作の通知               |
+| TaskListPage          | Task一覧画面の構成と表示データの受け渡し                         |
+| TaskDetailPage        | Task詳細画面の構成と表示データの受け渡し                         |
+| TaskDetailView        | Task詳細データの表示とFieldの配置                                |
+| AriadnePage           | Page共通の構造とContents領域の提供                               |
+| AriadneListTable      | 一覧表の構造、表示、スクロール制御                               |
+| AriadneToggle         | 選択肢を切り替える共通UIの表示と操作通知                         |
+| AriadneField          | Field共通のLabel、Value、Error領域の構造                         |
+| AriadneToast          | Notificationの表示                                               |
+| Header / Footer       | Application共通情報の表示                                        |
 
-SideNavigationは、ユーザーの選択操作を通知するが、Navigationの成立可否や遷移先の確定は担当しない。
+`AriadneSideNavigation` は、ユーザーの選択操作を通知するが、Navigationの成立可否や遷移先の確定は担当しない。
 
-TaskListは、取得処理やNavigationの判断を担当せず、受け取ったTask一覧を表示する。
+Task List / DetailのPageは、TaskContextから取得したデータを表示Componentへ渡す。データ取得処理やStoreの生成は担当しない。
 
 Configへの切替時にはTaskManagementを破棄し、Task機能に属するStateを維持しない。
 
-Create / Edit、Confirmation Modal、Field Validation等のComponent構造は、対象Behaviorの実装時に具体化する。TODO:
+##### Page / View / Common Component
+
+Frontendの画面は、Pageによる画面構成と、Viewによる表示内容の組み立てを分離する。
+
+Pageは、画面に必要なデータを受け取り、共通のPage構造の中に表示内容を配置する。
+
+Viewは、受け取ったデータをField等のComponentに渡し、各要素の配置と表示領域を決定する。
+
+`AriadnePage` はContents領域を提供し、Contentsが表示可能領域を超える場合はスクロールによって閲覧できるようにする。
+
+一覧表では、`AriadneListTable` がTable内部のスクロールを管理する。少数行ではデータ直下に横スクロールバーを配置し、表示可能な高さを超える場合はTable内部で縦スクロールする。
+
+画面の表示幅が縮小しても、Viewが定義したFieldの幅や配置を自動的に変更することは基本とせず、必要に応じてContentsをスクロールさせる。
+
+##### Field Components
+
+Fieldは、値の意味と表示方法を扱うComponentと、共通の表示構造を扱うComponentに分ける。
+
+`AriadneField` は、Fieldに共通するLabel、Value、Errorの表示領域と装飾を担当する。値の型や業務上の意味は扱わない。
+
+各Field Componentは、`AriadneField` を利用しながら、値の意味に応じた表示方法を担当する。
+
+Prototypeでは以下のFieldを使用する。
+
+| Field             | Responsibility                         |
+| ----------------- | -------------------------------------- |
+| TextField         | 単一行または固定行数のText表示         |
+| SubTextField      | 一覧表等における補助的なText表示       |
+| TextareaField     | 改行を含むTextの表示と領域内スクロール |
+| TaskPriorityField | Task Priorityの星表示                  |
+| TaskStatusField   | Task StatusのBadge表示                 |
+
+`TaskPriorityField` および `TaskStatusField` はTask固有の意味を持つため、Task機能内に配置する。
+
+Fieldは以下のVariantを共通して使用する。
+
+| Variant   | Purpose                        |
+| --------- | ------------------------------ |
+| reference | 参照画面における値の表示       |
+| edit      | 更新画面における値の編集       |
+| cell      | 一覧表のCell内における値の表示 |
+
+Variantの型定義は `AriadneField` から共有する。
+
+Fieldの表示領域の幅と配置は、利用側のViewが決定する。Fieldは与えられた領域の中で、値の表示方法と必要な高さを管理する。
+
+Reference表示では以下を基本とする。
+
+- TextFieldは指定された行数に応じた固定の高さを持つ。表示しきれない場合の省略は例外的な処置とし、Tooltipによる補完を前提としない。
+- TextareaFieldは固定の高さを持ち、内容が収まらない場合は内部スクロールで全文を閲覧できるようにする。
+- Cell内のTextFieldは必要に応じて省略表示とTooltipを利用する。
+- SubTextFieldは補助情報として表示し、省略時もTooltipを基本的に使用しない。
+
+Reference表示の構造はL02で検証済みとする。
+
+Edit Variantの入力操作、Validation、変更検出等の具体的な振る舞いは、Task Create / EditのBehavior実装時に確定する。
+
+##### Future Components
+
+Task Create / Edit、Confirmation Modal、Field Validation等の未実装部分については、対象Behaviorの実装時に具体化する。TODO:
+
+共通化は、実際の利用箇所と責務に基づいて判断し、不要な抽象化を先行させない。
 
 #### 3.4.2 State Management
 
@@ -467,12 +554,14 @@ PrototypeのTask管理機能では、Navigation Stateと、各画面で利用す
 
 Task管理機能では、以下の責務分担とする。
 
-| Element        | Responsibility                                              |
-| -------------- | ----------------------------------------------------------- |
-| TaskManagement | Navigation操作の受付、画面遷移の制御、表示画面の切替        |
-| TaskContext    | 遷移準備中・確定済みの画面と、その画面で利用するStoreの管理 |
-| TaskListStore  | BackendからのTask一覧取得と、取得したTask一覧データの保持   |
-| TaskList       | TaskContextを通じて取得したデータの表示                     |
+| Element         | Responsibility                                              |
+| --------------- | ----------------------------------------------------------- |
+| TaskManagement  | Navigation操作の受付、画面遷移の制御、表示画面の切替        |
+| TaskContext     | 遷移準備中・確定済みの画面と、その画面で利用するStoreの管理 |
+| TaskListStore   | Task一覧の取得、取得結果の検証と保持                        |
+| TaskDetailStore | 指定されたIDによるTask詳細の取得、取得結果の検証と保持      |
+| TaskListPage    | TaskContextからTask一覧データを取得し、表示Componentへ渡す  |
+| TaskDetailPage  | TaskContextからTask詳細データを取得し、TaskDetailViewへ渡す |
 
 `TaskContext` は、遷移準備中のStateと確定済みのStateを区別する。
 
@@ -501,7 +590,7 @@ TaskListStore
     ↓ 取得データを保持
 TaskContext
     ↓ 遷移確定後にデータを提供
-TaskList
+TaskListPage
     ↓
 画面表示
 ```
@@ -510,7 +599,58 @@ TaskList
 
 `TaskContext` は、現在の画面に対応するStoreを管理し、表示Componentからのデータ取得要求に応じて、そのStoreのデータを提供する。
 
-`TaskList` は、Task一覧の取得処理やStoreの生成を担当しない。
+`TaskListPage` は、TaskContextを通じて取得したデータを表示に使用する。
+
+Task一覧の取得処理やStoreの生成は担当しない。
+
+##### Task Detail Data
+
+Task詳細の取得と保持には `TaskDetailStore` を使用する。
+
+Task詳細画面へのNavigationでは、対象TaskのIDを指定してデータを取得する。
+
+```text
+TaskManagement
+    ↓ IDを含む遷移準備を要求
+TaskContext
+    ↓ TaskDetailStoreを生成
+TaskDetailStore
+    ↓ GetTask(ID)
+Wails Generated Binding
+    ↓
+Application Service
+    ↓ Task詳細を返却
+TaskDetailStore
+    ↓ 取得データを保持
+TaskContext
+    ↓ 遷移確定後にデータを提供
+TaskDetailPage
+    ↓ TaskDetailViewへ渡す
+画面表示
+```
+
+`TaskDetailStore` は、指定されたIDに対応するTask詳細を取得し、その結果を保持する。
+
+`TaskDetailPage` は、TaskContextを通じて取得したTask詳細を `TaskDetailView` に渡す。
+
+Task詳細の取得処理やStoreの生成は担当しない。
+
+##### Store Data Contract
+
+Backend ServiceとWails Generated Bindingでは、戻り値のNullabilityが異なる場合がある。
+
+Prototypeでは、Backend Serviceが正常終了した場合、`ListTasks()` は非nilの一覧を、`GetTask(ID)` は非nilのTaskを返却する。
+
+一方、Wails Generated BindingのTypeScript型では、戻り値に `null` が含まれる。
+
+この差異はStoreで吸収する。
+
+- TaskListStoreは正常な一覧データを保持する。Taskが0件の場合は空配列として扱う。
+- TaskDetailStoreは正常なTask詳細データを保持する。
+- 正常応答として想定しない `null` を受け取った場合は、StoreでErrorとして扱う。
+- Page / Viewでは、正常に取得されたデータを前提として表示する。
+
+Wails Binding固有のNullabilityを、表示Componentへ伝播させない。
 
 ##### State Lifecycle
 
@@ -542,36 +682,57 @@ Primary Navigationの切替により、選択された機能のComponentを表�
 
 PrototypeのTask管理機能では、`TaskManagement.svelte` がNavigation操作を受け付け、`TaskContext` を介して画面遷移を管理する。
 
-`SideNavigation.svelte` は共通ComponentとしてNavigation項目を表示し、ユーザー操作を通知する。遷移先の確定は担当しない。
+`AriadneSideNavigation.svelte` は共通ComponentとしてNavigation項目を表示し、ユーザー操作を通知する。遷移先の確定は担当しない。
 
 ##### Navigation Transition
 
 Navigationでは、ユーザーが画面を選択したことと、実際に画面遷移が成立したことを区別する。
 
-遷移前にデータ取得等の準備が必要な場合は、準備が成功した後にNavigation Stateを確定する。
+Task機能内の画面遷移では、`TaskManagement` がNavigation Requestを受け付け、`TaskContext` を通じて遷移先の準備と確定を行う。
+
+遷移は以下の2段階で扱う。
+
+- **Prepare**：遷移先の画面に必要なデータを取得・準備する。現在の確定済みStateは変更しない。
+- **Commit**：準備成功後に遷移先を確定し、Navigation Stateと表示画面を切り替える。
 
 ```text
 User Action
     ↓
 Navigation Request
     ↓
-必要なデータの取得・準備
+TaskContext.prepare(request)
     ↓
 Success?
-    ├─ YES → Navigation Stateを確定
+    ├─ YES → TaskContext.commit(screen)
+    │            ↓
+    │        Navigation Stateを確定
+    │            ↓
+    │        Main Areaを切替
+    │
     └─ NO  → 現在のNavigation Stateを維持
+              現在のMain Areaを維持
               Error Toastを表示
 ```
 
-準備に失敗した場合は、現在のNavigation選択状態とMain Areaの表示内容を維持する。
+準備に失敗した場合はCommitを行わず、現在のNavigation選択状態とMain Areaの表示内容を維持する。
 
 Navigation Stateの確定と画面表示の切替を一貫して行い、選択表示とMain Areaの内容が不整合になることを防ぐ。
+
+##### Navigation Data Refresh
+
+Prototypeでは、Task ListからTask Referenceへ遷移する際、選択されたTaskのIDを使用して `GetTask(ID)` を呼び出す。
+
+Task一覧で保持しているSummaryを詳細データの代わりに使用せず、遷移時に最新のTask詳細を取得する。
+
+この取得に失敗した場合はReference画面へ遷移せず、Task List画面を維持する。
+
+Reference / Edit間のデータ引継ぎや再取得、保存後の画面遷移については、Task EditのBehavior実装時に具体化する。TODO:
 
 #### 3.4.4 Notification and Error Handling
 
 Frontendでは、Applicationの処理結果やErrorをNotification Toastで表示する。
 
-Toastの表示Stateと自動消去Timerは `App.svelte` が管理し、`Toast.svelte` は表示のみを担当する。
+Toastの表示Stateと自動消去Timerは `App.svelte` が管理し、`AriadneToast.svelte` は表示のみを担当する。
 
 Prototypeでは以下を基本とする。
 
@@ -604,20 +765,25 @@ Notification Toast
 
 Prototypeでは、今後のBehavior実装に合わせて以下の設計・技術検証を行う。TODO:
 
-- Task Create / Edit画面のComponent構造とState管理
+- Task Create / Editにおける入力Stateと変更Stateの管理
+- Reference / Editの切替におけるState管理とNavigationの責務
 - Confirmation Modalの共通Componentとしての利用方法とState管理
-- Field ValidationのState管理とComponent間の責務
+- Field Validationの実行タイミング、State管理、およびComponent間の責務
+- 複数FieldにまたがるCorrelation Validationの構成
 - Modify時の未指定・null・値ありの表現方法
+- 保存成功・失敗時の画面遷移とStateの扱い
 
-Task Create / Editは、Task Listと同じMain Area配下の画面として構成する。
+Task Create / Editは、Task List / Referenceと同じMain Area配下の画面として構成する。
+
+Reference表示で確立したPage / View / Fieldの責務分離を基本とし、入力操作、Validation Error表示、変更検出等の振る舞いを追加する。
 
 Confirmation Modalは共通Componentとし、Task Create / Edit等から利用する。
 
 これらについても、Componentの表示責務と、State管理・Application処理の責務を分離する原則を適用する。
 
-Create / Edit構築の際に、入力Field・値変換・Validation Error表示等の共通Component化を検討する。TODO:
+入力FormのComponent構造と責務分担は、Create / EditのBehavior実装時に具体化する。
 
-Atomic Design等のComponent分割方針についても、実際の機能構成と再利用の必要性を踏まえて判断する。
+共通Componentの分割は、実際の機能構成と再利用の必要性を踏まえて判断する。
 
 ---
 
@@ -2034,6 +2200,10 @@ Configの選択によるPage切替をBehavior Testで確認する。
 
 ### Step 4：Task List / Read
 
+**Status：COMPLETE**（L01 / L02）
+
+Task YAMLの読み込みから、Task List表示、Task選択によるTask Reference表示までのVertical Sliceを実装・検証した。
+
 Step開始時にTask List画面の簡易画面設計を行う。
 
 主に以下を確認する。
@@ -2125,6 +2295,48 @@ File Read → YAML Parse → Persistence Modelへの変換 → Business Modelへ
 最終的にはC. Backend Module Testにより、
 Service Public APIからのTask取得を保証する。
 
+#### Implementation Result
+
+Step 4では、以下の2つのBehaviorを実装した。
+
+| Behavior | Description                              | Status   |
+| -------- | ---------------------------------------- | -------- |
+| L01      | Task Listの取得・表示                    | COMPLETE |
+| L02      | Task選択によるTask Referenceの取得・表示 | COMPLETE |
+
+Frontendでは、TaskManagement / TaskContext / Store / Page / Viewの責務分離を具体化した。
+
+Task ListとTask Referenceの画面遷移では、遷移先データの取得をPrepareとして扱い、成功した場合のみCommitする。
+
+Task ListからTask Referenceへの遷移では、一覧のTaskSummaryを流用せず、`GetTask(ID)` によりTask詳細を取得する。
+
+Task Referenceでは、Page / View / Field Componentの分離を実装し、Reference表示に必要な共通Componentを整備した。
+
+また、Wails Generated BindingのNullableな戻り値はStoreで検証し、正常に取得されたデータをPage / Viewへ提供する構造とした。
+
+#### Verification Result
+
+L01 / L02のBehavior TestおよびBackend Testを実施し、Wails Buildと実画面の動作を確認した。
+
+Frontend Behavior Testは10件すべて成功した。
+
+| Category           | Result     |
+| ------------------ | ---------- |
+| Application Shell  | 3 / 3 PASS |
+| L01 Task List      | 4 / 4 PASS |
+| L02 Task Reference | 3 / 3 PASS |
+| Backend Test       | PASS       |
+| Wails Build        | PASS       |
+| UI Verification    | PASS       |
+
+L02では、Task詳細取得のSuccess / Not Found / Read Failureを確認した。
+
+取得に失敗した場合はTask List画面とNavigation選択状態を維持し、Error Toastを表示する。
+
+これにより、Step 4の実装・検証を完了とする。
+
+Task Create / Editに関する入力、Validation、Confirmation、保存処理は後続Stepで扱う。
+
 ---
 
 ### Step 5：Task Create
@@ -2149,6 +2361,8 @@ Step開始時にTask Create画面の簡易画面設計を行う。
 詳細な画面設計書は作成せず、実装に必要なUI構造とState管理方式を決定する。
 
 Create / Editで共通する入力Component、Validation表示、Confirmation Modal等は、実際の利用方法を踏まえて共通化を検討する。
+
+Task Create画面はSection 3.4で定義したPage / View / Fieldの責務分離を基本とし、入力Formに必要なComponent構造を実装時に具体化する。
 
 #### 5-2. Create Use Case
 
@@ -2312,9 +2526,13 @@ Step開始時にTask Edit画面の簡易画面設計を行う。
 - Field Validation Errorの表示
 - Confirmation Modalの表示と操作
 - Notification Toast
-- 保存成功後のBaseline Reset
+- 保存成功後のTask再取得と参照モードへの遷移
+- 更新成功後の再取得失敗時の画面状態と通知
 
 Task Createと共通するUI要素は、Step 5の実装を踏まえて再利用を検討する。
+
+Task Edit画面はTask Referenceで実装したTaskDetailPage / TaskDetailView / Field Componentの構造を基本とし、
+Reference / Editで共通する表示構造を再利用する。
 
 #### 6-2. Edit Use Case
 
@@ -2336,6 +2554,10 @@ File Persistence Adapter
     ↓
 Application Service
     │ Business Model → Public Task
+    ↓
+Svelte / Task Reference
+    ↓
+    │ Editへ切替
     ↓
 Svelte / Task Edit
     ↓
@@ -2366,7 +2588,13 @@ Application Service / Wails Boundary
     ↓
 Svelte
     ↓
-Info Toast / Edit Baseline Reset
+更新成功
+    ↓
+GetTask(ID)によるTask再取得
+    ↓
+Task Reference表示 / 保持データ更新
+    ↓
+Edit状態終了 / Info Toast
 ```
 
 一覧表示時のTaskSummaryを編集用Dataとして流用せず、`GetTask(ID)`によりPublic Taskを取得する。
@@ -2379,7 +2607,7 @@ File Persistence AdapterはPersistence上のTimestampおよびYAML Sequence順�
 
 Edit画面では以下を管理する。
 
-- Original Values：編集開始時または保存成功後の基準値
+- Original Values：参照モードからEditモードへ切り替えた時点の基準値
 - Current Values：現在の入力値
 - Changed Fields：Original ValuesとCurrent Valuesの差分
 
@@ -2456,17 +2684,17 @@ Confirmした場合に`ModifyTask(ID, Properties)`を呼び出す。
 
 ErrorはWails Boundaryで公開用Errorへ変換し、FrontendではError Toastを表示する。
 
-保存成功時はInfo Toastを表示し、Edit Baseline Resetを行う。
+保存成功時はInfo Toastを表示し、更新したTaskを`GetTask(ID)`で再取得する。
 
-Edit Baseline Resetでは以下を実行する。
+再取得に成功した場合は、取得したTaskを参照モードの保持データに反映し、
+Task Reference画面へ遷移してEdit状態を終了する。
 
-- Current Valuesを新しいOriginal Valuesとする
-- Changed FieldsをClear
-- Validation ErrorをClear
-- Correlation Validation Modeを`INITIAL`へ戻す
-- Modify ButtonをDisabledにする
+更新・保存には成功したが再取得に失敗した場合は、
+更新成功と再取得失敗を区別してError Toastで通知する。
+更新処理を再実行せず、画面状態の扱いは実装前に確定する。TODO:
 
-保存失敗時はBaseline Resetを行わず、Current Values / Original Values / Changed Fieldsを維持する。
+保存失敗時はEdit状態を終了せず、
+Current Values / Original Values / Changed Fieldsを維持する。
 
 #### 6-7. Test / Verification
 
@@ -2483,7 +2711,8 @@ Frontend Module Testでは、Wails Public APIをMockし、主に以下を保証�
 - Confirmation Modalの表示、Cancel、Confirm
 - Changed FieldsのみをModify Propertiesとして送信すること
 - Backend Responseに応じたToast表示
-- 保存成功後のBaseline Reset
+- 保存成功後のTask再取得と参照モードへの遷移
+- 更新成功後の再取得失敗時の通知と画面状態
 - 保存失敗時のState維持
 
 Backend Module Testでは、Service Public APIを境界として、実File I/Oを用いて主に以下を保証する。
