@@ -69,10 +69,13 @@
 
 <style>
   .list-table {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
+
     width: 100%;
-    height: 100%;
+    height: fit-content;
+    max-height: 100%;
+
     min-width: 0;
     min-height: 0;
   }
@@ -95,6 +98,7 @@
     min-width: 0;
     min-height: 0;
     overflow: auto;
+    flex-shrink: 1;
   }
 
   table {
@@ -148,7 +152,7 @@
 
   /* INFO:  Focus：操作可能な行だけ、青い輪郭で示す */
   tbody tr.interactive:focus-visible {
-    outline: 2px solid #2563eb;
+    outline: 2px solid rgba(59, 111, 189, 0.65);
     outline-offset: -2px;
   }
 </style>

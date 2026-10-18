@@ -61,4 +61,10 @@
   .side-navigation button[aria-pressed="true"]:hover {
     background: #dce6f7;
   }
+
+  /* INFO: キーボードFocus */
+  .side-navigation button:focus-visible {
+    outline: 2px solid rgba(59, 111, 189, 0.65);
+    outline-offset: -2px;
+  }
 </style>

@@ -61,7 +61,7 @@ test("L02 Taskを選択する - Success", async () => {
 
   // INFO: VERIFY
   // Task Side Navigation
-  expect(listNavigation.getAttribute("aria-pressed")).toBe("true");
+  expect(listNavigation.getAttribute("aria-pressed")).toBe("false");
 
   // Main Area - Task詳細画面
   expect(await screen.findByRole("heading", { name: "Task 詳細" })).toBeTruthy();
@@ -71,7 +71,7 @@ test("L02 Taskを選択する - Success", async () => {
   expect(screen.getByText("01M465BRVCYNR0H09A30JE03PW")).toBeTruthy();
   expect(screen.getByText("Task A - Updated")).toBeTruthy();
   expect(screen.getByText("詳細取得時の説明")).toBeTruthy();
-  expect(screen.getByText("★☆☆☆☆")).toBeTruthy();
+  expect(screen.getByRole("img", { name: "優先度 1" })).toBeTruthy();
   expect(screen.getByText("DOING")).toBeTruthy();
 
   // Error Toast

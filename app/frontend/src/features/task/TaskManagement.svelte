@@ -1,9 +1,11 @@
 <script lang="ts">
-  import SideNavigation from "../../components/SideNavigation.svelte";
+  import SideNavigation from "../../components/AriadneSideNavigation.svelte";
   import TaskListPage from "./TaskListPage.svelte";
+  import TaskDetailPage from "./TaskDetailPage.svelte";
 
-  import { TaskScreen, TaskContext } from "./TaskContext";
+  import { TaskScreen, TaskContext, type TaskNavigation } from "./TaskContext";
   import { toErrorMessage } from "../../lib/errors/ProcessedError";
+  import { createProcessedError } from "../../lib/errors/ProcessedError";
 
   export let onError: (message: string) => void;
 
@@ -22,41 +24,60 @@
   // INFO: タスクコンテキスト
   let context = new TaskContext();
 
-  // FUNCTION: 画面遷移
-  async function navigate(value: string): Promise<void> {
+  // FUNCTION: Side Navigationからの選択
+  function handleSideNavSelect(value: string): void {
+    // INFO: Navigationに指定した文字列であることをチェック
+    if (!navigationItems.some((item) => item.value === value)) {
+      handleError(createProcessedError(`TaskManagement: Invalid screen: ${value}`));
+      return;
+    }
+
+    const screen = value as typeof TaskScreen.List | typeof TaskScreen.Create;
+    void navigate({ screen });
+  }
+
+  // FUNCTION: Task一覧からの選択
+  function handleTaskSelect(id: string): void {
+    void navigate({
+      screen: TaskScreen.Reference,
+      id,
+    });
+  }
+
+  // FUNCTION: 共通の画面遷移
+  async function navigate(request: TaskNavigation): Promise<void> {
     // INFO: 二重操作防止
     if (isNavigating) {
       return;
     }
 
+    // INFO: 遷移処理
     isNavigating = true;
-
     try {
-      // INFO: 選択された画面の検証
-      if (!navigationItems.some((item) => item.value === value)) {
-        console.error("TaskManagement: Invalid screen", value);
-        throw new Error("予期しないエラーが発生しました。");
-      }
-
-      const screen = value as TaskScreen;
-
-      await context.prepare(screen);
-      context.commit(screen);
-      currentTaskOperation = screen;
+      await context.prepare(request);
+      context.commit(request.screen);
+      currentTaskOperation = request.screen;
     } catch (error) {
-      onError(toErrorMessage(error));
+      handleError(error);
     } finally {
       isNavigating = false;
     }
   }
+
+  // FUNCTION: エラーハンドリング
+  function handleError(error: unknown): void {
+    onError(toErrorMessage(error));
+  }
 </script>
 
 <div class="feature-area with-side-navigation">
-  <SideNavigation label="Task" items={navigationItems} current={currentTaskOperation} onSelect={navigate} />
+  <SideNavigation label="Task" items={navigationItems} current={currentTaskOperation} onSelect={handleSideNavSelect} />
 
   <main class="main-area">
     {#if currentTaskOperation === TaskScreen.List}
-      <TaskListPage {context} />
+      <TaskListPage {context} onTaskSelect={handleTaskSelect} />
+    {:else if currentTaskOperation === TaskScreen.Reference}
+      <TaskDetailPage {context} />
     {:else if currentTaskOperation === TaskScreen.Create}
       <!-- TODO: Createのダミー実装  -->
       <p>Create Task.</p>

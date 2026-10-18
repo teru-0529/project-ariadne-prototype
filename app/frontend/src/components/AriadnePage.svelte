@@ -42,7 +42,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0;
+    margin-bottom: 10px;
   }
 
   .page-header h2 {
@@ -51,8 +51,13 @@
     font-weight: 600;
   }
 
+  .header-action {
+    margin-right: 12px;
+  }
+
   .page-content {
     min-height: 0;
     min-width: 0;
+    overflow: auto;
   }
 </style>

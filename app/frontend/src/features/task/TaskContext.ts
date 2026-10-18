@@ -1,9 +1,11 @@
 import { TaskListStore } from "./stores/TaskListStore";
+import { TaskDetailStore } from "./stores/TaskDetailStore";
 import { createProcessedError } from "../../lib/errors/ProcessedError";
 
 // INFO: 画面識別
 export const TaskScreen = {
   List: "TaskList",
+  Reference: "TaskReference",
   Create: "TaskCreate",
   Edit: "TaskEdit",
 } as const;
@@ -11,11 +13,18 @@ export const TaskScreen = {
 // INFO: 画面識別一覧
 export type TaskScreen = (typeof TaskScreen)[keyof typeof TaskScreen];
 
+// INFO: 画面遷移情報
+export type TaskNavigation =
+  | { screen: typeof TaskScreen.List }
+  | { screen: typeof TaskScreen.Reference; id: string }
+  | { screen: typeof TaskScreen.Create };
+
 // INFO: コンテキスト構造
 type TaskContextState = {
   screen: TaskScreen;
   stores: {
     taskList?: TaskListStore;
+    taskDetail?: TaskDetailStore;
   };
 };
 
@@ -28,25 +37,35 @@ export class TaskContext {
   private prepared: TaskContextState | null = null;
 
   // FUNCTION: 遷移準備
-  // TODO: Backend引数パラメーター
-  async prepare(screen: TaskScreen): Promise<void> {
+  async prepare(request: TaskNavigation): Promise<void> {
     if (this.prepared !== null) {
       throw createProcessedError("TaskContext: Prepared already exists");
     }
 
-    if (screen === TaskScreen.List) {
+    if (request.screen === TaskScreen.List) {
       // INFO: ListTask
       const store = await TaskListStore.create();
 
       this.prepared = {
-        screen: screen,
+        screen: request.screen,
         stores: {
           taskList: store,
         },
       };
-    } else if (screen === TaskScreen.Create) {
+    } else if (request.screen === TaskScreen.Reference) {
+      // INFO: ReferenceTask
+      const store = await TaskDetailStore.create(request.id);
+
       this.prepared = {
-        screen: screen,
+        screen: request.screen,
+        stores: {
+          taskDetail: store,
+        },
+      };
+    } else if (request.screen === TaskScreen.Create) {
+      // INFO: CreateTask
+      this.prepared = {
+        screen: request.screen,
         stores: {},
       };
     }
@@ -67,7 +86,10 @@ export class TaskContext {
   }
 
   // FUNCTION: データ取得
-  getData(screen: TaskScreen, key: StoreKey) {
+  getData<K extends StoreKey>(
+    screen: TaskScreen,
+    key: K,
+  ): ReturnType<NonNullable<TaskContextState["stores"][K]>["getData"]> {
     if (this.active === null || this.active.screen !== screen) {
       throw createProcessedError("TaskContext: Active screen mismatch");
     }
@@ -78,6 +100,6 @@ export class TaskContext {
       throw createProcessedError(`TaskContext: Store does not exist (${key})`);
     }
 
-    return store.getData();
+    return store.getData() as ReturnType<NonNullable<TaskContextState["stores"][K]>["getData"]>;
   }
 }
