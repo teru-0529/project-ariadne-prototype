@@ -8,7 +8,7 @@
   type PrimaryPage = "task" | "config";
 
   // INFO: 選択中のPrimaryページ
-  let currentPage: PrimaryPage = "task";
+  let currentPage: PrimaryPage = $state("task");
 
   // INFO: Toast
   type ToastState = {
@@ -17,7 +17,7 @@
   };
 
   // INFO: Toast表示状態
-  let toast: ToastState | null = null;
+  let toast: ToastState | null = $state(null);
 
   // INFO: Toastのタイマー（Success用）
   let successTimer: ReturnType<typeof setTimeout> | null = null;
@@ -85,14 +85,14 @@
       <button
         type="button"
         aria-current={currentPage === "task" ? "page" : undefined}
-        on:click={() => (currentPage = "task")}
+        onclick={() => (currentPage = "task")}
       >
         Task
       </button>
       <button
         type="button"
         aria-current={currentPage === "config" ? "page" : undefined}
-        on:click={() => (currentPage = "config")}
+        onclick={() => (currentPage = "config")}
       >
         Config
       </button>
@@ -153,7 +153,7 @@
 {/if}
 
 <!-- INFO: Windowクリック時の動き -->
-<svelte:window on:click={handleWindowClick} />
+<svelte:window onclick={handleWindowClick} />
 
 <style>
   :global(*) {
