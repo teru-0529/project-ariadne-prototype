@@ -1,6 +1,10 @@
 <script lang="ts">
-  export let type: "error" | "success";
-  export let message: string;
+  type Props = {
+    type: "error" | "success";
+    message: string;
+  };
+
+  let { type, message }: Props = $props();
 </script>
 
 <div class:error={type === "error"} class:success={type === "success"} class="toast" role="alert">
