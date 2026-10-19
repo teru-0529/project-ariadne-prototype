@@ -5,7 +5,7 @@ tasks:
   - id: "01M465B5JK59B98Q8AXTJ6HSDR"
     title: "Grandit API仕様の調査と整理、および既存システムとの連携方法の検討"
     description: |
-      "重要度5の場合は説明必須"
+      重要度5の場合は説明必須
     priority: 5
     status: TODO
     createdAt: "2026-10-04T09:00:00+09:00"
