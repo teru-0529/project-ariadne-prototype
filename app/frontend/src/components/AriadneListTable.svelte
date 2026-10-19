@@ -9,12 +9,16 @@
     align?: "left" | "center" | "right";
   };
 
-  export let minWidth: `${number}px` | undefined = undefined;
-  export let data: T[];
-  export let getKey: (item: T) => string | number;
-  export let columns: Column<T>[];
-  export let getRowVariant: ((item: T) => "muted" | undefined) | undefined = undefined;
-  export let onRowActivate: ((item: T) => void) | undefined = undefined;
+  type Props<T> = {
+    minWidth?: `${number}px`;
+    data: T[];
+    getKey: (item: T) => string | number;
+    columns: Column<T>[];
+    getRowVariant?: (item: T) => "muted" | undefined;
+    onRowActivate?: (item: T) => void;
+  };
+
+  let { minWidth, data, getKey, columns, getRowVariant, onRowActivate }: Props<T> = $props();
 </script>
 
 <div class="list-table">
