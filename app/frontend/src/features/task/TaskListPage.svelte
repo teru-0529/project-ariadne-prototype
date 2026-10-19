@@ -9,13 +9,15 @@
 
   import type { TaskSummary } from "../../../bindings/ariadne/backend/services/publish";
 
-  export let onTaskSelect: (id: string) => void;
+  type Props = {
+    onTaskSelect: (id: string) => void;
+    context: TaskContext;
+  };
 
-  // INFO: タスクコンテキスト
-  export let context: TaskContext;
+  let { onTaskSelect, context }: Props = $props();
 
   // INFO: タスク一覧（表示元データ）
-  const tasks = context.getData(TaskScreen.List, "taskList");
+  const tasks = $derived(context.getData(TaskScreen.List, "taskList"));
 
   // INFO: 行選択時のふるまい
   function handleRowActivate(task: TaskSummary) {
