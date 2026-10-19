@@ -2,10 +2,14 @@
   import AriadneField from "./AriadneField.svelte";
   import type { FieldVariant } from "./AriadneField.svelte";
 
-  export let variant: FieldVariant;
-  export let label: string = "";
-  export let value: string;
-  export let lines: number = 3;
+  type Props = {
+    variant: FieldVariant;
+    label?: string;
+    value: string;
+    lines?: number;
+  };
+
+  let { variant, label = "", value, lines = 3 }: Props = $props();
 </script>
 
 <AriadneField {variant} {label}>
