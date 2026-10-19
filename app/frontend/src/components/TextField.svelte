@@ -3,10 +3,14 @@
   import type { FieldVariant } from "./AriadneField.svelte";
   import Tooltip from "./AriadneTooltip.svelte";
 
-  export let variant: FieldVariant;
-  export let label: string = "";
-  export let value: string;
-  export let lines: number = 1;
+  type Props = {
+    variant: FieldVariant;
+    label?: string;
+    value: string;
+    lines?: number;
+  };
+
+  let { variant, label = "", value, lines = 1 }: Props = $props();
 </script>
 
 <AriadneField {variant} {label}>
