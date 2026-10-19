@@ -10,11 +10,14 @@
     { value: "edit", label: "Edit" },
   ];
 
-  // INFO: タスクコンテキスト
-  export let context: TaskContext;
+  type Props = {
+    context: TaskContext;
+  };
+
+  let { context }: Props = $props();
 
   // INFO: タスク（表示元データ）
-  const task = context.getData(TaskScreen.Reference, "taskDetail");
+  let task = $derived(context.getData(TaskScreen.Reference, "taskDetail"));
 
   // INFO: トグル変更時のふるまい
   function handleModeSelect(value: string) {
