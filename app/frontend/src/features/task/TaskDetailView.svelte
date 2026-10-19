@@ -5,7 +5,11 @@
   import TaskPriorityField from "./TaskPriorityField.svelte";
   import TaskStatusField from "./TaskStatusField.svelte";
 
-  export let task: Task;
+  type Props = {
+    task: Task;
+  };
+
+  let { task }: Props = $props();
 </script>
 
 <div class="detail-layout">
