@@ -7,7 +7,11 @@
   import { toErrorMessage } from "../../lib/errors/ProcessedError";
   import { createProcessedError } from "../../lib/errors/ProcessedError";
 
-  export let onError: (message: string) => void;
+  type Props = {
+    onError: (message: string) => void;
+  };
+
+  let { onError }: Props = $props();
 
   // INFO: Side Navigation に渡すリスト
   const navigationItems: { value: TaskScreen; label: string }[] = [
@@ -19,7 +23,7 @@
   let isNavigating = false;
 
   // INFO: 選択中の画面
-  let currentTaskOperation: TaskScreen | null = null;
+  let currentTaskOperation = $state<TaskScreen | null>(null);
 
   // INFO: タスクコンテキスト
   let context = new TaskContext();
