@@ -1,12 +1,16 @@
 <script lang="ts">
   import { tick } from "svelte";
 
-  export let text: string;
+  type Props = {
+    text: string;
+  };
 
-  let visible = false;
-  let left = 0;
-  let top = 0;
-  let tooltipElement: HTMLDivElement;
+  let { text }: Props = $props();
+
+  let visible = $state(false);
+  let left = $state(0);
+  let top = $state(0);
+  let tooltipElement = $state<HTMLDivElement | undefined>(undefined);
 
   // Use an action so this display-only element needs no keyboard interaction.
   function hoverTooltip(node: HTMLDivElement) {
