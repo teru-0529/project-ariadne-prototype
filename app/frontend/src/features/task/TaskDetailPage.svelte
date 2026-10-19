@@ -17,8 +17,8 @@
   const task = context.getData(TaskScreen.Reference, "taskDetail");
 
   // INFO: トグル変更時のふるまい
-  function handleModeSelect(event: CustomEvent<string>) {
-    if (event.detail === "edit") {
+  function handleModeSelect(value: string) {
+    if (value === "edit") {
       // TODO: 将来はTaskManagementへ画面遷移を依頼する
       window.alert("Edit機能は未実装です。");
     }
@@ -27,7 +27,7 @@
 
 {#snippet modeToggle()}
   <!-- TODO: Edit実装時に現在の表示モードと連動させる -->
-  <AriadneToggle options={modeOptions} selected="reference" on:select={handleModeSelect} />
+  <AriadneToggle options={modeOptions} selected="reference" onSelect={handleModeSelect} />
 {/snippet}
 
 <AriadnePage title="Task 詳細" headerAction={modeToggle}>

@@ -1,21 +1,20 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-
   type ToggleOption = {
     value: string;
     label: string;
   };
 
-  export let options: ToggleOption[];
-  export let selected: string;
+  type Props = {
+    options: ToggleOption[];
+    selected: string;
+    onSelect: (value: string) => void;
+  };
 
-  const dispatch = createEventDispatcher<{
-    select: string;
-  }>();
+  let { options, selected, onSelect }: Props = $props();
 
   function handleSelect(value: string) {
     if (value === selected) return;
-    dispatch("select", value);
+    onSelect(value);
   }
 </script>
 
@@ -25,7 +24,7 @@
       type="button"
       class:selected={selected === option.value}
       aria-pressed={selected === option.value}
-      on:click={() => handleSelect(option.value)}
+      onclick={() => handleSelect(option.value)}
     >
       {option.label}
     </button>
