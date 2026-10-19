@@ -1158,7 +1158,7 @@ Modeは以下のルールで遷移する。
 | Confirmation Modal Cancel                                     | ACTIVEを維持     |
 | 保存失敗                                                      | ACTIVEを維持     |
 | Create保存成功後のForm Reset                                  | INITIAL          |
-| Edit保存成功後のBaseline Reset                                | INITIAL          |
+| Edit保存成功後、再取得成功・Reference画面へ遷移              | Edit終了（Mode管理対象外） |
 
 `INITIAL`では、Focus Out時にCorrelation Validationを実行しない。
 
