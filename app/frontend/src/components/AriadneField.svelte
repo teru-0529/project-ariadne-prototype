@@ -1,17 +1,24 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   // INFO: TYPE: 表示形態
   export type FieldVariant = "reference" | "edit" | "cell";
 </script>
 
 <script lang="ts">
-  export let variant: FieldVariant;
-  export let label: string = "";
-  export let required: boolean = false;
-  export let error: string | null = null;
+  import type { Snippet } from "svelte";
+
+  type Props = {
+    variant: FieldVariant;
+    label?: string;
+    required?: boolean;
+    error?: string | null;
+    children: Snippet;
+  };
+
+  let { variant, label = "", required = false, error = null, children }: Props = $props();
 </script>
 
 {#if variant === "cell"}
-  <slot />
+  {@render children()}
 {:else}
   <div class="ariadne-field">
     <div class="field-label">
@@ -22,7 +29,7 @@
     </div>
 
     <div class="field-value" class:editable={variant === "edit"} class:invalid={variant === "edit" && !!error}>
-      <slot />
+      {@render children()}
     </div>
 
     <div class="field-error">
