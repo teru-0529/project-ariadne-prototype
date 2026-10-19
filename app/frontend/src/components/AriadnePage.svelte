@@ -1,14 +1,13 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  // INFO: ページタイトル
-  export let title: string;
+  type Props = {
+    title: string;
+    headerAction?: Snippet;
+    children: Snippet;
+  };
 
-  // INFO: ページヘッダー右端の任意コンテンツ
-  export let headerAction: Snippet | undefined = undefined;
-
-  // INFO: ページ本文
-  export let children: Snippet;
+  let { title, headerAction, children }: Props = $props();
 </script>
 
 <div class="ariadne-page">
