@@ -4,16 +4,20 @@
     label: string;
   };
 
-  export let label: string;
-  export let items: NavigationItem[];
-  export let current: string | null;
-  export let onSelect: (value: string) => void;
+  type Props = {
+    label: string;
+    items: NavigationItem[];
+    current: string | null;
+    onSelect: (value: string) => void;
+  };
+
+  let { label, items, current, onSelect }: Props = $props();
 </script>
 
 <aside class="side-navigation">
   <nav aria-label={label}>
     {#each items as item}
-      <button type="button" aria-pressed={current === item.value} on:click={() => onSelect(item.value)}>
+      <button type="button" aria-pressed={current === item.value} onclick={() => onSelect(item.value)}>
         {item.label}
       </button>
     {/each}
