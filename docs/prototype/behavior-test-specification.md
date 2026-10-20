@@ -424,6 +424,7 @@ Task Validationの各Validation PatternはLogic Test（D）で保証する。
 
 ##### Expected
 
+- Task Side Navigationの `Create` が選択状態になる
 - Task Create画面が表示される
 - `title` の入力項目が存在する
 - `title` の初期値が `""` である
