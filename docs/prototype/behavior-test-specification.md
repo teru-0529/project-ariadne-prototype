@@ -410,7 +410,43 @@ Task Validationの各Validation PatternはLogic Test（D）で保証する。
 
 ---
 
-## 7. Note
+## 7. C01 Createを選択する
+
+### Frontend Module Test
+
+##### Given
+
+- Application起動直後で、Primary Navigationの `Task` が選択されている
+
+##### When
+
+- Task Side Navigationの `Create` を選択する
+
+##### Expected
+
+- Task Create画面が表示される
+- `title` の入力項目が存在する
+- `title` の初期値が `""` である
+- `description` の入力項目が存在する
+- `description` の初期値が `""` である
+- `priority` の入力項目が存在する
+- `priority` の初期値が `3` である
+- `status` の入力項目が存在する
+- `status` の初期値が `TODO` である
+- `title` のValidation Errorが表示されない
+- `description` のValidation Errorが表示されない
+- `priority` のValidation Errorが表示されない
+- `status` のValidation Errorが表示されない
+- `Create` Buttonが存在する
+- `Create` ButtonがDisabledである
+
+### Backend Module Test
+
+N/A
+
+---
+
+## 8. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
