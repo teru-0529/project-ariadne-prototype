@@ -61,18 +61,7 @@
   }
 
   .field-value.editable {
-    background: #fff;
-    border: 1px solid #bfc5ce;
-  }
-
-  .field-value.editable.invalid {
-    border-color: #d94855;
-  }
-
-  /* FocusとErrorが重なった場合はErrorを優先 */
-  .field-value.editable.invalid:focus-within {
-    border-color: #d94855;
-    outline-color: rgba(217, 72, 85, 0.2);
+    background: transparent;
   }
 
   .field-error {
@@ -97,11 +86,5 @@
     font-size: 9px;
     font-weight: 600;
     line-height: 1.2;
-  }
-
-  /* Focus */
-  .field-value.editable:focus-within {
-    border-color: #3b6fbd;
-    outline: 2px solid rgba(59, 111, 189, 0.2);
   }
 </style>

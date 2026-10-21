@@ -19,7 +19,7 @@
       {value}
     </div>
   {:else if variant === "edit"}
-    <textarea aria-label={label} {value}></textarea>
+    <textarea aria-label={label} {value} rows={lines}></textarea>
   {:else}
     <span>{value}</span>
   {/if}
@@ -35,6 +35,26 @@
     overflow-wrap: anywhere;
     overflow-y: scroll;
     overflow-x: hidden;
+  }
+
+  textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    field-sizing: content;
+    resize: none;
+
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 5px 8px;
+    border: 1px solid #bfc5ce;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  textarea:focus {
+    outline: 2px solid rgba(59, 111, 189, 0.65);
+    outline-offset: 0;
   }
 
   /* INFO: Referenceのスクロール領域のキーボードFocus */

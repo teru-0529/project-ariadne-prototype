@@ -40,4 +40,23 @@
 
     overflow-wrap: anywhere;
   }
+
+  input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 5px 8px;
+
+    border: 1px solid #bfc5ce;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  input:focus {
+    outline: 2px solid rgba(59, 111, 189, 0.65);
+    outline-offset: 0;
+  }
 </style>
