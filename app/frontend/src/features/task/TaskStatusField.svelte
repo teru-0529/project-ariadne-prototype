@@ -6,10 +6,11 @@
 
   type Props = {
     variant: FieldVariant;
+    required?: boolean;
     value: string;
   };
 
-  let { variant, value }: Props = $props();
+  let { variant, required = false, value }: Props = $props();
 
   const initialValue = () => value;
   let currentValue = $state(initialValue());
@@ -17,7 +18,7 @@
   const label = "ステータス";
 </script>
 
-<AriadneField {variant} {label}>
+<AriadneField {variant} {label} {required}>
   {#if variant === "edit"}
     <div class="status-group" role="radiogroup" aria-label="ステータス">
       {#each statuses as status}

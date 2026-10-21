@@ -7,8 +7,8 @@
 </script>
 
 <AriadneForm submitLabel="Create Task">
-  <TextField variant="edit" label="タイトル" value="" />
+  <TextField variant="edit" label="タイトル" required={true} value="" />
   <TextareaField variant="edit" label="説明" value="" />
-  <TaskPriorityField variant="edit" value={3} />
-  <TaskStatusField variant="edit" value="TODO" />
+  <TaskPriorityField variant="edit" required={true} value={3} />
+  <TaskStatusField variant="edit" required={true} value="TODO" />
 </AriadneForm>

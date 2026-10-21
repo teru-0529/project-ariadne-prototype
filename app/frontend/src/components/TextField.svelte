@@ -6,14 +6,15 @@
   type Props = {
     variant: FieldVariant;
     label?: string;
+    required?: boolean;
     value: string;
     lines?: number;
   };
 
-  let { variant, label = "", value, lines = 1 }: Props = $props();
+  let { variant, label = "", required = false, value, lines = 1 }: Props = $props();
 </script>
 
-<AriadneField {variant} {label}>
+<AriadneField {variant} {label} {required}>
   {#if variant === "reference"}
     <div class="text-value" style:--lines={lines}>
       {value}
