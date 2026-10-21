@@ -20,11 +20,11 @@
   <TextareaField variant="reference" label="説明" value={task.Description} />
 
   <div class="priority-layout">
-    <TaskPriorityField variant="reference" label="優先度" value={task.Priority} />
+    <TaskPriorityField variant="reference" value={task.Priority} />
   </div>
 
   <div class="status-layout">
-    <TaskStatusField variant="reference" label="ステータス" value={task.Status} />
+    <TaskStatusField variant="reference" value={task.Status} />
   </div>
 </div>
 

@@ -9,6 +9,6 @@
 <AriadneForm submitLabel="Create Task">
   <TextField variant="edit" label="タイトル" value="" />
   <TextareaField variant="edit" label="説明" value="" />
-  <TaskPriorityField variant="edit" label="優先度" value={3} />
-  <!--TODO: Field群は次の増分で追加 -->
+  <TaskPriorityField variant="edit" value={3} />
+  <TaskStatusField variant="edit" value="TODO" />
 </AriadneForm>

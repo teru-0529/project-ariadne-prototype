@@ -4,14 +4,15 @@
 
   type Props = {
     variant: FieldVariant;
-    label?: string;
     value: number;
   };
 
-  let { variant, label = "", value }: Props = $props();
+  let { variant, value }: Props = $props();
 
   const initialValue = () => value;
   let currentValue = $state(initialValue());
+
+  const label = "ステータス";
 </script>
 
 <AriadneField {variant} {label}>
@@ -90,7 +91,7 @@
   }
 
   .priority-edit:focus-visible {
-    outline: 2px solid #3264bd;
-    outline-offset: 2px;
+    outline: 2px solid rgba(59, 111, 189, 0.65);
+    outline-offset: -2px;
   }
 </style>

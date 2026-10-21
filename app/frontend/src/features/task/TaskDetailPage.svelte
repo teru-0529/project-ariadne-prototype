@@ -1,7 +1,7 @@
 <script lang="ts">
   import AriadnePage from "../../components/AriadnePage.svelte";
   import { TaskContext, TaskScreen } from "./TaskContext";
-  import TaskDetailView from "./TaskDetailView.svelte";
+  import TaskView from "./TaskView.svelte";
   import AriadneToggle from "../../components/AriadneToggle.svelte";
 
   // INFO: Ariadne Toggle に渡すリスト
@@ -34,5 +34,5 @@
 {/snippet}
 
 <AriadnePage title="Task 詳細" headerAction={modeToggle}>
-  <TaskDetailView {task} />
+  <TaskView {task} />
 </AriadnePage>
