@@ -17,6 +17,8 @@
     <div class="textarea-value" style:--lines={lines}>
       {value}
     </div>
+  {:else if variant === "edit"}
+    <textarea aria-label={label} {value}></textarea>
   {:else}
     <span>{value}</span>
   {/if}

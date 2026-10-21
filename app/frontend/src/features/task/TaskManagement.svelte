@@ -2,6 +2,7 @@
   import SideNavigation from "../../components/AriadneSideNavigation.svelte";
   import TaskListPage from "./TaskListPage.svelte";
   import TaskDetailPage from "./TaskDetailPage.svelte";
+  import TaskCreatePage from "./TaskCreatePage.svelte";
 
   import { TaskScreen, TaskContext, type TaskNavigation } from "./TaskContext";
   import { toErrorMessage } from "../../lib/errors/ProcessedError";
@@ -83,7 +84,7 @@
     {:else if currentTaskOperation === TaskScreen.Reference}
       <TaskDetailPage {context} />
     {:else if currentTaskOperation === TaskScreen.Create}
-      <!-- TODO: Createのダミー実装  -->
+      <TaskCreatePage />
       <p>Create Task.</p>
     {:else}
       <p>Select an operation.</p>

@@ -18,10 +18,10 @@
     <div class="text-value" style:--lines={lines}>
       {value}
     </div>
+  {:else if variant === "edit"}
+    <input type="text" aria-label={label} {value} />
   {:else if variant === "cell"}
     <Tooltip text={value} />
-  {:else}
-    <span>{value}</span>
   {/if}
 </AriadneField>
 
