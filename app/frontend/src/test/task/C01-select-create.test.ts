@@ -32,7 +32,7 @@ test("C01 Createを選択する", async () => {
 
   const priority = screen.getByRole("spinbutton", { name: "優先度" });
   expect(priority).toBeTruthy();
-  expect((priority as HTMLInputElement).value).toBe("3");
+  expect(priority.getAttribute("aria-valuenow")).toBe("3");
 
   const status = screen.getByRole("radio", { name: "TODO" });
   expect(status).toBeTruthy();
