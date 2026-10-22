@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AriadneView from "../../components/AriadneView.svelte";
   import type { Task } from "../../../bindings/ariadne/backend/services/publish";
   import TextField from "../../components/TextField.svelte";
   import TextareaField from "../../components/TextareaField.svelte";
@@ -12,21 +13,23 @@
   let { task }: Props = $props();
 </script>
 
-<div class="detail-layout">
-  <TextField variant="reference" label="ID" value={task.ID} maxLength={30} />
+<AriadneView>
+  <div class="detail-layout">
+    <TextField variant="reference" label="ID" value={task.ID} maxLength={30} />
 
-  <TextField variant="reference" label="タイトル" value={task.Title} maxLength={50} lines={2} />
+    <TextField variant="reference" label="タイトル" value={task.Title} maxLength={50} lines={2} />
 
-  <TextareaField variant="reference" label="説明" value={task.Description} />
+    <TextareaField variant="reference" label="説明" value={task.Description} />
 
-  <div class="priority-layout">
-    <TaskPriorityField variant="reference" value={task.Priority} />
+    <div class="priority-layout">
+      <TaskPriorityField variant="reference" value={task.Priority} />
+    </div>
+
+    <div class="status-layout">
+      <TaskStatusField variant="reference" value={task.Status} />
+    </div>
   </div>
-
-  <div class="status-layout">
-    <TaskStatusField variant="reference" value={task.Status} />
-  </div>
-</div>
+</AriadneView>
 
 <style>
   .detail-layout {

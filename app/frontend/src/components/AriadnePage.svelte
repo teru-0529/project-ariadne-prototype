@@ -57,6 +57,5 @@
   .page-content {
     min-height: 0;
     min-width: 0;
-    overflow: auto;
   }
 </style>
