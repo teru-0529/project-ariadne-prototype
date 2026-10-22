@@ -85,7 +85,6 @@
       <TaskDetailPage {context} />
     {:else if currentTaskOperation === TaskScreen.Create}
       <TaskCreatePage />
-      <p>Create Task.</p>
     {:else}
       <p>Select an operation.</p>
     {/if}
