@@ -19,5 +19,5 @@
 <form onsubmit={(event) => event.preventDefault()}>
   {@render children()}
 
-  <AriadneButton label={submitLabel} variant="primary" type="button" onclick={handleSubmit} />
+  <AriadneButton label={submitLabel} variant="primary" type="submit" onclick={handleSubmit} />
 </form>
