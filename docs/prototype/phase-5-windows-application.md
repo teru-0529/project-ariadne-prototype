@@ -409,23 +409,22 @@ Prototypeでは、以下のComponent構造を基本とする。
 ```mermaid
 flowchart TD
     App["App.svelte"]
-
     Header["Header / Primary Navigation"]
     Task["TaskManagement.svelte"]
     Config["Config Dummy Page"]
     Footer["Footer"]
     Toast["AriadneToast.svelte"]
     Side["AriadneSideNavigation.svelte"]
-
     ListPage["TaskListPage.svelte"]
     DetailPage["TaskDetailPage.svelte"]
-
-    ListFrame["AriadnePage"]
-    DetailFrame["AriadnePage"]
-
-    DetailView["TaskDetailView.svelte"]
-
+    CreatePage["TaskCreatePage.svelte"]
+    Page["AriadnePage.svelte"]
     Table["AriadneListTable.svelte"]
+    TaskView["TaskView.svelte"]
+    AriadneView["AriadneView.svelte"]
+    TaskEntry["TaskEntry.svelte"]
+    Form["AriadneForm.svelte"]
+    Button["AriadneButton.svelte"]
     Field["Field Components"]
     Toggle["AriadneToggle.svelte"]
 
@@ -434,19 +433,21 @@ flowchart TD
     App --> Config
     App --> Footer
     App --> Toast
-
     Task -.-> Side
     Task --> ListPage
     Task --> DetailPage
-
-    ListPage --> ListFrame
-    DetailPage --> DetailFrame
-
-    ListFrame -->|Contents| Table
-    DetailFrame -->|Contents| DetailView
-
-    DetailView --> Field
-
+    Task --> CreatePage
+    ListPage --> Page
+    DetailPage --> Page
+    CreatePage --> Page
+    ListPage --> Table
+    DetailPage --> TaskView
+    CreatePage --> TaskEntry
+    TaskView --> AriadneView
+    AriadneView --> Field
+    TaskEntry --> Form
+    Form --> Field
+    Form --> Button
     DetailPage -.-> Toggle
 ```
 
@@ -465,7 +466,12 @@ flowchart TD
 | AriadneSideNavigation | 渡されたNavigation項目の表示と、ユーザー操作の通知               |
 | TaskListPage          | Task一覧画面の構成と表示データの受け渡し                         |
 | TaskDetailPage        | Task詳細画面の構成と表示データの受け渡し                         |
-| TaskDetailView        | Task詳細データの表示とFieldの配置                                |
+| TaskView              | Task固有の参照Fieldの構成・配置                                  |
+| TaskCreatePage        | Task作成画面の構成                                               |
+| TaskEntry             | Task固有の入力Fieldの構成・配置                                  |
+| AriadneView           | 汎用参照コンテナと内部スクロール                                 |
+| AriadneForm           | 入力領域の内部スクロール、操作ボタンの配置、Submit受付             |
+| AriadneButton         | 共通ボタンの表示・操作                                           |
 | AriadnePage           | Page共通の構造とContents領域の提供                               |
 | AriadneListTable      | 一覧表の構造、表示、スクロール制御                               |
 | AriadneToggle         | 選択肢を切り替える共通UIの表示と操作通知                         |
@@ -475,23 +481,31 @@ flowchart TD
 
 `AriadneSideNavigation` は、ユーザーの選択操作を通知するが、Navigationの成立可否や遷移先の確定は担当しない。
 
-Task List / DetailのPageは、TaskContextから取得したデータを表示Componentへ渡す。データ取得処理やStoreの生成は担当しない。
+Task List / DetailのPageは、TaskContextから取得したデータを表示Componentへ渡す。データ取得処理やStoreの生成は担当しない。Task Createの入力内容はTaskEntryが構成する。
 
 Configへの切替時にはTaskManagementを破棄し、Task機能に属するStateを維持しない。
 
-##### Page / View / Common Component
+##### Page / View / Form / Common Component
 
-Frontendの画面は、Pageによる画面構成と、Viewによる表示内容の組み立てを分離する。
+Frontendの画面は、Pageによる画面構成、業務固有Componentによる表示・入力内容の構成、共通Componentによる表示領域内の振る舞いを分離する。
 
-Pageは、画面に必要なデータを受け取り、共通のPage構造の中に表示内容を配置する。
+`AriadnePage` はHeaderとContentsの表示領域を提供する。Contents自体はスクロールを管理せず、配置されたComponentが必要に応じて自身の領域内でスクロールを管理する。
 
-Viewは、受け取ったデータをField等のComponentに渡し、各要素の配置と表示領域を決定する。
+業務固有Componentは、親から与えられた領域を利用してField等の配置を決定する。コンテンツの寸法は基本的に固定とし、Windowの縮小に合わせて自動的に縮小しない。
 
-`AriadnePage` はContents領域を提供し、Contentsが表示可能領域を超える場合はスクロールによって閲覧できるようにする。
+共通Componentは、親から割り当てられた領域内で自身の責務を果たす。親のPage構造や業務固有のField構成には依存しない。
 
-一覧表では、`AriadneListTable` がTable内部のスクロールを管理する。少数行ではデータ直下に横スクロールバーを配置し、表示可能な高さを超える場合はTable内部で縦スクロールする。
+- `AriadneListTable` は、一覧表の表示と内部スクロールを管理する。
+- `AriadneView` は、参照表示の共通コンテナとして、子コンテンツの内部スクロールを管理する。
+- `AriadneForm` は、入力内容の内部スクロール、操作ボタンの配置、Submit受付を管理する。操作ボタンはFormに割り当てられた表示領域の右下に固定し、入力内容との重なりを許容する。
 
-画面の表示幅が縮小しても、Viewが定義したFieldの幅や配置を自動的に変更することは基本とせず、必要に応じてContentsをスクロールさせる。
+Task詳細画面では `TaskView` が `AriadneView` を利用し、Task作成画面では `TaskEntry` が `AriadneForm` を利用する。
+
+`AriadneForm` のSubmit受付は実装済みだが、Validation、Confirmation Modal、登録処理への連携は後続Behaviorで実装・検証する。
+
+`TaskEntry` はCreate / Editで共通利用する方針とする。Createでの利用は確認済みだが、Editへの適用はStep 6で検証する。
+
+これにより、業務固有の表示・入力内容と、スクロールや操作ボタンなどの共通的な振る舞いを分離する。
 
 ##### Field Components
 
@@ -523,7 +537,7 @@ Fieldは以下のVariantを共通して使用する。
 
 Variantの型定義は `AriadneField` から共有する。
 
-Fieldの表示領域の幅と配置は、利用側のViewが決定する。Fieldは与えられた領域の中で、値の表示方法と必要な高さを管理する。
+Fieldの幅と配置は、利用側の業務固有Component（TaskView / TaskEntry等）が決定する。Fieldは与えられた領域の中で、値の表示方法と必要な高さを管理する。
 
 Reference表示では以下を基本とする。
 
@@ -538,7 +552,7 @@ Edit Variantの入力操作、Validation、変更検出等の具体的な振る�
 
 ##### Future Components
 
-Task Create / Edit、Confirmation Modal、Field Validation等の未実装部分については、対象Behaviorの実装時に具体化する。TODO:
+Task Createの基本的な画面構造は実装済みとする。Validation、Confirmation Modal、登録処理、およびTask Edit固有の振る舞いは、対象Behaviorで具体化・検証する。TODO:
 
 共通化は、実際の利用箇所と責務に基づいて判断し、不要な抽象化を先行させない。
 
@@ -561,7 +575,7 @@ Task管理機能では、以下の責務分担とする。
 | TaskListStore   | Task一覧の取得、取得結果の検証と保持                        |
 | TaskDetailStore | 指定されたIDによるTask詳細の取得、取得結果の検証と保持      |
 | TaskListPage    | TaskContextからTask一覧データを取得し、表示Componentへ渡す  |
-| TaskDetailPage  | TaskContextからTask詳細データを取得し、TaskDetailViewへ渡す |
+| TaskDetailPage  | TaskContextからTask詳細データを取得し、TaskViewへ渡す |
 
 `TaskContext` は、遷移準備中のStateと確定済みのStateを区別する。
 
@@ -625,13 +639,13 @@ TaskDetailStore
 TaskContext
     ↓ 遷移確定後にデータを提供
 TaskDetailPage
-    ↓ TaskDetailViewへ渡す
+    ↓ TaskViewへ渡す
 画面表示
 ```
 
 `TaskDetailStore` は、指定されたIDに対応するTask詳細を取得し、その結果を保持する。
 
-`TaskDetailPage` は、TaskContextを通じて取得したTask詳細を `TaskDetailView` に渡す。
+`TaskDetailPage` は、TaskContextを通じて取得したTask詳細を `TaskView` に渡す。
 
 Task詳細の取得処理やStoreの生成は担当しない。
 
@@ -781,7 +795,7 @@ Confirmation Modalは共通Componentとし、Task Create / Edit等から利用�
 
 これらについても、Componentの表示責務と、State管理・Application処理の責務を分離する原則を適用する。
 
-入力FormのComponent構造と責務分担は、Create / EditのBehavior実装時に具体化する。
+Task Createでは、TaskEntryがTask固有の入力Fieldを構成し、AriadneFormが入力領域のスクロール、操作ボタンの配置、Submit受付を担当する構造を採用した。Validation、Confirmation Modal、登録処理に至る共通手順は後続Behaviorで実装・検証する。Task EditでもTaskEntry / AriadneFormを共通利用する方針とし、Edit固有の成立性はStep 6で検証する。
 
 共通Componentの分割は、実際の機能構成と再利用の必要性を踏まえて判断する。
 
@@ -2360,9 +2374,9 @@ Step開始時にTask Create画面の簡易画面設計を行う。
 
 詳細な画面設計書は作成せず、実装に必要なUI構造とState管理方式を決定する。
 
-Create / Editで共通する入力Component、Validation表示、Confirmation Modal等は、実際の利用方法を踏まえて共通化を検討する。
+Task Create画面の基本構造は、Section 3.4.1に定義するTaskEntryとAriadneFormを用いて実装した。Fieldの配置、入力操作、Form内のスクロール、操作ボタンの配置とSubmit受付はA04で確認済みとする。
 
-Task Create画面はSection 3.4で定義したPage / View / Fieldの責務分離を基本とし、入力Formに必要なComponent構造を実装時に具体化する。
+Validationに伴うボタン活性制御、エラー表示、Confirmation Modal、保存処理は後続Behaviorで具体化する。
 
 #### 5-2. Create Use Case
 
@@ -2529,10 +2543,9 @@ Step開始時にTask Edit画面の簡易画面設計を行う。
 - 保存成功後のTask再取得と参照モードへの遷移
 - 更新成功後の再取得失敗時の画面状態と通知
 
-Task Createと共通するUI要素は、Step 5の実装を踏まえて再利用を検討する。
+Task Edit画面は、Task Createで導入したTaskEntryとAriadneFormを共通利用する方針とする。Task ReferenceのTaskViewは参照表示専用とし、入力Componentとして再利用しない。
 
-Task Edit画面はTask Referenceで実装したTaskDetailPage / TaskDetailView / Field Componentの構造を基本とし、
-Reference / Editで共通する表示構造を再利用する。
+Edit固有の初期値、変更検出、Validation、保存処理、および共通Componentの成立性はStep 6で検証する。
 
 #### 6-2. Edit Use Case
 
