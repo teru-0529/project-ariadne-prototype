@@ -4,5 +4,5 @@
 </script>
 
 <AriadnePage title="Task 作成">
-  <TaskEntry />
+  <TaskEntry submitLabel="Create Task" />
 </AriadnePage>
