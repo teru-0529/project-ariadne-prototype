@@ -13,9 +13,9 @@
 </script>
 
 <div class="detail-layout">
-  <TextField variant="reference" label="ID" value={task.ID} />
+  <TextField variant="reference" label="ID" value={task.ID} maxLength={30} />
 
-  <TextField variant="reference" label="タイトル" value={task.Title} lines={2} />
+  <TextField variant="reference" label="タイトル" value={task.Title} maxLength={50} lines={2} />
 
   <TextareaField variant="reference" label="説明" value={task.Description} />
 

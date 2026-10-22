@@ -8,10 +8,13 @@
     label?: string;
     required?: boolean;
     value: string;
+    maxLength: number;
     lines?: number;
   };
 
-  let { variant, label = "", required = false, value, lines = 1 }: Props = $props();
+  let { variant, label = "", required = false, value, maxLength, lines = 1 }: Props = $props();
+
+  let composing = false;
 </script>
 
 <AriadneField {variant} {label} {required}>
@@ -20,7 +23,29 @@
       {value}
     </div>
   {:else if variant === "edit"}
-    <input type="text" aria-label={label} {value} />
+    <textarea
+      aria-label={label}
+      {value}
+      rows={lines}
+      maxlength={maxLength}
+      onkeydown={(event) => {
+        if (event.key === "Enter" && !event.isComposing) {
+          event.preventDefault();
+        }
+      }}
+      oncompositionstart={() => {
+        composing = true;
+      }}
+      oncompositionend={(event) => {
+        composing = false;
+        event.currentTarget.value = event.currentTarget.value.replace(/[\r\n]/g, "");
+      }}
+      oninput={(event) => {
+        if (composing) return;
+
+        const element = event.currentTarget;
+        element.value = element.value.replace(/[\r\n]/g, "");
+      }}></textarea>
   {:else if variant === "cell"}
     <Tooltip text={value} />
   {/if}
@@ -41,7 +66,7 @@
     overflow-wrap: anywhere;
   }
 
-  input {
+  textarea {
     display: block;
     width: 100%;
     box-sizing: border-box;
@@ -53,9 +78,13 @@
     border: 1px solid #bfc5ce;
     border-radius: 4px;
     background: #fff;
+
+    resize: none;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
-  input:focus {
+  textarea:focus {
     outline: 2px solid rgba(59, 111, 189, 0.65);
     outline-offset: 0;
   }

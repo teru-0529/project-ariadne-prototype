@@ -26,7 +26,7 @@
 </script>
 
 {#snippet titleCell(task: TaskSummary)}
-  <TextField variant="cell" value={task.Title} />
+  <TextField variant="cell" value={task.Title} maxLength={50} />
   <SubTextField variant="cell" value={task.ID} />
 {/snippet}
 

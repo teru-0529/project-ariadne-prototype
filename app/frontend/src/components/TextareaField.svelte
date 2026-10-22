@@ -19,7 +19,7 @@
       {value}
     </div>
   {:else if variant === "edit"}
-    <textarea aria-label={label} {value} rows={lines}></textarea>
+    <textarea aria-label={label} {value} style:--lines={lines}></textarea>
   {:else}
     <span>{value}</span>
   {/if}
@@ -50,6 +50,8 @@
     border: 1px solid #bfc5ce;
     border-radius: 4px;
     background: #fff;
+
+    min-height: calc(var(--lines) * 1.5em + 12px);
   }
 
   textarea:focus {
