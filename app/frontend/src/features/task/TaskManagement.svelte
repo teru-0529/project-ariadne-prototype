@@ -20,6 +20,9 @@
     { value: TaskScreen.Create, label: "Create" },
   ];
 
+  // INFO: 画面再生成キー
+  let navigationKey = $state(0);
+
   // INFO: 画面遷移中
   let isNavigating = false;
 
@@ -62,6 +65,7 @@
       await context.prepare(request);
       context.commit(request.screen);
       currentTaskOperation = request.screen;
+      navigationKey += 1;
     } catch (error) {
       handleError(error);
     } finally {
@@ -79,15 +83,17 @@
   <SideNavigation label="Task" items={navigationItems} current={currentTaskOperation} onSelect={handleSideNavSelect} />
 
   <main class="main-area">
-    {#if currentTaskOperation === TaskScreen.List}
-      <TaskListPage {context} onTaskSelect={handleTaskSelect} />
-    {:else if currentTaskOperation === TaskScreen.Reference}
-      <TaskDetailPage {context} />
-    {:else if currentTaskOperation === TaskScreen.Create}
-      <TaskCreatePage />
-    {:else}
-      <p>Select an operation.</p>
-    {/if}
+    {#key navigationKey}
+      {#if currentTaskOperation === TaskScreen.List}
+        <TaskListPage {context} onTaskSelect={handleTaskSelect} />
+      {:else if currentTaskOperation === TaskScreen.Reference}
+        <TaskDetailPage {context} />
+      {:else if currentTaskOperation === TaskScreen.Create}
+        <TaskCreatePage />
+      {:else}
+        <p>Select an operation.</p>
+      {/if}
+    {/key}
   </main>
 </div>
 
