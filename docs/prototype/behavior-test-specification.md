@@ -447,7 +447,222 @@ N/A
 
 ---
 
-## 8. Note
+## 8. C02 入力項目からFocus Outする
+
+### Result Pattern: Single Field Error
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleを空文字のままFocusする
+
+##### When
+
+- TitleからFocus Outする
+
+##### Expected
+
+- TitleにRequired Errorが表示される
+- Create ButtonがDisabledになる
+
+---
+
+### Result Pattern: Correlation Errorなし（INITIAL）
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに `Test` を入力する
+- Priorityを5に設定する
+- DescriptionをFocusする
+
+##### When
+
+- DescriptionからFocus Outする
+
+##### Expected
+
+- DescriptionにValidation Errorが表示されない
+- Create ButtonがEnabledになる
+
+---
+
+### Result Pattern: Correlation Errorなし（ACTIVE）
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに `Test` を入力する
+- Priorityを5に設定する
+- Descriptionに `Details` を入力する
+- Create Buttonを押す
+- Confirmation ModalでCancelを選択する
+- DescriptionをFocusする
+
+##### When
+
+- DescriptionからFocus Outする
+
+##### Expected
+
+- DescriptionにValidation Errorが表示されない
+- Create ButtonがEnabledになる
+
+---
+
+### Result Pattern: Correlation Errorあり（ACTIVE）
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに `Test` を入力する
+- Priorityを5に設定する
+- Descriptionに `Details` を入力する
+- Create Buttonを押す
+- Confirmation ModalでCancelを選択する
+- Descriptionを空文字にする
+
+##### When
+
+- DescriptionからFocus Outする
+
+##### Expected
+
+- DescriptionにCorrelation Required Errorが表示される
+- Create ButtonがDisabledになる
+
+### Backend Module Test
+
+N/A
+
+---
+
+## 9. C03 Create Buttonを押す
+
+### Result Pattern: Invalid - Single Field
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに51文字入力する
+- Priorityを5に設定する
+
+##### When
+
+- Create Buttonを押す
+
+##### Expected
+
+- TitleにMax Length Errorが表示される
+- DescriptionにCorrelation Required Errorが表示されない
+- Confirmation Modalが表示されない
+- Create ButtonがDisabledになる
+
+---
+
+### Result Pattern: Invalid - Correlation
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに `Test` を入力する
+- Priorityを5に設定する
+
+##### When
+
+- Create Buttonを押す
+
+##### Expected
+
+- DescriptionにCorrelation Required Errorが表示される
+- Confirmation Modalが表示されない
+- Create ButtonがDisabledになる
+
+---
+
+### Result Pattern: Valid - Descriptionなし
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに `Test` を入力する
+
+##### When
+
+- Create Buttonを押す
+
+##### Expected
+
+- Validation Errorが表示されない
+- Confirmation Modalが表示される
+
+---
+
+### Result Pattern: Valid - Descriptionあり
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C01 `Createを選択する`
+
+##### Given
+
+- Titleに `Test` を入力する
+- Priorityを5に設定する
+- Descriptionに `Details` を入力する
+
+##### When
+
+- Create Buttonを押す
+
+##### Expected
+
+- Validation Errorが表示されない
+- Confirmation Modalが表示される
+
+### Backend Module Test
+
+N/A
+
+---
+
+## 10. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
