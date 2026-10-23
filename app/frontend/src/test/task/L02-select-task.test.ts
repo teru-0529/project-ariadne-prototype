@@ -4,6 +4,12 @@ import { render, screen, within, fireEvent } from "@testing-library/svelte";
 import App from "../../App.svelte";
 import { TaskBoundary } from "../../../bindings/ariadne/backend/adapters/wails";
 
+// INFO: L01 Task Listを表示する
+async function givenL01ListSelected() {
+  render(App);
+  await fireEvent.click(screen.getByRole("button", { name: "List" }));
+}
+
 vi.mock("../../../bindings/ariadne/backend/adapters/wails", () => ({
   TaskBoundary: {
     ListTasks: vi.fn().mockResolvedValue([
@@ -36,11 +42,7 @@ test("L02 Taskを選択する - Success", async () => {
   };
   vi.mocked(TaskBoundary.GetTask).mockResolvedValue(initialValue);
 
-  render(App);
-
-  // Task Side Navigation
-  const listNavigation = screen.getByRole("button", { name: "List" });
-  await fireEvent.click(listNavigation);
+  await givenL01ListSelected();
 
   // Task List
   const taskList = await screen.findByRole("table");
@@ -61,6 +63,7 @@ test("L02 Taskを選択する - Success", async () => {
 
   // INFO: VERIFY
   // Task Side Navigation
+  const listNavigation = screen.getByRole("button", { name: "List" });
   expect(listNavigation.getAttribute("aria-pressed")).toBe("false");
 
   // Main Area - Task詳細画面
@@ -89,11 +92,7 @@ test("L02 Taskを選択する - Not Found", async () => {
   });
   vi.mocked(TaskBoundary.GetTask).mockRejectedValue(error);
 
-  render(App);
-
-  // Task Side Navigation
-  const listNavigation = screen.getByRole("button", { name: "List" });
-  await fireEvent.click(listNavigation);
+  await givenL01ListSelected();
 
   // Task List
   const taskList = await screen.findByRole("table");
@@ -104,6 +103,7 @@ test("L02 Taskを選択する - Not Found", async () => {
 
   // INFO: VERIFY
   // Task Side Navigation
+  const listNavigation = screen.getByRole("button", { name: "List" });
   expect(listNavigation.getAttribute("aria-pressed")).toBe("true");
 
   // Main Area（遷移しない）
@@ -126,11 +126,7 @@ test("L02 Taskを選択する - Read Failure", async () => {
   });
   vi.mocked(TaskBoundary.GetTask).mockRejectedValue(error);
 
-  render(App);
-
-  // Task Side Navigation
-  const listNavigation = screen.getByRole("button", { name: "List" });
-  await fireEvent.click(listNavigation);
+  await givenL01ListSelected();
 
   // Task List
   const taskList = await screen.findByRole("table");
@@ -141,6 +137,7 @@ test("L02 Taskを選択する - Read Failure", async () => {
 
   // INFO: VERIFY
   // Task Side Navigation
+  const listNavigation = screen.getByRole("button", { name: "List" });
   expect(listNavigation.getAttribute("aria-pressed")).toBe("true");
 
   // Main Area（遷移しない）

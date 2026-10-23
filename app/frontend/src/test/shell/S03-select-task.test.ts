@@ -3,18 +3,21 @@ import { render, screen, within, fireEvent } from "@testing-library/svelte";
 
 import App from "../../App.svelte";
 
+// INFO: S02 Configを選択する
+async function givenS02ConfigSelected() {
+  render(App);
+  await fireEvent.click(screen.getByRole("button", { name: "Config" }));
+}
+
 // TEST:
 test("S03 Primary NavigationでTaskを選択する", async () => {
-  render(App);
+  // INFO: GIVEN
+  await givenS02ConfigSelected();
 
   // Primary Navigation
   const primaryNavigation = screen.getByRole("navigation", { name: "Primary" });
   const taskNavigation = within(primaryNavigation).getByRole("button", { name: "Task" });
   const configNavigation = within(primaryNavigation).getByRole("button", { name: "Config" });
-
-  // INFO: GIVEN
-  // S02が保証する機能を利用してconfig ページを表示する
-  await fireEvent.click(configNavigation);
 
   // INFO: ACTION
   await fireEvent.click(taskNavigation);

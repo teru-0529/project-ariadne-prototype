@@ -16,15 +16,11 @@
 <AriadneView>
   <div class="detail-layout">
     <TextField variant="reference" label="ID" value={task.ID} maxLength={30} />
-
-    <TextField variant="reference" label="タイトル" value={task.Title} maxLength={50} lines={2} />
-
+    <TextField variant="reference" label="タイトル" value={task.Title} maxLength={80} lines={2} />
     <TextareaField variant="reference" label="説明" value={task.Description} />
-
     <div class="priority-layout">
       <TaskPriorityField variant="reference" value={task.Priority} />
     </div>
-
     <div class="status-layout">
       <TaskStatusField variant="reference" value={task.Status} />
     </div>

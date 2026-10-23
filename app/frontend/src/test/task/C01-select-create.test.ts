@@ -47,6 +47,5 @@ test("C01 Createを選択する", async () => {
   // Create Button
   const createButton = screen.getByRole("button", { name: "Create Task" });
   expect(createButton).toBeTruthy();
-  // TODO: Validation処理構築後にコメント解除
-  // expect((createButton as HTMLButtonElement).disabled).toBe(true);
+  expect((createButton as HTMLButtonElement).disabled).toBe(true);
 });
