@@ -194,7 +194,7 @@ ModifyTask(ID, Properties)
 
 各Operationの入出力にはPublic Modelを使用する。具体的なTaskモデルと入力項目はSection 5で定義する。
 
-Create / Modifyの入力モデルについては、操作ごとに独立したモデルを使用する方針とする。ただし、具体的な型、IDの受け渡し方法、未指定・null・値ありの表現方式はPhase 5 TODO:とする。
+Create / Modifyの入力モデルについては、操作ごとに独立したモデルを使用する。
 
 #### 3.2.3 Persistence Port
 
@@ -316,7 +316,7 @@ Public ModelからFrontend向けのTypeScript表現への変換は、WailsのBin
 
 Wails Boundaryは公開範囲と接続を担当し、Public Modelの業務上の意味や項目構成を独自に決定しない。
 
-Create / Modifyの入力モデルについては、Public Modelを使用する原則を適用する。ただし、具体的な型とWailsを介した値の受け渡し方式は、当該Behaviorの実装時に検証する。TODO:
+Create / Modifyの入力モデルにはPublic Modelを使用する。
 
 #### 3.3.3 Error Boundary
 
@@ -552,7 +552,7 @@ Edit Variantの入力操作、Validation、変更検出等の具体的な振る�
 
 ##### Future Components
 
-Task Createの基本的な画面構造は実装済みとする。Validation、Confirmation Modal、登録処理、およびTask Edit固有の振る舞いは、対象Behaviorで具体化・検証する。TODO:
+Task Createの基本的な画面構造は実装済みとする。
 
 共通化は、実際の利用箇所と責務に基づいて判断し、不要な抽象化を先行させない。
 
@@ -740,8 +740,6 @@ Task一覧で保持しているSummaryを詳細データの代わりに使用せ
 
 この取得に失敗した場合はReference画面へ遷移せず、Task List画面を維持する。
 
-Reference / Edit間のデータ引継ぎや再取得、保存後の画面遷移については、Task EditのBehavior実装時に具体化する。TODO:
-
 #### 3.4.4 Notification and Error Handling
 
 Frontendでは、Applicationの処理結果やErrorをNotification Toastで表示する。
@@ -775,17 +773,7 @@ Notification Toast
 
 それぞれの識別方法、公開用Messageの決定原則、未処理Errorに対するFallbackおよびLogging方針はSection 3.5で定義する。
 
-#### 3.4.5 Future Verification
-
-Prototypeでは、今後のBehavior実装に合わせて以下の設計・技術検証を行う。TODO:
-
-- Task Create / Editにおける入力Stateと変更Stateの管理
-- Reference / Editの切替におけるState管理とNavigationの責務
-- Confirmation Modalの共通Componentとしての利用方法とState管理
-- Field Validationの実行タイミング、State管理、およびComponent間の責務
-- 複数FieldにまたがるCorrelation Validationの構成
-- Modify時の未指定・null・値ありの表現方法
-- 保存成功・失敗時の画面遷移とStateの扱い
+#### 3.4.5 Task Create / Edit
 
 Task Create / Editは、Task List / Referenceと同じMain Area配下の画面として構成する。
 
@@ -795,7 +783,7 @@ Confirmation Modalは共通Componentとし、Task Create / Edit等から利用�
 
 これらについても、Componentの表示責務と、State管理・Application処理の責務を分離する原則を適用する。
 
-Task Createでは、TaskEntryがTask固有の入力Fieldを構成し、AriadneFormが入力領域のスクロール、操作ボタンの配置、Submit受付を担当する構造を採用した。Validation、Confirmation Modal、登録処理に至る共通手順は後続Behaviorで実装・検証する。Task EditでもTaskEntry / AriadneFormを共通利用する方針とし、Edit固有の成立性はStep 6で検証する。
+Task Createでは、TaskEntryがTask固有の入力Fieldを構成し、AriadneFormが入力領域のスクロール、操作ボタンの配置、Submit受付を担当する構造を採用した。Task EditでもTaskEntry / AriadneFormを共通利用する方針とする。
 
 共通Componentの分割は、実際の機能構成と再利用の必要性を踏まえて判断する。
 
@@ -1382,8 +1370,6 @@ TaskのIdentityはDeposit時にFile Persistence Adapterが生成する。
 Modify Propertiesでは、
 未指定・`null`・値ありを区別できる必要がある。
 
-具体的な表現方式は Prototype の技術検証課題とする。TODO:
-
 #### Model Conversion
 
 Public ModelとBusiness Modelの相互変換は、
@@ -1537,9 +1523,6 @@ Safe Writeは、Write処理の失敗によって既存のCanonical Fileが
 不完全な内容に置き換わることを防ぐことを目的とする。
 
 Backup GenerationおよびCrash Recovery機構はPrototypeでは実装しない。
-
-Windows上でのFile Replaceの具体的な実現方式は、 Phase
-5実装時に技術検証する。TODO:
 
 ---
 
@@ -2704,7 +2687,7 @@ Task Reference画面へ遷移してEdit状態を終了する。
 
 更新・保存には成功したが再取得に失敗した場合は、
 更新成功と再取得失敗を区別してError Toastで通知する。
-更新処理を再実行せず、画面状態の扱いは実装前に確定する。TODO:
+更新処理は再実行しない。
 
 保存失敗時はEdit状態を終了せず、
 Current Values / Original Values / Changed Fieldsを維持する。
