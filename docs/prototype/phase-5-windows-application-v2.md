@@ -52,3 +52,173 @@ Phase 5の完了は、以下の観点で判断する。
 4. **判断の整理**：検証を通じて確定した重要な設計判断、残課題およびCoreへの引継ぎ事項が整理されている。
 
 個別BehaviorやTestの詳細な合否条件は、第2〜4章および関連するBehavior Map・Test文書で定義する。
+
+## 2. Development Process
+
+### 2.1 Development Approach
+
+PROJECT ARIADNEのPrototype Phase 5では、小さな単位で設計・実装・検証を繰り返す反復型の開発プロセスを採用する。
+
+開発はPlanning、Design、Implementation & Test、Build & Verificationを基本的な活動として構成し、TDDを実装の基本手法とする。
+
+各活動は一方向に完了するものではない。Testや実機確認によって設計上の問題、仕様の不足、計画の不整合が明らかになった場合は、必要な段階へ戻って見直す。
+
+重要なのは、当初の計画を守り切ることではなく、実装と検証を通じて設計判断の妥当性を確かめ、Application全体を無理のない構造として成立させることである。
+
+### 2.2 Planning Process
+
+Phaseの目的とScopeを明確にしたうえで、実現する主要なBehaviorをBehavior Mapとして整理する。
+
+Behaviorは原則として1つのユーザーActionを基本単位とし、同じActionに対する結果の分岐はResult Patternとして整理する。各Behaviorについて、開始状態、Action、結果、Frontend / Backendの関与を明らかにする。
+
+Behavior Mapは、Test対象を整理するためだけの文書ではない。Phase全体で実現する振る舞いを俯瞰し、Stepの分割と実施順序を検討するための入力情報とする。
+
+Stepは、機能間の依存関係と段階的な検証の成立順序を考慮して分割する。各Stepでは、必要な課題検討、設計、実装、検証を小さな単位で進められることを重視する。
+
+後続Step固有の詳細仕様を先行して決定しなければ現在のStepが成立しない場合は、安易に先回りするのではなく、Behavior MapやStepの分割・順序が適切かを再検討する。
+
+ただし、現在のStepで設計する共通機構について、既知の後続Behaviorとの整合性を考慮することは妨げない。
+
+Behavior MapとStep計画は固定的なものではない。開発中に新たなBehaviorや依存関係が明らかになった場合は、必要に応じて更新する。
+
+### 2.3 Design Process
+
+各Stepでは、実装に先立って課題検討と設計を行う。
+
+まず、実現したいこと、前提条件、制約、既存の設計判断、未決定事項を整理する。そのうえで、責務境界と必要な構造を検討し、実現方法を具体化する。
+
+設計では、最初に挙がった案や既存実装を無条件に採用しない。必要に応じて代替案を比較し、それぞれの成立条件、複雑さ、トレードオフを明らかにする。
+
+設計判断は、その理由を理解し、納得したうえで確定する。重要な判断は、第3章Application Architecture、第4章Application Specificationなど、該当する正本へ反映する。
+
+Testや実装を通じて設計の不足・矛盾が明らかになった場合は、設計へ戻る。問題がBehaviorの定義やStepの分割・実施順序に及ぶ場合は、Planning Processまで戻って見直す。
+
+Testを通すためだけに、不自然な構造や例外的な処理を積み重ねない。
+
+### 2.4 Implementation & Test Process
+
+#### Test Strategy
+
+PROJECT ARIADNEでは、Testを技術要素ではなく、保証する範囲によって分類する。
+
+基本戦略は、Frontend Module Test（FMT）とBackend Module Test（BMT）によってBehaviorを保証することである。
+
+**Frontend Module Test（FMT）**
+
+対象BehaviorのFrontend側の振る舞いを、公開されたSvelte Componentの適切な境界から確認する。
+
+Backendを利用する場合はWails Public APIをMockし、ユーザー操作に対する表示、状態変化、Validation Message、Toastなどを確認する。
+
+子Component単位で網羅的にTestすることは目的とせず、1 Behavior = 1 Component = 1 Test Fileとも規定しない。
+
+VitestとSvelte Testing Libraryを使用する。Test Codeは実装と分離したTest用Directoryに配置し、Behavior単位で整理する。
+
+**Backend Module Test（BMT）**
+
+対象BehaviorのBackend側の振る舞いを、Frontendに公開するWails Public APIではなく、その内側にあるApplication Serviceの公開APIを直接呼び出して確認する。
+
+Test Codeは実装とは分離したTest用Packageに配置し、Behavior単位で整理する。1 Behavior = 1 Test Fileとは規定せず、Result PatternやTest Caseに応じて複数ファイルへ分割してよい。
+
+File I/Oを伴う場合も、原則としてFile SystemをMockせず、`t.TempDir()`などで用意した一時Directory上で実際のFile AdapterとFile I/Oを使用する。
+
+Application ErrorはServiceの公開APIを通じて分類とError Chainを確認する。Wails PublicErrorへの変換はBMTの対象外とする。
+
+**Logic / Development Step Test**
+
+FMT/BMTのModule TestだけではTest Patternが過大になる複雑なLogicや、未知の技術要素を段階的に検証する場合に限り、補助的に使用する。
+
+Development Stepとして作成したTestは、上位のModule Testが成立した後、継続して保証する価値がなければ削除してよい。
+
+Logic / Development Step Testは通常の`test.sh`およびBuild Gateには含めない。必要な場合は`backend-test.sh --logic`で実行する。
+
+#### Behavior Test Specification
+
+Behavior Mapで定義したBehaviorについて、各Stepの課題検討・実装設計を終えた後、実装直前にBehavior Test Specificationを具体化する。
+
+Behavior Test Specificationでは、Result Patternごとに必要なFrontend / Backend Testを検討し、Dependency、Given、When、Expectedを明らかにする。
+
+Behavior Mapは振る舞いの正本、Behavior Test Specificationはその保証方法を定義する文書とする。
+
+1つのResult Patternを複数のTest Caseで確認してよい。特にBackendでは、Application上同じ結果になる複数の失敗原因を、必要に応じて個別に検証する。
+
+TestのGivenを構築するために先行Behaviorの機能を利用する場合は、依存先をBehavior Test Specificationに明記する。先行Behaviorの保証内容を重複してTestすることは目的とせず、依存先のTestがGREENであることを前提とする。
+
+Behavior Test Specificationは、Test Codeの内部実装を詳細設計するための文書ではない。
+
+#### TDD Implementation Cycle
+
+Behavior Test Specificationに基づき、実装より先にModule Testを作成する。
+
+Module Testは対象Behaviorの完成条件を示すものであり、GREENにするための最短経路で実装することは目的としない。
+
+基本サイクルは次のとおりとする。
+
+1. 対象BehaviorとResult Patternを選択する。
+2. 必要なModule Testを作成し、REDとなることを確認する。
+3. 既存のModule TestのGREENを維持しながら、小さな技術的・機能的単位で実装を進める。
+4. 必要に応じてLogic / Development Step Testを利用し、段階ごとに動作を確認する。
+5. 新たに作成したModule Testを含め、すべてのModule TestがGREENとなることを確認する。
+6. 必要に応じてRefactorし、再びALL GREENを確認する。
+
+新たなModule TestがREDである間も、既存のModule TestはGREENを維持することを原則とする。
+
+実装中に設計上の疑問が生じた場合は、必要な設計判断へ戻る。問題がStep計画に及ぶ場合はPlanning Processまで戻る。
+
+### 2.5 Build & Verification Process
+
+Implementation & Test Processで成立した実装を、Windows ApplicationとしてBuildし、実機で確認する。
+
+日常的なModule Testの統一入口は`test.sh`とする。
+
+`test.sh`は`backend-test.sh`と`frontend-test.sh`を実行し、両方がPASSした場合のみPASSとする。Logic / Development Step Testは通常実行に含めない。
+
+Frontend / Backendの各Test Scriptは、日常的に確認しやすいコンパクトな結果表示とする。TestごとのPASS / FAIL、Total、Error Rate、実行時間を基本とし、Errorの詳細はFailure時に表示する。冗長なDOMやStack Traceなどのノイズを抑制する。
+
+`build.sh`は、既存のBuild成果物を削除した後、`test.sh`をBuild Gateとして実行する。
+
+Module TestがすべてPASSした場合のみWails ApplicationをBuildする。FAILした場合はBuildせず、以前の成果物も残さない。
+
+Build後は、Windows実機でApplicationを起動し、操作、画面表示、状態遷移、FrontendからBackendおよびFile Persistenceまでの連携を確認する。
+
+CSS、Layout、Color、Spacing、SizeなどのVisual Designは、原則として自動Module Testの保証対象とせず、実機で確認する。
+
+一方、表示の有無、Validation Message、Toast、画面状態の変化など、Behaviorとして意味を持つUI状態はFMTの対象とする。
+
+Buildと実機確認はModule Testの代替ではない。異なる保証範囲を持つ検証として組み合わせる。
+
+### 2.6 Communication & Collaboration
+
+PROJECT ARIADNEでは、テルとアリアドネが対話を通じて設計・開発を進める。
+
+テルは、実現したいこと、目的、譲れない条件を提示し、設計判断を確定する主体となる。
+
+アリアドネは、目的や課題の構造化、実現方法の提案、代替案の比較、疑問・矛盾の指摘、反論、記録の整理を担う。
+
+両者は単に提案と承認を繰り返すのではなく、設計判断の理由を共有し、理解と納得に至るまで議論する。
+
+アリアドネはテルの提案を無条件に肯定しない。既存実装や過去の決定についても、必要であれば疑問を呈する。
+
+一方、テルが設計上の疑問を持っている段階で、アリアドネが先行して実装を進めない。
+
+設計判断が確定したら、小さな単位で実装・検証を進め、結果を共有する。問題が見つかった場合は、原因と影響範囲を確認し、必要な段階へ戻って協議する。
+
+### 2.7 Development Artifacts & Management
+
+PROJECT ARIADNEでは、設計判断を保持するDocument、BehaviorとTestの関連文書、作業管理情報、Source Codeについて、それぞれの役割と更新方法を区別する。
+
+設計判断の継続的な参照先は正本とし、IssueやPull Requestを正本の代替としない。
+
+| 対象 | 役割 | 更新方式 | 管理方針 |
+| --- | --- | --- | --- |
+| Phase正本 | 目的、設計原則、Architecture、Application Specificationなどの重要な設計判断を保持する | PR運用（アリアドネ） | 設計判断の確定・変更時に更新する |
+| Behavior Map | Phase全体のBehaviorを整理し、Step計画の入力とする | PR運用（アリアドネ） | Phase開始時に作成し、Behaviorや計画の変更に応じて更新する |
+| Behavior Test Specification | BehaviorごとのTest対象、条件、期待結果を定義する | PR運用（アリアドネ） | 各Behaviorの実装直前に具体化し、変更に応じて更新する |
+| Validation Rules | FieldおよびCorrelation Validationの判定条件を定義する | PR運用（アリアドネ） | 独立Documentとして維持するか第4章へ統合するかは、第4章の再編集時に判断する |
+| GitHub Issue | Activity、Task、未決定事項、進捗、検討結果を管理する | 直接更新（アリアドネ） | 作業や検討の進行に合わせて更新する |
+| Source Code | Applicationの実装を保持する | PR運用（テル） | テルが自ら実装し、変更を管理する |
+
+DocumentationのPR運用では、アリアドネがBranch上で編集・Commitし、Pull Requestを作成する。テルがレビューし、合意後にMergeする。
+
+Source Codeの実装・変更・Mergeはテルが行う。
+
+各Stepの完了時には、実装・検証結果、確定した設計判断、残課題を整理し、必要なDocumentとIssueを更新する。
