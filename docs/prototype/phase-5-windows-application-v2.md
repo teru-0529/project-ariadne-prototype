@@ -42,8 +42,6 @@ Taskの**新規作成**は対象に含む。一方、Task管理環境の**初回
 
 Phase 2〜4で扱ったElements / API / DDLのモデルおよび変換構造を、Applicationから操作する機能は本Phaseの対象外とする。それらを扱うApplication機能やValidator / Resolver / Generator等の実装はCoreで扱う。
 
-Git Integrationの採否・機能範囲はCore Backlog（Issue #9）の検討事項とする。内部Databaseを採用しない方針とFile Persistenceの具体的な設計は、第3章 Application Architectureで明文化する。
-
 ### 1.4 Completion Criteria
 
 Phase 5の完了は、以下の観点で判断する。
