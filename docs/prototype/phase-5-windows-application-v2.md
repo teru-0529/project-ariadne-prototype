@@ -230,9 +230,7 @@ Source Codeの実装・変更・Mergeはテルが行う。
 
 PROJECT ARIADNEでは、**Go Service First**を基本方針とし、Application Serviceを中心としたArchitectureを採用する。
 
-Frontend、Wails Boundary、Application Service、Persistence Adapterの責務を分離し、構成要素間の接続とデータの受け渡しを明確にする。
-
-Frontend、Wails Boundary、Backendの3つをApplicationの基本構造とする。
+**Frontend、Wails Boundary、Backendの3つをApplicationの基本構造とし、BackendにApplication Serviceが含まれる。**
 
 Frontendは画面表示・入力および画面状態を扱い、Wails Boundaryを通じてBackendの機能を利用する。BackendはApplication Serviceを中心に業務処理と永続化を担う。
 
