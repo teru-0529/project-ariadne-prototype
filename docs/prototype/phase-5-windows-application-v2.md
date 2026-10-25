@@ -234,7 +234,7 @@ Frontend、Wails Boundary、Application Service、Persistence Adapterの責務�
 
 #### Architecture Diagram
 
-\`\`\`mermaid
+```mermaid
 flowchart TB
     Page["Page"]
     Store["Store"]
@@ -255,7 +255,7 @@ flowchart TB
         Store
         Outbound
     end
-\`\`\`
+```
 
 この図は、Applicationの主要な構成要素と、それぞれの責務およびデータ・操作要求の流れを模式的に示す。Package間の依存方向を示すものではない。
 
