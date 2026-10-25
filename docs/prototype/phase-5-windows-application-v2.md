@@ -222,3 +222,97 @@ DocumentationのPR運用では、アリアドネがBranch上で編集・Commit�
 Source Codeの実装・変更・Mergeはテルが行う。
 
 各Stepの完了時には、実装・検証結果、確定した設計判断、残課題を整理し、必要なDocumentとIssueを更新する。
+
+
+## 3. Application Architecture
+
+### 3.1 Architecture Overview
+
+PROJECT ARIADNEでは、**Go Service First**を基本方針とし、Application Serviceを中心としたArchitectureを採用する。
+
+Frontend、Wails Boundary、Application Service、Persistence Adapterの責務を分離し、構成要素間の接続とデータの受け渡しを明確にする。
+
+#### Architecture Diagram
+
+\`\`\`mermaid
+flowchart TB
+    Page["Page"]
+    Store["Store"]
+    Outbound["送信側の要求準備（構成未決定）"]
+    WB["Wails Boundary"]
+    AS["Application Service"]
+    PA["Persistence Adapter"]
+
+    WB -->|取得データ| Store
+    Store -->|画面状態| Page
+    Page -->|操作要求| Outbound
+    Outbound -->|Public Model| WB
+    WB <-->|Public Model| AS
+    AS <-->|Persistence Portを介する| PA
+
+    subgraph Frontend
+        Page
+        Store
+        Outbound
+    end
+\`\`\`
+
+この図は、Applicationの主要な構成要素と、それぞれの責務およびデータ・操作要求の流れを模式的に示す。Package間の依存方向を示すものではない。
+
+Frontendでは、取得したデータを画面で扱える状態に整える経路と、ユーザーの操作要求をBackendへ伝える経路を区別する。送信側の具体的な構成は、後続の設計で明確にする。
+
+Backendでは、Application Serviceが操作要求を処理し、Persistence Portを介してPersistence Adapterに永続化を委ねる。
+
+#### Architecture Principles
+
+##### Go Service First
+
+Application Serviceは、Wailsに依存しない通常のGo Serviceとして実装する。
+
+WailsはFrontendとBackendを接続するために利用し、業務処理をWails固有の実装へ持ち込まない。
+
+##### Model Separation
+
+Application内部では、責務に応じてモデルと状態の表現を分離する。
+
+Backendでは、以下の3種類のモデルを区別する。
+
+- **Business Model**：業務上の概念と成立条件を表す。
+- **Public Model**：Application Serviceが提供するOperationの入出力契約を表す。
+- **Persistence Model**：永続化方式に適したデータ表現を表す。
+
+Public ModelはBusiness Modelの完全な写像ではない。取得系ではBusiness Modelの必要な側面を公開し、登録・更新系ではBusiness Modelを成立・変更させるための要求を表す。Business ModelとPublic Modelは一対一に対応する必要はない。
+
+Frontendでは、Public Modelをそのまま画面の状態として扱うとは限らない。公開IFの表現をFrontendで扱いやすい形に整え、表示、入力、操作に必要なStateを管理する。
+
+各モデルの変換責務はBackend Architectureで、Frontend内部の状態管理と公開IFへの適合はFrontend Architectureで定義する。
+
+##### Persistence Independence
+
+Application Serviceは、具体的な永続化方式に依存せず、Persistence Portを介して永続化操作を要求する。
+
+Application Serviceが定義するPersistence PortをPersistence Adapterが実装する。
+
+Application ServiceはPersistence Modelを認識せず、永続化方式に必要な変換と読み書きはPersistence Adapterが担当する。
+
+Package間の依存方向およびPort / Adapterの詳細はBackend Architectureで定義する。
+
+##### Wails Boundary
+
+FrontendとApplication Serviceの接続にはWails v3を使用する。
+
+Wails Boundaryは公開APIとデータの受け渡しを担う。Frontendとの境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
+
+Wailsが生成するBindingはFramework管理のコードとして扱い、手動編集しない。
+
+公開API、Bindingおよび境界でのエラー変換はWails Boundaryで定義する。
+
+##### Source of Truth
+
+Applicationが管理するデータのSource of Truthは、Persistence Adapterを通じて永続化されたデータとする。
+
+Frontend StateやApplication Service内のBusiness Modelは、永続化データの正本とはしない。
+
+Prototypeでは、File Persistence Adapterを使用し、ローカルYAMLを永続化先とする。
+
+具体的な永続化方式、データ構造および読み書きの仕様はApplication Specificationで定義する。
