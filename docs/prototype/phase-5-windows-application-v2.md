@@ -237,29 +237,25 @@ Frontend、Wails Boundary、Application Service、Persistence Adapterの責務�
 ```mermaid
 flowchart LR
     subgraph Frontend
-        direction TB
-        Store["Store"]
         Page["Page"]
-        Outbound["要求準備"]
-        Store -->|取得| Page
-        Page -->|送信| Outbound
+        Store["Store"]
+        Prep["要求準備"]
     end
 
     WB["Wails Boundary"]
 
     subgraph Backend
-        direction LR
         AS["Application Service"]
         PA["Persistence Adapter"]
-        AS <--> PA
     end
 
-    WB -->|取得| Store
-    Outbound -->|送信| WB
-    WB <--> AS
+    Page ~~~ Store
+    Store ~~~ Prep
+    Frontend --- WB
+    WB --- Backend
 ```
 
-この図は、Applicationの主要な構成要素と、それぞれの責務およびデータ・操作要求の流れを模式的に示す。Package間の依存方向を示すものではない。
+この図は、Applicationの主要な構成要素とその接続関係を模式的に示す。処理経路やPackage間の依存方向を示すものではない。
 
 Frontendでは、取得したデータを画面で扱える状態に整える経路と、ユーザーの操作要求をBackendへ伝える経路を区別する。送信側の具体的な構成は、後続の設計で明確にする。
 
