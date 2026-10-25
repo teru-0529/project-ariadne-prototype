@@ -232,34 +232,11 @@ PROJECT ARIADNEでは、**Go Service First**を基本方針とし、Application 
 
 Frontend、Wails Boundary、Application Service、Persistence Adapterの責務を分離し、構成要素間の接続とデータの受け渡しを明確にする。
 
-#### Architecture Diagram
+Frontend、Wails Boundary、Backendの3つをApplicationの基本構造とする。
 
-```mermaid
-flowchart LR
-    subgraph Frontend
-        Page["Page"]
-        Store["Store"]
-        Prep["要求準備"]
-    end
+Frontendは画面表示・入力および画面状態を扱い、Wails Boundaryを通じてBackendの機能を利用する。BackendはApplication Serviceを中心に業務処理と永続化を担う。
 
-    WB["Wails Boundary"]
-
-    subgraph Backend
-        AS["Application Service"]
-        PA["Persistence Adapter"]
-    end
-
-    Page ~~~ Store
-    Store ~~~ Prep
-    Frontend --- WB
-    WB --- Backend
-```
-
-この図は、Applicationの主要な構成要素とその接続関係を模式的に示す。処理経路やPackage間の依存方向を示すものではない。
-
-Frontendでは、取得したデータを画面で扱える状態に整える経路と、ユーザーの操作要求をBackendへ伝える経路を区別する。送信側の具体的な構成は、後続の設計で明確にする。
-
-Backendでは、Application Serviceが操作要求を処理し、Persistence Portを介してPersistence Adapterに永続化を委ねる。
+各構成要素の内部構造と責務は、後続の節で定義する。
 
 #### Architecture Principles
 
