@@ -235,26 +235,28 @@ Frontend、Wails Boundary、Application Service、Persistence Adapterの責務�
 #### Architecture Diagram
 
 ```mermaid
-flowchart TB
-    Page["Page"]
-    Store["Store"]
-    Outbound["送信側の要求準備（構成未決定）"]
-    WB["Wails Boundary"]
-    AS["Application Service"]
-    PA["Persistence Adapter"]
-
-    WB -->|取得データ| Store
-    Store -->|画面状態| Page
-    Page -->|操作要求| Outbound
-    Outbound -->|Public Model| WB
-    WB <-->|Public Model| AS
-    AS <-->|Persistence Portを介する| PA
-
+flowchart LR
     subgraph Frontend
-        Page
-        Store
-        Outbound
+        direction TB
+        Store["Store"]
+        Page["Page"]
+        Outbound["要求準備"]
+        Store -->|取得| Page
+        Page -->|送信| Outbound
     end
+
+    WB["Wails Boundary"]
+
+    subgraph Backend
+        direction LR
+        AS["Application Service"]
+        PA["Persistence Adapter"]
+        AS <--> PA
+    end
+
+    WB -->|取得| Store
+    Outbound -->|送信| WB
+    WB <--> AS
 ```
 
 この図は、Applicationの主要な構成要素と、それぞれの責務およびデータ・操作要求の流れを模式的に示す。Package間の依存方向を示すものではない。
