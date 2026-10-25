@@ -289,3 +289,76 @@ Frontend StateやApplication Service内のBusiness Modelは、永続化データ
 Prototypeでは、File Persistence Adapterを使用し、ローカルYAMLを永続化先とする。
 
 具体的な永続化方式、データ構造および読み書きの仕様はApplication Specificationで定義する。
+
+### 3.2 Backend Architecture
+
+#### 3.2.1 Backend Structure
+
+Backendでは、**Business Modelを中心にApplicationを構成する。**
+
+Business Modelは業務上の概念と成立条件を表し、**そのモデルが成立している限り、業務上の条件が満たされていることを保証する。** 不正な状態のBusiness Modelを生成・変更・復元させないことを設計上の責任とする。
+
+Application Serviceが業務処理を担い、Persistence AdapterがBusiness Modelの保存・復元を担う。
+
+Wails BoundaryとPersistence Adapterは、いずれもApplication Service側に依存するAdapterとして位置づける。
+
+```mermaid
+flowchart TB
+    S["Application Service<br/>Business Model"]
+    W["Wails Boundary<br/>(Inbound Adapter)"]
+    P["Persistence Adapter<br/>(Outbound Adapter)"]
+    W -->|依存| S
+    P -->|依存| S
+```
+
+図の矢印は、処理やデータの流れではなく、**ソースコード上の依存方向**を示す。Wails BoundaryはApplication ServiceのOperationを呼び出し、Persistence AdapterはApplication Service側で定義されたPersistence Portを実装する。
+
+Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義するInterfaceであり、Application Serviceと同じPackageに配置する。これにより、Application ServiceはPersistence Adapterの具体的な実装に依存しない。
+
+Persistence Portは、Application Serviceが必要とする操作を契約として定義する。操作の命名と粒度は、永続化技術の機能ではなく、Application Serviceが表現したい操作意図に基づいて決定する。
+
+#### 3.2.2 Application Service
+
+Application Serviceは、Business Modelを中心に、Applicationが提供する業務処理を実現する。
+
+Business Modelが保証する成立条件を前提として、Operationに必要な処理を組み立てる。
+
+主な責務は以下とする。
+
+- Business Modelを用いた業務処理の実行
+- Public ModelによるOperationの入出力契約の定義
+- Business ModelとPublic Modelの相互変換
+- Persistence Portを介したBusiness Modelの取得・保存要求
+
+Application Serviceは、Frontendの画面表示や具体的な永続化方式を認識しない。
+
+#### 3.2.3 Persistence Adapter
+
+Persistence Adapterは、Business Modelの保存・復元を実現する。
+
+永続化方式に応じたPersistence Modelを定義し、Business Modelとの相互変換を担当する。
+
+Application Serviceが操作の意図を決定し、Persistence AdapterはPersistence Portで定義された契約に従って実行する。
+
+Persistence Adapterは、具体的な保存形式や入出力処理を担当する。
+
+#### 3.2.4 Model Separation
+
+Backendでは、**Business Modelを中心とし、目的に応じてPublic ModelとPersistence Modelを定義する。**
+
+Public Modelは、Business Modelを外部から利用するための表現であり、Application Serviceが提供するOperationの入出力契約を表す。Business Modelの完全な写像である必要はない。
+
+Persistence Modelは、Business Modelを永続化方式に適合させた表現であり、保存・復元に使用する。
+
+Persistence Modelには、`createdAt`・`updatedAt`のような記録管理用Timestampを持たせることができる。これらはBusiness Modelの成立条件を表すものではなく、Business Modelには含めない。記録管理用TimestampはPersistence Adapterが生成・維持し、画面表示には使用しない。業務上必要な日時情報は、Business Modelに別途定義する。
+
+Business ModelとPublic Modelは、それぞれ独立したPackageで定義する。
+
+モデル間の変換責務は以下とする。
+
+| 変換 | 担当 |
+| --- | --- |
+| Business Model ↔ Public Model | Application Service |
+| Business Model ↔ Persistence Model | Persistence Adapter |
+
+Application ServiceはPersistence Modelを認識せず、Persistence AdapterはPublic Modelを認識しない。
