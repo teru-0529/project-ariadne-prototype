@@ -107,7 +107,7 @@ PROJECT ARIADNEでは、Testを技術要素ではなく、保証する範囲に�
 
 対象BehaviorのFrontend側の振る舞いを、公開されたSvelte Componentの適切な境界から確認する。
 
-Backendを利用する場合はWails Public APIをMockし、ユーザー操作に対する表示、状態変化、Validation Message、Toastなどを確認する。
+Backendを利用する場合はWailsが生成するBindingをMockし、ユーザー操作に対する表示、状態変化、Validation Message、Toastなどを確認する。
 
 子Component単位で網羅的にTestすることは目的とせず、1 Behavior = 1 Component = 1 Test Fileとも規定しない。
 
@@ -115,7 +115,7 @@ VitestとSvelte Testing Libraryを使用する。Test Codeは実装と分離し�
 
 **Backend Module Test（BMT）**
 
-対象BehaviorのBackend側の振る舞いを、Frontendに公開するWails Public APIではなく、その内側にあるApplication Serviceの公開APIを直接呼び出して確認する。
+対象BehaviorのBackend側の振る舞いを、Wails Boundaryを介さず、Application Serviceの公開Operationを直接呼び出して確認する。
 
 Test Codeは実装とは分離したTest用Packageに配置し、Behavior単位で整理する。1 Behavior = 1 Test Fileとは規定せず、Result PatternやTest Caseに応じて複数ファイルへ分割してよい。
 
@@ -222,3 +222,406 @@ DocumentationのPR運用では、アリアドネがBranch上で編集・Commit�
 Source Codeの実装・変更・Mergeはテルが行う。
 
 各Stepの完了時には、実装・検証結果、確定した設計判断、残課題を整理し、必要なDocumentとIssueを更新する。
+
+
+## 3. Application Architecture
+
+### 3.1 Architecture Overview
+
+PROJECT ARIADNEでは、**Go Service First**を基本方針とし、Application Serviceを中心としたArchitectureを採用する。
+
+**Frontend、Wails Boundary、Backendの3つをApplicationの基本構造とし、BackendにApplication Serviceが含まれる。**
+
+Frontendは画面表示・入力および画面状態を扱い、Wails Boundaryを通じてBackendの機能を利用する。BackendはApplication Serviceを中心に業務処理と永続化を担う。
+
+各構成要素の内部構造と責務は、後続の節で定義する。
+
+#### Architecture Principles
+
+##### Go Service First
+
+Application Serviceは、Wailsに依存しない通常のGo Serviceとして実装する。
+
+WailsはFrontendとBackendを接続するために利用し、業務処理をWails固有の実装へ持ち込まない。
+
+##### Model Separation
+
+Application内部では、責務に応じてモデルと状態の表現を分離する。
+
+Backendでは、以下の3種類のモデルを区別する。
+
+- **Business Model**：業務上の概念と成立条件を表す。
+- **Public Model**：Application Serviceが提供するOperationの入出力契約を表す。
+- **Persistence Model**：永続化方式に適したデータ表現を表す。
+
+Public ModelはBusiness Modelの完全な写像ではなく、Operationの目的に応じて必要な入出力を表す。取得用のPublic Modelと登録・更新用の入力モデルは独立して定義し、取得用モデルをそのまま入力モデルとして流用しない。
+
+Frontendでは、Public Modelをそのまま画面の状態として扱うとは限らない。必要に応じてPublic Modelの表現を変換し、画面の表示・入力・操作に必要な情報や状態を管理する。
+
+各モデルの変換責務はBackend Architectureで、Frontend内部の状態管理と公開IFへの適合はFrontend Architectureで定義する。
+
+##### Persistence Independence
+
+Application Serviceは、具体的な永続化方式に依存せず、Persistence Portを介して永続化操作を要求する。
+
+Application Serviceが定義するPersistence PortをPersistence Adapterが実装する。
+
+Application ServiceはPersistence Modelを認識せず、永続化方式に必要な変換と読み書きはPersistence Adapterが担当する。
+
+Package間の依存方向およびPort / Adapterの詳細はBackend Architectureで定義する。
+
+##### Wails Boundary
+
+FrontendとApplication Serviceの接続にはWails v3を使用する。
+
+Wails Boundaryは、FrontendとApplication Serviceの接続およびデータの受け渡しを担う。境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
+
+Wailsが生成するBindingはFramework管理のコードとして扱い、手動編集しない。
+
+Application Serviceとの接続、Bindingおよび境界でのエラー変換はWails Boundaryで定義する。
+
+##### Source of Truth
+
+Applicationが管理するデータのSource of Truthは、Persistence Adapterを通じて永続化されたデータとする。
+
+Frontend StateやApplication Service内のBusiness Modelは、永続化データの正本とはしない。
+
+具体的な永続化方式、データ構造および読み書きの仕様はApplication Specificationで定義する。
+
+### 3.2 Backend Architecture
+
+#### 3.2.1 Backend Structure
+
+Backendでは、**Business Modelを中心にApplicationを構成する。**
+
+Business Modelは業務上の概念と成立条件を表し、**登録・更新・復元のいずれにおいても、成立した時点ですべての成立条件を満たすことを保証する。** 成立条件を満たす前の入力情報や中間状態はBusiness Modelとして扱わず、不正な状態のBusiness Modelを生成・変更・復元させない。
+
+Business Modelの成立条件違反は、モデルとして成立しないことを表す。これをApplication上のどのErrorとして扱うかは、そのBusiness Modelを生成・変更・復元しようとした呼び出し元の文脈に応じて決定する。
+
+Application Serviceが業務処理を担い、Persistence AdapterがBusiness Modelの保存・復元を担う。
+
+Wails BoundaryとPersistence Adapterは、いずれもApplication Service側に依存するAdapterとして位置づける。
+
+```mermaid
+flowchart TB
+    S["Application Service<br/>Business Model"]
+    W["Wails Boundary<br/>(Inbound Adapter)"]
+    P["Persistence Adapter<br/>(Outbound Adapter)"]
+    W -->|依存| S
+    P -->|依存| S
+```
+
+図の矢印は、処理やデータの流れではなく、**ソースコード上の依存方向**を示す。Wails BoundaryはApplication ServiceのOperationを呼び出し、Persistence AdapterはApplication Service側で定義されたPersistence Portを実装する。
+
+Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義するInterfaceであり、Application Serviceと同じPackageに配置する。これにより、Application ServiceはPersistence Adapterの具体的な実装に依存しない。
+
+Persistence Portは、Application Serviceが必要とする操作を契約として定義する。操作の命名と粒度は、永続化技術の機能ではなく、Application Serviceが表現したい操作意図に基づいて決定する。
+
+#### 3.2.2 Application Service
+
+Application Serviceは、Business Modelを中心に、Applicationが提供する業務処理を実現する。
+
+Business Modelが保証する成立条件を前提として、Operationに必要な処理を組み立てる。
+
+主な責務は以下とする。
+
+- Business Modelを用いた業務処理の実行
+- Public ModelによるOperationの入出力契約の定義
+- Business ModelとPublic Modelの相互変換
+- Persistence Portを介したBusiness Modelの取得・保存要求
+
+Application Serviceは、Frontendの画面表示や具体的な永続化方式を認識しない。
+
+#### 3.2.3 Persistence Adapter
+
+Persistence Adapterは、Business Modelの保存・復元を実現する。
+
+永続化方式に応じたPersistence Modelを定義し、Business Modelとの相互変換を担当する。
+
+Application Serviceが操作の意図を決定し、Persistence AdapterはPersistence Portで定義された契約に従って実行する。
+
+Persistence Adapterは、具体的な保存形式や入出力処理を担当する。
+
+#### 3.2.4 Model Separation
+
+Backendでは、**Business Modelを中心とし、目的に応じてPublic ModelとPersistence Modelを定義する。**
+
+Public Modelは、Application Serviceが提供するOperationの入出力契約を表す。取得系ではBusiness Modelの必要な側面を公開し、登録・更新系ではBusiness Modelを成立・変更させるための要求を表す。Business ModelとPublic Modelは一対一に対応する必要はない。
+
+Persistence Modelは、Business Modelを永続化方式に適合させた表現であり、保存・復元に使用する。
+
+Persistence Modelには、`createdAt`・`updatedAt`のような記録管理用Timestampを持たせることができる。これらはBusiness Modelの成立条件を表すものではなく、Business Modelには含めない。記録管理用TimestampはPersistence Adapterが生成・維持し、画面表示には使用しない。業務上必要な日時情報は、Business Modelに別途定義する。
+
+Business ModelとPublic Modelは、それぞれ独立したPackageで定義する。
+
+モデル間の変換責務は以下とする。
+
+| 変換 | 担当 |
+| --- | --- |
+| Business Model ↔ Public Model | Application Service |
+| Business Model ↔ Persistence Model | Persistence Adapter |
+
+Application ServiceはPersistence Modelを認識せず、Persistence AdapterはPublic Modelを認識しない。
+
+
+### 3.3 Frontend Architecture
+
+#### 3.3.1 Frontend Structure
+
+Frontendの画面は、**業務Page、業務Component、Fieldの3階層**で構成する。
+
+各階層は、必要な下位要素を構成し、Ariadne系の共通Componentを利用して共通の表示構造や振る舞いを備える。Ariadne系Componentは独立した階層ではない。
+
+```mermaid
+flowchart TB
+    P["業務Page"]
+    C["業務Component"]
+    F["Field"]
+    AP["AriadnePage"]
+    AC["AriadneView / AriadneForm / AriadneListTable"]
+    AF["AriadneField"]
+    P -->|構成・利用| C
+    C -->|選択・配置| F
+    P -.->|利用| AP
+    C -.->|利用| AC
+    F -.->|利用| AF
+```
+
+図の実線は画面構成上の3階層の関係、破線は各階層が共通Componentを利用する関係を示す。処理の実行順序やデータ変換経路、厳密なSvelte Componentの包含関係を示すものではない。
+
+##### Field
+
+Fieldは、個々の値の表示・入力を担当する。Text、Textareaなどの汎用Fieldに加え、業務固有の意味や表示方法を持つFieldを定義できる。
+
+Fieldは`AriadneField`を利用し、Label、Value、Errorの共通構造と装飾を備える。個々のFieldは値の種類に応じた表示・入力方法を担当する。
+
+Fieldの表示形態は`reference`（参照表示）、`edit`（入力・変更）、`cell`（一覧表のセル表示）を区別する。各Fieldは用途に応じて必要な表示形態を実装し、3形態すべてを一律に要求しない。
+
+##### 業務Component
+
+業務Componentは、必要なFieldを選択し、値を割り当て、組み合わせと配置を決定する。
+
+業務Componentは、用途に応じて`AriadneView`、`AriadneForm`、`AriadneListTable`などを利用し、共通の表示・入力構造と振る舞いを備える。業務Component自身が、Field群の構成と利用する共通Componentの両方を決定する。
+
+- `AriadneView`：参照表示の共通構造とスクロール
+- `AriadneForm`：入力領域の共通構造、スクロール、Submit受付、操作ボタンの配置
+- `AriadneListTable`：一覧表示の共通構造、行・列の表示、スクロール
+
+##### 業務Page
+
+業務Pageは、画面全体を構成し、必要な業務Componentを利用する。
+
+業務Pageは`AriadnePage`を利用し、HeaderとContentsの共通構造を備える。`AriadnePage`はContents自体のスクロールを管理せず、必要なスクロールは内部のComponentが担当する。
+
+業務PageはStore / Contextと業務Componentを結びつけるが、Backendを直接呼び出さない。データ変換、入力値の再構成、登録・更新における要求内容の構築は3.3.2で定義する。
+
+##### Modal / Toast
+
+Confirmation ModalとNotification Toastは、画面構成の3階層とは別に、複数の画面から利用する共通Componentとする。
+
+- **Confirmation Modal**：意思確認を行い、判断結果を呼び出し元へ返す。業務処理の実行やNavigationの確定は担当しない。
+- **Notification Toast**：指定された通知内容を表示する。通知内容の決定や業務処理の結果判定は担当しない。
+
+Form利用時の意思確認と正常な登録・更新結果の通知は3.3.2、未保存変更がある場合の離脱確認は3.3.3、Error通知とLoggingの関係は3.5で定義する。
+
+#### 3.3.2 Frontend Data Management
+
+Frontendでは、データの取得・保持、業務データの分解・統合、個々の値の表現、画面における業務操作を、それぞれの責務に応じて分担する。
+
+##### Responsibility
+
+| 要素 | 責務 |
+| --- | --- |
+| **Feature Management** | Feature内の画面遷移を制御する |
+| **Context** | 遷移準備中の状態を含め、画面に対応するStoreを管理する |
+| **Store** | Backendからデータを取得・保持し、必要に応じて技術的な表現差異を補正する |
+| **業務Page** | 画面表示を構成し、画面における業務操作とBackendへの要求内容の構築を担当する |
+| **業務Component** | 業務データの分解・統合とFieldの配置を担当する |
+| **Field** | 個々の値の入力・表示と表現変換を担当する |
+
+##### Data Management
+
+Application全体で共有するStateはApplication側で管理し、特定のFeatureに属するStateは、そのFeatureの有効期間内で管理する。
+
+Feature内のデータ管理では、Contextが画面に対応するStoreを管理する。画面遷移の準備中に必要なStoreもContextが管理し、画面遷移の制御はFeature Managementが担当する。
+
+StoreはBackendから取得したPublic Modelを保持する。業務画面固有の加工は行わず、Wails Binding等による技術的な表現差異がある場合のみ必要な補正を行う。
+
+Storeは、Application Serviceの正常応答として想定しない`null`を受け取った場合、Errorとして扱う。
+
+業務PageはContextを介してStoreのデータを取得し、業務Componentへ渡す。
+
+業務Componentは業務データを個々のFieldへ分解し、Fieldから受け取った値を統合する。Fieldの選択・配置も担当する。
+
+Fieldは個々の値の表示・入力と表現変換を担当する。業務データ全体の構造は認識しない。
+
+入力値の変更有無はFieldが自身の保持する状態から判定し、上位Componentはその判定結果を利用する。上位Componentで変更有無を重複して判定しない。
+
+業務Componentによる統合はFieldの値をまとめるところまでとし、Backendへ渡すPublic Modelの構築は業務Pageが担当する。
+
+##### Validation
+
+Frontend Validationは、個々のFieldを対象とするSingle Field Validationと、複数Fieldの関係を対象とするCorrelation Validationに分ける。
+
+Frontend Validationは入力時の利用者支援を目的とし、Business Modelの成立条件を保証するものではない。Business Modelの成立条件はBackendで保証する。
+
+Field単位のValidationと複数FieldにまたがるValidationは、責務を分離して管理する。
+
+具体的な判定条件や実行タイミングはApplication Specificationで定義する。
+
+##### Operation Control
+
+業務Pageは、登録・更新など画面における業務操作を制御する。
+
+業務操作に必要な入力データを業務Componentから受け取り、Backendへの要求を構成する。
+
+登録・更新におけるBackend呼び出しは、Storeによるデータ取得とは別の責務として扱う。具体的な呼び出し方式と担当要素は、実装時に決定する。
+
+利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは判断結果を返すのみで、業務処理を実行しない。
+
+業務Pageは登録・更新の成功時にNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。この成功通知は未実装とする。
+
+#### 3.3.3 Navigation Management
+
+FrontendのNavigationは、Application全体のFeatureを切り替えるPrimary Navigationと、Feature内の画面を切り替えるFeature Navigationに分ける。
+
+##### Primary Navigation
+
+Primary Navigationは、Application全体のFeature切替を担当する。
+
+Featureを切り替える際は、切替前のFeature ComponentとそのStateを破棄する。再度同じFeatureを選択した場合は、新しいStateで開始する。
+
+Prototypeでは、TaskとConfigを切替対象とする。
+
+##### Feature Navigation
+
+Feature内の画面遷移はFeature Managementが制御する。
+
+Feature ManagementはNavigation Requestを受け付け、Contextを介して遷移先の準備と確定を行う。
+
+画面遷移は、**Prepare / Commitの二段階**で扱う。
+
+| 段階 | 責務 |
+| --- | --- |
+| **Prepare** | 遷移先画面に必要なデータを取得・準備する。現在の確定済みStateは変更しない |
+| **Commit** | Prepare成功後に遷移先を確定し、Navigation Stateと表示画面を切り替える |
+
+Prepareに失敗した場合はCommitせず、現在のNavigation Stateと表示画面を維持し、Error Handlingへ委ねる。
+
+Navigation Stateの確定と表示画面の切替は一貫して行い、選択状態と表示内容の不整合を防ぐ。
+
+遷移処理中は、重複するNavigation Requestを受け付けない。
+
+##### Navigation Data Refresh
+
+画面遷移に必要なデータは、Prepareの段階でBackendから取得する。
+
+Prototypeでは、Task ListからTask Referenceへ遷移する際、一覧で保持しているTaskSummaryを流用せず、指定されたIDによりTask詳細を取得する。
+
+##### Unsaved Changes
+
+未保存の変更がある画面から離脱する場合は、Confirmation Modalを利用して利用者の判断を確認する。
+
+Confirmation Modalは判断結果を返すのみとし、画面遷移の制御はFeature Managementが担当する。
+
+### 3.4 Wails Boundary
+
+Wails Boundaryは、FrontendとApplication Serviceを接続する境界である。
+
+Application ServiceはWailsに依存せず、Wails BoundaryがFrontendとの接続とErrorの公開用変換を担当する。
+
+#### 3.4.1 Application Service Connection
+
+Wails Boundaryは、Application ServiceのOperationのうち、Frontendから利用するものだけを接続する。
+
+Application Serviceへの処理委譲と、返却されたErrorのPublicErrorへの変換を担当する。
+
+Business LogicやValidationは実装しない。
+
+#### 3.4.2 Public Model / Binding
+
+FrontendとApplication Serviceの間で受け渡すデータにはPublic Modelを使用する。
+
+Wailsが生成するTypeScript BindingおよびModelはFramework管理のコードとして扱い、手動編集しない。
+
+
+### 3.5 Error Handling / Logging
+
+Applicationでは、Errorの原因情報を保持しながら、内部の診断情報とユーザーへ公開する情報を分離する。
+
+Error HandlingはBackend、Wails Boundary、Frontendの責務に分け、LoggingはApplication全体の共通方針として定義する。
+
+#### 3.5.1 Backend Error Handling
+
+BackendではGoのError Chainを使用し、下位Layerで発生したErrorを必要に応じてWrapして上位Layerへ伝達する。
+
+各Layerは、自身の責務に基づいてErrorを意味付けする。
+
+- **Persistence Adapter**は、永続化技術に固有の失敗をPersistence Portの契約に沿ったErrorへ変換する。
+- **Application Service**は、Operationの成立可否を判断し、必要に応じてApplicationとして意味のあるErrorへ変換する。
+
+Errorの変換時には原因情報を保持し、Application ServiceがPersistence Adapterの実装詳細に依存しないようにする。
+
+Errorの分類は、Applicationの振る舞いに必要な意味を基準とし、不要な詳細分類を上位Layerへ公開しない。
+
+具体的なError分類およびOperationごとの発生条件は第4章で定義する。
+
+#### 3.5.2 Wails Boundary Error Handling
+
+Wails Boundaryは、Application Serviceから伝達されたErrorを、Frontendへ公開可能な形式に変換する。
+
+Backend内部のError Chainをそのまま公開せず、公開用Messageを持つ`PublicError`へ変換する。
+
+`PublicError`は以下の情報を持つ。
+
+- `Processed`：公開用に処理済みであることを示す。
+- `Message`：Frontendへ公開するMessage。
+
+Application Error Codeは設けない。
+
+Wails Runtimeを通じて伝達された`PublicError`は、FrontendではJavaScriptの`Error.cause`から参照する。
+
+Prototypeでは、Backendのpanicに対する捕捉・回復処理を実装しない。想定外の形式で伝達されたErrorは、Frontend側のFallbackで扱う。
+
+#### 3.5.3 Frontend Error Handling
+
+Frontendでは、Frontend自身で発生したErrorと、Backendから伝達されたErrorを共通の仕組みで扱う。
+
+公開用に処理済みのErrorは、以下の形式で識別する。
+
+- `ProcessedError`：Frontend側で公開用に処理したError。
+- `Error.cause.Processed == true`：Wails Boundaryで公開用に処理したError。
+
+共通の`toErrorMessage`は、処理済みErrorから公開用Messageを取得する。
+
+公開用に処理済みであることを確認できないErrorは、未処理Errorとして扱う。この場合、内部情報をそのまま公開せず、共通の予期しないError Messageを使用する。
+
+未処理Errorへの対応は、通常のError Handling経路ではなく、想定外のErrorや伝達形式の不整合に備える防御的なFallbackとして位置付ける。
+
+業務操作で発生したErrorは業務Pageが、画面遷移のPrepareで発生したErrorはFeature Managementが、それぞれError Handlingへつなぐ。エラー通知用の公開Messageは`toErrorMessage`によって取得し、Notification Toastへ渡してユーザーへ通知する。Notification Toast自身はErrorの判定やMessageの決定を行わない。
+
+Toastの具体的な表示・操作仕様は第4章で定義する。
+
+#### 3.5.4 Logging
+
+Loggingは、診断に必要な情報を保持しながら、同じErrorに対する重複記録を避けることを基本とする。
+
+**Backend Logging**
+
+Backendでは、Errorを各Layerで重複して記録せず、Error Chainとして上位へ伝達する。
+
+原則としてWails Boundaryで診断情報を記録し、Frontendへ公開するMessageとは分離する。
+
+Information / Debugについては、その情報を認識しているLayerで記録する。
+
+**Frontend Logging**
+
+Frontendでは、公開用に処理済みであることを確認できないErrorを検出した箇所で診断情報を記録する。
+
+処理済みErrorについては、原則として重複して記録しない。
+
+**Prototype Scope**
+
+Prototypeでは、Errorの原因情報を失わない構造を優先し、本格的なApplication Loggingは必須実装としない。
+
+具体的なLogger、出力先、Log Format、Log Rotation等はCoreで検討する。
