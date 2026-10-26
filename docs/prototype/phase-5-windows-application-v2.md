@@ -107,7 +107,7 @@ PROJECT ARIADNEでは、Testを技術要素ではなく、保証する範囲に�
 
 対象BehaviorのFrontend側の振る舞いを、公開されたSvelte Componentの適切な境界から確認する。
 
-Backendを利用する場合はWails Public APIをMockし、ユーザー操作に対する表示、状態変化、Validation Message、Toastなどを確認する。
+Backendを利用する場合はWailsが生成するBindingをMockし、ユーザー操作に対する表示、状態変化、Validation Message、Toastなどを確認する。
 
 子Component単位で網羅的にTestすることは目的とせず、1 Behavior = 1 Component = 1 Test Fileとも規定しない。
 
@@ -115,7 +115,7 @@ VitestとSvelte Testing Libraryを使用する。Test Codeは実装と分離し�
 
 **Backend Module Test（BMT）**
 
-対象BehaviorのBackend側の振る舞いを、Frontendに公開するWails Public APIではなく、その内側にあるApplication Serviceの公開APIを直接呼び出して確認する。
+対象BehaviorのBackend側の振る舞いを、Wails Boundaryを介さず、Application Serviceの公開Operationを直接呼び出して確認する。
 
 Test Codeは実装とは分離したTest用Packageに配置し、Behavior単位で整理する。1 Behavior = 1 Test Fileとは規定せず、Result PatternやTest Caseに応じて複数ファイルへ分割してよい。
 
@@ -458,6 +458,8 @@ Fieldは個々の値の表示・入力と表現変換を担当する。業務デ
 ##### Validation
 
 Frontend Validationは、個々のFieldを対象とするSingle Field Validationと、複数Fieldの関係を対象とするCorrelation Validationに分ける。
+
+Frontend Validationは入力時の利用者支援を目的とし、Business Modelの成立条件を保証するものではない。Business Modelの成立条件はBackendで保証する。
 
 Field単位のValidationと複数FieldにまたがるValidationは、責務を分離して管理する。
 
