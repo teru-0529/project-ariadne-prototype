@@ -472,3 +472,46 @@ Field単位のValidationと複数FieldにまたがるValidationは、責務を�
 利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは判断結果を返すのみで、業務処理を実行しない。
 
 業務Pageは操作結果に応じてNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。
+
+#### 3.3.3 Navigation Management
+
+FrontendのNavigationは、Application全体のFeatureを切り替えるPrimary Navigationと、Feature内の画面を切り替えるFeature Navigationに分ける。
+
+##### Primary Navigation
+
+Primary Navigationは、Application全体のFeature切替を担当する。
+
+Featureを切り替える際は、切替前のFeature ComponentとそのStateを破棄する。再度同じFeatureを選択した場合は、新しいStateで開始する。
+
+Prototypeでは、TaskとConfigを切替対象とする。
+
+##### Feature Navigation
+
+Feature内の画面遷移はFeature Managementが制御する。
+
+Feature ManagementはNavigation Requestを受け付け、Contextを介して遷移先の準備と確定を行う。
+
+画面遷移は、**Prepare / Commitの二段階**で扱う。
+
+| 段階 | 責務 |
+| --- | --- |
+| **Prepare** | 遷移先画面に必要なデータを取得・準備する。現在の確定済みStateは変更しない |
+| **Commit** | Prepare成功後に遷移先を確定し、Navigation Stateと表示画面を切り替える |
+
+Prepareに失敗した場合はCommitせず、現在のNavigation Stateと表示画面を維持し、Error Handlingへ委ねる。
+
+Navigation Stateの確定と表示画面の切替は一貫して行い、選択状態と表示内容の不整合を防ぐ。
+
+遷移処理中は、重複するNavigation Requestを受け付けない。
+
+##### Navigation Data Refresh
+
+画面遷移に必要なデータは、Prepareの段階でBackendから取得する。
+
+Prototypeでは、Task ListからTask Referenceへ遷移する際、一覧で保持しているTaskSummaryを流用せず、指定されたIDによりTask詳細を取得する。
+
+##### Unsaved Changes
+
+未保存の変更がある画面から離脱する場合は、Confirmation Modalを利用して利用者の判断を確認する。
+
+Confirmation Modalは判断結果を返すのみとし、画面遷移の制御はFeature Managementが担当する。
