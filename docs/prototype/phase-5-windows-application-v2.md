@@ -425,3 +425,50 @@ Confirmation ModalとNotification Toastは、画面構成の3階層とは別に�
 - **Notification Toast**：指定された通知内容を表示する。通知内容の決定や業務処理の結果判定は担当しない。
 
 Form利用時の意思確認と正常な登録・更新結果の通知は3.3.2、未保存変更がある場合の離脱確認は3.3.3、Error通知とLoggingの関係は3.5で定義する。
+
+#### 3.3.2 Frontend Data Management
+
+Frontendでは、データの取得・保持、業務データの分解・統合、個々の値の表現、画面における業務操作を、それぞれの責務に応じて分担する。
+
+##### Responsibility
+
+| 要素 | 責務 |
+| --- | --- |
+| **Feature Management** | Feature内の画面遷移を制御する |
+| **Context** | 遷移準備中の状態を含め、画面に対応するStoreを管理する |
+| **Store** | Backendからデータを取得・保持し、必要に応じて技術的な表現差異を補正する |
+| **業務Page** | 画面表示を構成し、画面における業務操作とBackend連携を制御する |
+| **業務Component** | 業務データの分解・統合とFieldの配置を担当する |
+| **Field** | 個々の値の入力・表示と表現変換を担当する |
+
+##### Data Management
+
+Contextは画面に対応するStoreを管理する。画面遷移の準備中に必要なStoreもContextが管理し、画面遷移の制御はFeature Managementが担当する。
+
+StoreはBackendから取得したPublic Modelを保持する。業務画面固有の加工は行わず、Wails Binding等による技術的な表現差異がある場合のみ必要な補正を行う。
+
+業務PageはContextを介してStoreのデータを取得し、業務Componentへ渡す。
+
+業務Componentは業務データを個々のFieldへ分解し、Fieldから受け取った値を統合する。Fieldの選択・配置も担当する。
+
+Fieldは個々の値の表示・入力と表現変換を担当する。業務データ全体の構造は認識しない。
+
+業務Componentによる統合はFieldの値をまとめるところまでとし、Backendへ渡すPublic Modelの構築は業務Pageが担当する。
+
+##### Validation
+
+Frontend Validationは、個々のFieldを対象とするSingle Field Validationと、複数Fieldの関係を対象とするCorrelation Validationに分ける。
+
+Field単位のValidationと複数FieldにまたがるValidationは、責務を分離して管理する。
+
+具体的な判定条件や実行タイミングはApplication Specificationで定義する。
+
+##### Operation Control
+
+業務Pageは、登録・更新など画面における業務操作を制御する。
+
+業務操作に必要な入力データを業務Componentから受け取り、Backendへの要求を構成する。
+
+利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは判断結果を返すのみで、業務処理を実行しない。
+
+業務Pageは操作結果に応じてNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。
