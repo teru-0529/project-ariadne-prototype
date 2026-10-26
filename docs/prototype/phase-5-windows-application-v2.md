@@ -362,3 +362,66 @@ Business ModelとPublic Modelは、それぞれ独立したPackageで定義す�
 | Business Model ↔ Persistence Model | Persistence Adapter |
 
 Application ServiceはPersistence Modelを認識せず、Persistence AdapterはPublic Modelを認識しない。
+
+
+### 3.3 Frontend Architecture
+
+#### 3.3.1 Frontend Structure
+
+Frontendの画面は、**業務Page、業務Component、Fieldの3階層**で構成する。
+
+各階層は、必要な下位要素を構成し、Ariadne系の共通Componentを利用して共通の表示構造や振る舞いを備える。Ariadne系Componentは独立した階層ではない。
+
+```mermaid
+flowchart TB
+    P["業務Page"]
+    C["業務Component"]
+    F["Field"]
+    AP["AriadnePage"]
+    AC["AriadneView / AriadneForm / AriadneListTable"]
+    AF["AriadneField"]
+    P -->|構成・利用| C
+    C -->|選択・配置| F
+    P -.->|利用| AP
+    C -.->|利用| AC
+    F -.->|利用| AF
+```
+
+図の実線は画面構成上の3階層の関係、破線は各階層が共通Componentを利用する関係を示す。処理の実行順序やデータ変換経路、厳密なSvelte Componentの包含関係を示すものではない。
+
+##### Field
+
+Fieldは、個々の値の表示・入力を担当する。Text、Textareaなどの汎用Fieldに加え、業務固有の意味や表示方法を持つFieldを定義できる。
+
+Fieldは`AriadneField`を利用し、Label、Value、Errorの共通構造と装飾を備える。個々のFieldは値の種類に応じた表示・入力方法を担当する。
+
+Fieldの表示形態は`reference`（参照表示）、`edit`（入力・変更）、`cell`（一覧表のセル表示）を区別する。各Fieldは用途に応じて必要な表示形態を実装し、3形態すべてを一律に要求しない。
+
+##### 業務Component
+
+業務Componentは、必要なFieldを選択し、値を割り当て、組み合わせと配置を決定する。
+
+業務Componentは、用途に応じて`AriadneView`、`AriadneForm`、`AriadneListTable`などを利用し、共通の表示・入力構造と振る舞いを備える。業務Component自身が、Field群の構成と利用する共通Componentの両方を決定する。
+
+- `AriadneView`：参照表示の共通構造とスクロール
+- `AriadneForm`：入力領域の共通構造、スクロール、Submit受付、操作ボタンの配置
+- `AriadneListTable`：一覧表示の共通構造、行・列の表示、スクロール
+
+Tableにおける行・列・セルの構成と業務Componentの責務分担は、Snippet等の利用も含めて別途具体化する。
+
+##### 業務Page
+
+業務Pageは、画面全体を構成し、必要な業務Componentを利用する。
+
+業務Pageは`AriadnePage`を利用し、HeaderとContentsの共通構造を備える。`AriadnePage`はContents自体のスクロールを管理せず、必要なスクロールは内部のComponentが担当する。
+
+業務PageはStore / Contextと業務Componentを結びつけるが、Backendを直接呼び出さない。データ変換、入力値の再構成、更新処理の連携は3.3.2で定義する。
+
+##### Modal / Toast
+
+Confirmation ModalとNotification Toastは、画面構成の3階層とは別に、複数の画面から利用する共通Componentとする。
+
+- **Confirmation Modal**：意思確認を行い、判断結果を呼び出し元へ返す。業務処理の実行やNavigationの確定は担当しない。
+- **Notification Toast**：指定された通知内容を表示する。通知内容の決定や業務処理の結果判定は担当しない。
+
+Form利用時の意思確認と正常な登録・更新結果の通知は3.3.2、未保存変更がある場合の離脱確認は3.3.3、Error通知とLoggingの関係は3.5で定義する。
