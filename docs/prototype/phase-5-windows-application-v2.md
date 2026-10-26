@@ -254,9 +254,7 @@ Backendでは、以下の3種類のモデルを区別する。
 - **Public Model**：Application Serviceが提供するOperationの入出力契約を表す。
 - **Persistence Model**：永続化方式に適したデータ表現を表す。
 
-Public ModelはBusiness Modelの完全な写像ではない。取得系ではBusiness Modelの必要な側面を公開し、登録・更新系ではBusiness Modelを成立・変更させるための要求を表す。Business ModelとPublic Modelは一対一に対応する必要はない。
-
-取得用のPublic Modelと登録・更新用の入力モデルは、Operationの目的に応じて独立して定義し、取得用モデルをそのまま入力モデルとして流用しない。
+Public ModelはBusiness Modelの完全な写像ではなく、Operationの目的に応じて必要な入出力を表す。取得用のPublic Modelと登録・更新用の入力モデルは独立して定義し、取得用モデルをそのまま入力モデルとして流用しない。
 
 Frontendでは、Public Modelをそのまま画面の状態として扱うとは限らない。公開IFの表現をFrontendで扱いやすい形に整え、表示、入力、操作に必要なStateを管理する。
 
@@ -276,7 +274,7 @@ Package間の依存方向およびPort / Adapterの詳細はBackend Architecture
 
 FrontendとApplication Serviceの接続にはWails v3を使用する。
 
-Wails Boundaryは、Application ServiceのOperationのうち、Frontendから利用するものだけを接続し、データの受け渡しを担う。Frontendとの境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
+Wails Boundaryは、FrontendとApplication Serviceの接続およびデータの受け渡しを担う。境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
 
 Wailsが生成するBindingはFramework管理のコードとして扱い、手動編集しない。
 
@@ -298,9 +296,7 @@ Prototypeでは、File Persistence Adapterを使用し、ローカルYAMLを永�
 
 Backendでは、**Business Modelを中心にApplicationを構成する。**
 
-Business Modelは業務上の概念と成立条件を表し、**そのモデルが成立している限り、業務上の条件が満たされていることを保証する。** 不正な状態のBusiness Modelを生成・変更・復元させないことを設計上の責任とする。
-
-Business Modelは、登録・更新・復元のいずれの過程においても、成立した時点ですべての成立条件を満たしていなければならない。成立条件を満たす前の入力情報や中間状態は、Business Modelとして扱わない。
+Business Modelは業務上の概念と成立条件を表し、**登録・更新・復元のいずれにおいても、成立した時点ですべての成立条件を満たすことを保証する。** 成立条件を満たす前の入力情報や中間状態はBusiness Modelとして扱わず、不正な状態のBusiness Modelを生成・変更・復元させない。
 
 Business Modelの成立条件違反は、モデルとして成立しないことを表す。これをApplication上のどのErrorとして扱うかは、そのBusiness Modelを生成・変更・復元しようとした呼び出し元の文脈に応じて決定する。
 
@@ -352,7 +348,7 @@ Persistence Adapterは、具体的な保存形式や入出力処理を担当す�
 
 Backendでは、**Business Modelを中心とし、目的に応じてPublic ModelとPersistence Modelを定義する。**
 
-Public Modelは、Business Modelを外部から利用するための表現であり、Application Serviceが提供するOperationの入出力契約を表す。Business Modelの完全な写像である必要はない。
+Public Modelは、Application Serviceが提供するOperationの入出力契約を表す。取得系ではBusiness Modelの必要な側面を公開し、登録・更新系ではBusiness Modelを成立・変更させるための要求を表す。Business ModelとPublic Modelは一対一に対応する必要はない。
 
 Persistence Modelは、Business Modelを永続化方式に適合させた表現であり、保存・復元に使用する。
 
@@ -451,7 +447,7 @@ Frontendでは、データの取得・保持、業務データの分解・統合
 
 Application全体で共有するStateはApplication側で管理し、特定のFeatureに属するStateは、そのFeatureの有効期間内で管理する。
 
-Contextは画面に対応するStoreを管理する。画面遷移の準備中に必要なStoreもContextが管理し、画面遷移の制御はFeature Managementが担当する。
+Feature内のデータ管理では、Contextが画面に対応するStoreを管理する。画面遷移の準備中に必要なStoreもContextが管理し、画面遷移の制御はFeature Managementが担当する。
 
 StoreはBackendから取得したPublic Modelを保持する。業務画面固有の加工は行わず、Wails Binding等による技術的な表現差異がある場合のみ必要な補正を行う。
 
@@ -540,7 +536,7 @@ Application ServiceはWailsに依存せず、Wails BoundaryがFrontendとの接�
 
 #### 3.4.1 Application Service Connection
 
-Wails Boundaryは、Application ServiceのOperationをFrontendから利用できるように接続する。
+Wails Boundaryは、Application ServiceのOperationのうち、Frontendから利用するものだけを接続する。
 
 Application Serviceへの処理委譲と、返却されたErrorのPublicErrorへの変換を担当する。
 
