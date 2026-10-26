@@ -274,11 +274,11 @@ Package間の依存方向およびPort / Adapterの詳細はBackend Architecture
 
 FrontendとApplication Serviceの接続にはWails v3を使用する。
 
-Wails Boundaryは公開APIとデータの受け渡しを担う。Frontendとの境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
+Wails BoundaryはApplication ServiceのOperationをFrontendから利用できるように接続し、データの受け渡しを担う。Frontendとの境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
 
 Wailsが生成するBindingはFramework管理のコードとして扱い、手動編集しない。
 
-公開API、Bindingおよび境界でのエラー変換はWails Boundaryで定義する。
+Application Serviceとの接続、Bindingおよび境界でのエラー変換はWails Boundaryで定義する。
 
 ##### Source of Truth
 
@@ -415,7 +415,7 @@ Tableにおける行・列・セルの構成と業務Componentの責務分担は
 
 業務Pageは`AriadnePage`を利用し、HeaderとContentsの共通構造を備える。`AriadnePage`はContents自体のスクロールを管理せず、必要なスクロールは内部のComponentが担当する。
 
-業務PageはStore / Contextと業務Componentを結びつけるが、Backendを直接呼び出さない。データ変換、入力値の再構成、更新処理の連携は3.3.2で定義する。
+業務PageはStore / Contextと業務Componentを結びつけるが、Backendを直接呼び出さない。データ変換、入力値の再構成、登録・更新における要求内容の構築は3.3.2で定義する。
 
 ##### Modal / Toast
 
@@ -437,7 +437,7 @@ Frontendでは、データの取得・保持、業務データの分解・統合
 | **Feature Management** | Feature内の画面遷移を制御する |
 | **Context** | 遷移準備中の状態を含め、画面に対応するStoreを管理する |
 | **Store** | Backendからデータを取得・保持し、必要に応じて技術的な表現差異を補正する |
-| **業務Page** | 画面表示を構成し、画面における業務操作とBackend連携を制御する |
+| **業務Page** | 画面表示を構成し、画面における業務操作とBackendへの要求内容の構築を担当する |
 | **業務Component** | 業務データの分解・統合とFieldの配置を担当する |
 | **Field** | 個々の値の入力・表示と表現変換を担当する |
 
@@ -469,9 +469,11 @@ Field単位のValidationと複数FieldにまたがるValidationは、責務を�
 
 業務操作に必要な入力データを業務Componentから受け取り、Backendへの要求を構成する。
 
+登録・更新におけるBackend呼び出しは、Storeによるデータ取得とは別の責務として扱う。具体的な呼び出し方式と担当要素は、実装時に決定する。
+
 利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは判断結果を返すのみで、業務処理を実行しない。
 
-業務Pageは操作結果に応じてNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。
+業務Pageは登録・更新の成功時にNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。この成功通知は未実装とする。
 
 #### 3.3.3 Navigation Management
 
@@ -522,11 +524,11 @@ Wails Boundaryは、FrontendとApplication Serviceを接続する境界である
 
 Application ServiceはWailsに依存せず、Wails BoundaryがFrontendとの接続とErrorの公開用変換を担当する。
 
-#### 3.4.1 Public API
+#### 3.4.1 Application Service Connection
 
-Wails Boundaryは、Application ServiceのOperationをFrontendへ公開するためのPublic APIを定義する。
+Wails Boundaryは、Application ServiceのOperationをFrontendから利用できるように接続する。
 
-Public APIは、Application Serviceへの処理委譲と、返却されたErrorのPublicErrorへの変換を担当する。
+Application Serviceへの処理委譲と、返却されたErrorのPublicErrorへの変換を担当する。
 
 Business LogicやValidationは実装しない。
 
@@ -588,7 +590,7 @@ Frontendでは、Frontend自身で発生したErrorと、Backendから伝達さ�
 
 公開用に処理済みであることを確認できないErrorは、未処理Errorとして扱う。この場合、内部情報をそのまま公開せず、共通の予期しないError Messageを使用する。
 
-業務操作で発生したErrorは業務Pageが、画面遷移のPrepareで発生したErrorはFeature Managementが、それぞれError Handlingへつなぐ。公開用Messageは`toErrorMessage`によって取得し、Notification Toastへ渡してユーザーへ通知する。Notification Toast自身はErrorの判定やMessageの決定を行わない。
+業務操作で発生したErrorは業務Pageが、画面遷移のPrepareで発生したErrorはFeature Managementが、それぞれError Handlingへつなぐ。エラー通知用の公開Messageは`toErrorMessage`によって取得し、Notification Toastへ渡してユーザーへ通知する。Notification Toast自身はErrorの判定やMessageの決定を行わない。
 
 Toastの具体的な表示・操作仕様は第4章で定義する。
 
