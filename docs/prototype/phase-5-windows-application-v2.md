@@ -515,3 +515,23 @@ Prototypeでは、Task ListからTask Referenceへ遷移する際、一覧で保
 未保存の変更がある画面から離脱する場合は、Confirmation Modalを利用して利用者の判断を確認する。
 
 Confirmation Modalは判断結果を返すのみとし、画面遷移の制御はFeature Managementが担当する。
+
+### 3.4 Wails Boundary
+
+Wails Boundaryは、FrontendとApplication Serviceを接続する境界である。
+
+Application ServiceはWailsに依存せず、Wails BoundaryがFrontendとの接続とErrorの公開用変換を担当する。
+
+#### 3.4.1 Public API
+
+Wails Boundaryは、Application ServiceのOperationをFrontendへ公開するためのPublic APIを定義する。
+
+Public APIは、Application Serviceへの処理委譲と、返却されたErrorのPublicErrorへの変換を担当する。
+
+Business LogicやValidationは実装しない。
+
+#### 3.4.2 Public Model / Binding
+
+FrontendとApplication Serviceの間で受け渡すデータにはPublic Modelを使用する。
+
+Wailsが生成するTypeScript BindingおよびModelはFramework管理のコードとして扱い、手動編集しない。
