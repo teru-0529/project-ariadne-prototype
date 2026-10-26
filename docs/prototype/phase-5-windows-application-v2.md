@@ -256,7 +256,7 @@ Backendでは、以下の3種類のモデルを区別する。
 
 Public ModelはBusiness Modelの完全な写像ではなく、Operationの目的に応じて必要な入出力を表す。取得用のPublic Modelと登録・更新用の入力モデルは独立して定義し、取得用モデルをそのまま入力モデルとして流用しない。
 
-Frontendでは、Public Modelをそのまま画面の状態として扱うとは限らない。公開IFの表現をFrontendで扱いやすい形に整え、表示、入力、操作に必要なStateを管理する。
+Frontendでは、Public Modelをそのまま画面の状態として扱うとは限らない。必要に応じてPublic Modelの表現を変換し、画面の表示・入力・操作に必要な情報や状態を管理する。
 
 各モデルの変換責務はBackend Architectureで、Frontend内部の状態管理と公開IFへの適合はFrontend Architectureで定義する。
 
@@ -285,8 +285,6 @@ Application Serviceとの接続、Bindingおよび境界でのエラー変換は
 Applicationが管理するデータのSource of Truthは、Persistence Adapterを通じて永続化されたデータとする。
 
 Frontend StateやApplication Service内のBusiness Modelは、永続化データの正本とはしない。
-
-Prototypeでは、File Persistence Adapterを使用し、ローカルYAMLを永続化先とする。
 
 具体的な永続化方式、データ構造および読み書きの仕様はApplication Specificationで定義する。
 
@@ -408,8 +406,6 @@ Fieldの表示形態は`reference`（参照表示）、`edit`（入力・変更�
 - `AriadneView`：参照表示の共通構造とスクロール
 - `AriadneForm`：入力領域の共通構造、スクロール、Submit受付、操作ボタンの配置
 - `AriadneListTable`：一覧表示の共通構造、行・列の表示、スクロール
-
-Tableにおける行・列・セルの構成と業務Componentの責務分担は、Snippet等の利用も含めて別途具体化する。
 
 ##### 業務Page
 
