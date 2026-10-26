@@ -625,3 +625,42 @@ Frontendでは、公開用に処理済みであることを確認できないErr
 Prototypeでは、Errorの原因情報を失わない構造を優先し、本格的なApplication Loggingは必須実装としない。
 
 具体的なLogger、出力先、Log Format、Log Rotation等はCoreで検討する。
+
+## 4. Application Specification
+
+本章では、PROJECT ARIADNEのApplication共通仕様と、Prototypeで題材とするTask管理の具体的な仕様を扱う。共通仕様はPROJECT ARIADNEのベースとなる振る舞いを定義し、必要に応じてPrototypeでの適用を示す。Task固有の仕様は4.4および4.5で定義する。
+
+### 4.1 Common UI Specification
+
+#### 4.1.1 Application Shell / Navigation
+
+##### Application Shell
+
+PROJECT ARIADNEのApplicationは、Header、Footer、Primary Navigation、および選択された機能の表示領域から構成する。
+
+- **Header**：Applicationを識別する情報を表示する。
+- **Footer**：Applicationに関する補助情報を表示する。
+- **Primary Navigation**：Applicationが提供する機能を切り替える。
+- **Feature Area**：選択された機能の画面を表示する。
+
+各機能は、必要に応じてSide NavigationとMain Areaを持つ。
+
+Prototypeでは、Headerに`PROJECT ARIADNE`を表示し、Primary NavigationにTaskとConfigを配置する。
+
+Task機能ではSide NavigationとMain Areaを使用する。Configは画面切替を確認するためのDummy Pageとし、設定機能自体は実装しない。
+
+##### Navigation
+
+Navigationは、Application全体の機能を切り替えるPrimary Navigationと、各機能内の画面を切り替えるFeature Navigationに分ける。
+
+Feature Navigationの表示には、必要に応じてSide Navigationを使用する。
+
+Primary Navigationによって機能を切り替えた場合は、選択された機能の画面を表示し、切替前の機能に属する画面とStateを破棄する。
+
+画面遷移では、ユーザーによるNavigation操作と、実際の遷移成立を区別する。
+
+遷移先で必要なデータがある場合は、遷移確定前に取得・準備する。準備に成功した場合のみ、Navigationの選択状態と表示画面を切り替える。
+
+準備に失敗した場合は遷移を確定せず、現在のNavigation選択状態と表示画面を維持し、Error Toastを表示する。
+
+PrototypeのTask管理では、Feature NavigationにSide Navigationを使用する。Task固有の画面構成、データ取得および遷移条件は、4.5 Task Functional Specificationで定義する。
