@@ -535,3 +535,83 @@ Business LogicやValidationは実装しない。
 FrontendとApplication Serviceの間で受け渡すデータにはPublic Modelを使用する。
 
 Wailsが生成するTypeScript BindingおよびModelはFramework管理のコードとして扱い、手動編集しない。
+
+
+### 3.5 Error Handling / Logging
+
+Applicationでは、Errorの原因情報を保持しながら、内部の診断情報とユーザーへ公開する情報を分離する。
+
+Error HandlingはBackend、Wails Boundary、Frontendの責務に分け、LoggingはApplication全体の共通方針として定義する。
+
+#### 3.5.1 Backend Error Handling
+
+BackendではGoのError Chainを使用し、下位Layerで発生したErrorを必要に応じてWrapして上位Layerへ伝達する。
+
+各Layerは、自身の責務に基づいてErrorを意味付けする。
+
+- **Persistence Adapter**は、永続化技術に固有の失敗をPersistence Portの契約に沿ったErrorへ変換する。
+- **Application Service**は、Operationの成立可否を判断し、必要に応じてApplicationとして意味のあるErrorへ変換する。
+
+Errorの変換時には原因情報を保持し、Application ServiceがPersistence Adapterの実装詳細に依存しないようにする。
+
+Errorの分類は、Applicationの振る舞いに必要な意味を基準とし、不要な詳細分類を上位Layerへ公開しない。
+
+具体的なError分類およびOperationごとの発生条件は第4章で定義する。
+
+#### 3.5.2 Wails Boundary Error Handling
+
+Wails Boundaryは、Application Serviceから伝達されたErrorを、Frontendへ公開可能な形式に変換する。
+
+Backend内部のError Chainをそのまま公開せず、公開用Messageを持つ`PublicError`へ変換する。
+
+`PublicError`は以下の情報を持つ。
+
+- `Processed`：公開用に処理済みであることを示す。
+- `Message`：Frontendへ公開するMessage。
+
+Application Error Codeは設けない。
+
+Wails Runtimeを通じて伝達された`PublicError`は、FrontendではJavaScriptの`Error.cause`から参照する。
+
+Prototypeでは、Backendのpanicに対する捕捉・回復処理を実装しない。想定外の形式で伝達されたErrorは、Frontend側のFallbackで扱う。
+
+#### 3.5.3 Frontend Error Handling
+
+Frontendでは、Frontend自身で発生したErrorと、Backendから伝達されたErrorを共通の仕組みで扱う。
+
+公開用に処理済みのErrorは、以下の形式で識別する。
+
+- `ProcessedError`：Frontend側で公開用に処理したError。
+- `Error.cause.Processed == true`：Wails Boundaryで公開用に処理したError。
+
+共通の`toErrorMessage`は、処理済みErrorから公開用Messageを取得する。
+
+公開用に処理済みであることを確認できないErrorは、未処理Errorとして扱う。この場合、内部情報をそのまま公開せず、共通の予期しないError Messageを使用する。
+
+業務操作で発生したErrorは業務Pageが、画面遷移のPrepareで発生したErrorはFeature Managementが、それぞれError Handlingへつなぐ。公開用Messageは`toErrorMessage`によって取得し、Notification Toastへ渡してユーザーへ通知する。Notification Toast自身はErrorの判定やMessageの決定を行わない。
+
+Toastの具体的な表示・操作仕様は第4章で定義する。
+
+#### 3.5.4 Logging
+
+Loggingは、診断に必要な情報を保持しながら、同じErrorに対する重複記録を避けることを基本とする。
+
+**Backend Logging**
+
+Backendでは、Errorを各Layerで重複して記録せず、Error Chainとして上位へ伝達する。
+
+原則としてWails Boundaryで診断情報を記録し、Frontendへ公開するMessageとは分離する。
+
+Information / Debugについては、その情報を認識しているLayerで記録する。
+
+**Frontend Logging**
+
+Frontendでは、公開用に処理済みであることを確認できないErrorを検出した箇所で診断情報を記録する。
+
+処理済みErrorについては、原則として重複して記録しない。
+
+**Prototype Scope**
+
+Prototypeでは、Errorの原因情報を失わない構造を優先し、本格的なApplication Loggingは必須実装としない。
+
+具体的なLogger、出力先、Log Format、Log Rotation等はCoreで検討する。
