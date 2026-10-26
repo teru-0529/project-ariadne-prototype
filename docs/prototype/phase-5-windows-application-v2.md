@@ -664,3 +664,57 @@ Primary Navigationによって機能を切り替えた場合は、選択され�
 準備に失敗した場合は遷移を確定せず、現在のNavigation選択状態と表示画面を維持し、Error Toastを表示する。
 
 PrototypeのTask管理では、Feature NavigationにSide Navigationを使用する。Task固有の画面構成、データ取得および遷移条件は、4.5 Task Functional Specificationで定義する。
+
+#### 4.1.2 Common Layout Components
+
+PROJECT ARIADNEでは、Pageの構造、業務固有の表示・入力内容、および共通的な表示・操作の振る舞いを分離する。
+
+業務Page・業務Component・Fieldの構成と、各Ariadne系共通Componentの利用関係は、3.3.1 Frontend Structureで定義する。本節では、共通Layout Componentの具体的な表示・操作仕様を定義する。
+
+##### AriadnePage
+
+`AriadnePage`は、4.1.1で定義したFeature Area内に表示される業務Pageの共通構造を提供する。
+
+Page HeaderとContentsの表示領域を持つ。Page HeaderはApplication全体のHeaderとは別の領域とする。
+
+Contents自体はスクロールを管理せず、必要なスクロールは内部に配置されたComponentが担当する。
+
+##### AriadneView
+
+`AriadneView`は、参照表示のための共通コンテナを提供する。
+
+配置されたコンテンツが表示領域に収まらない場合は、コンテナ内部でスクロールする。
+
+表示するFieldの種類・配置・寸法は、利用側の業務Componentが決定する。
+
+##### AriadneForm
+
+`AriadneForm`は、入力領域の共通構造、内部スクロール、操作ボタンの配置、Submit受付、およびConfirmation Modalによる意思確認を提供する。
+
+操作ボタンはFormに割り当てられた表示領域の右下に固定し、入力内容との重なりを許容する。
+
+Submit時には利用側の業務ComponentへValidationを要求する。Validationが成功した場合のみConfirmation Modalを表示し、Confirm / Cancelの判断を受け付ける。
+
+Confirmされた場合は、利用側へ業務処理の実行を通知する。
+
+Confirmation ModalでCancelされた場合は、Modalを閉じてSubmitを中止する。業務処理の実行や画面遷移は要求しない。
+
+業務固有の入力項目、Validation Ruleおよび業務処理そのものは定義しない。
+
+Validationの具体的な動作は4.2 Validation Specificationで、Confirmation Modalの表示仕様は4.1.4で定義する。
+
+##### AriadneListTable
+
+`AriadneListTable`は、一覧表の表示領域、表示件数、および内部スクロールを提供する。
+
+一覧表の行・列の構成および表示するデータは、利用側の業務Componentが決定する。
+
+##### Layout / Scrolling
+
+業務Componentは、親から割り当てられた領域を利用してコンテンツを構成する。
+
+コンテンツの寸法は基本的に固定とし、Windowの縮小に合わせて自動的に縮小しない。
+
+スクロールが必要な場合は、該当する表示領域を管理するComponentが自身の内部でスクロールを提供する。
+
+Prototypeでは、Task一覧に`AriadneListTable`、Task詳細参照に`AriadneView`、Task作成に`AriadneForm`を利用する。
