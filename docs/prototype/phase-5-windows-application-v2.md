@@ -878,6 +878,8 @@ ValidityとError Messageは、一つのValidation結果として整合性を保�
 
 Single Field ValidationとCorrelation Validationは、それぞれ自身のValidation結果を管理する。
 
+FieldとCorrelationValidatorは、それぞれ自身のStateを正本として保持する。業務Componentは公開されたStateからForm全体の状態を導出し、同じStateを別の正本として複製・管理しない。
+
 ##### Correlation Validation Mode
 
 各`CorrelationValidator`は、自身の実行状態として`INITIAL / ACTIVE`を保持する。Form全体で共通のModeを別途保持しない。
@@ -910,6 +912,10 @@ Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義�
 ##### Responsibility
 
 Fieldは、自身の入力値とSingle Field Validationの結果を管理する。
+
+Fieldの値のStateは、変更前の値`originalValue: T | null`と現在の入力値`currentValue: T`で表す。`originalValue`の`null`は変更前の値が存在しないことを表し、`currentValue`は`null`を取らない。
+
+変更有無は`isChanged()`で両者を比較して導出し、独立した変更フラグを保持しない。Createでは`originalValue`を`null`とし、Editでは取得した変更前の値を設定する。具体的な初期値はTask Create / Editの仕様で定義する。
 
 Validation結果は`UNKNOWN`、`VALID`、`INVALID`のValidityとError Messageで表し、両者を整合する組として更新する。
 
@@ -1209,7 +1215,9 @@ Applicationは、自身が対応するVersionを基準に、次の条件をす�
 - MajorがApplicationの対応Majorと一致する。
 - FileのMinorがApplicationの対応Minor以下である。
 
-条件を満たさないVersionはUnsupported Versionとして扱う。
+MajorがApplicationの対応Majorと異なる場合はUnsupported Versionとして扱う。
+
+Majorが一致していても、FileのMinorがApplicationの対応Minorを超える場合はRead Failureとして扱う。
 
 `format`の不一致はRead Failureとして扱う。
 
@@ -1265,7 +1273,7 @@ Canonical FileのReplaceに失敗した場合は、Write Failureとして扱う�
 
 Persistence Adapterは、ファイルの読み込み・解析・検証・Business Modelへの復元に失敗した場合、原因情報を保持してRead Failureを返す。
 
-ただし、対応していないVersionは、Read Failureと区別してUnsupported Versionとする。
+ただし、Applicationの対応Majorと異なるVersionは、Read Failureと区別してUnsupported Versionとする。同一MajorでApplicationの対応Minorを超えるVersionはRead Failureとする。
 
 指定された識別子に対応するデータが存在しない場合は、ファイルの読み込み失敗とは区別してNot Foundとする。
 
@@ -1509,6 +1517,12 @@ Task Listには、`TaskSummary`のPropertyを表示する。
 
 Task数が一覧表示領域を超える場合は、一覧領域内でスクロールできるようにする。
 
+##### Retrieval Failure
+
+`ListTasks`による取得に失敗した場合は、遷移を確定せず、現在の画面とNavigationの選択状態を維持してError Toastを表示する。
+
+ファイルの読み込み・解析・復元の失敗、および同一Majorで対応Minorを超えるVersionはRead Failureとする。対応Majorが異なる場合はUnsupported Versionとする。
+
 ##### Task Selection
 
 一覧からTaskを選択した場合、対象Taskの詳細画面へ遷移する。
@@ -1524,6 +1538,8 @@ Task ListでTaskを選択すると、`TaskDetailPage`へ遷移する。
 Task Listで保持している`TaskSummary`を詳細表示に流用せず、選択したTaskのIDを使って`GetTask`で再取得する。
 
 取得結果にはPublic Modelの`Task`を使用する。
+
+`GetTask`による取得に失敗した場合は、Task Detailへの遷移を確定せず、Task Listの画面とNavigationの選択状態を維持してError Toastを表示する。対象Taskが存在しない場合はNot Found、ファイルの読み込み・解析・復元の失敗はRead Failureとする。対応Majorが異なる場合はUnsupported Versionとする。
 
 ##### Display Mode
 
