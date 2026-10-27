@@ -772,3 +772,39 @@ Validationの実行タイミング、Error StateおよびError Messageの表示�
 Prototypeでは、共通Fieldとして`TextField`、`SubTextField`、`TextareaField`を使用する。
 
 Task固有のFieldとして`TaskPriorityField`と`TaskStatusField`を使用する。これらの業務上の意味と表示内容は、4.5 Task Functional Specificationで定義する。
+
+#### 4.1.4 Confirmation Modal
+
+Confirmation Modalは、ユーザーによる最終的な意思確認が必要な操作で使用する共通UIとする。
+
+Modalは操作の実行可否についてユーザーの判断を受け付けるものであり、業務処理の実行や処理結果の通知は担当しない。
+
+##### Display / Operation
+
+Confirmation Modalは、確認対象の操作内容を表示し、ConfirmとCancelの選択肢を提供する。
+
+- **Confirm**：Modalを閉じ、呼び出し元へ確定の判断結果を返す。
+- **Cancel**：Modalを閉じ、呼び出し元へ取消の判断結果を返す。
+
+Modal自体は、業務処理の実行、入力Stateの変更、および画面遷移を行わない。
+
+##### Usage
+
+Confirmation Modalは、以下のような意思確認に使用する。
+
+- **業務操作の最終確認**：登録・更新等の処理を実行するか確認する。
+- **未保存変更がある場合の離脱確認**：変更を破棄して画面遷移を続行するか確認する。
+
+Modalの判断結果に応じた処理は、呼び出し元が担当する。
+
+##### Formとの連携
+
+`AriadneForm`から業務操作の最終確認に使用する場合、必要なValidationが成功した後にConfirmation Modalを表示する。
+
+Confirmされた場合は、Formが利用側へ業務処理の実行を通知する。
+
+Cancelされた場合は、FormがSubmitを中止し、業務処理の実行や画面遷移を要求しない。
+
+##### Prototypeでの適用
+
+Prototypeでは、Taskの登録・更新時の最終確認、および未保存変更がある場合の画面離脱確認にConfirmation Modalを使用する。
