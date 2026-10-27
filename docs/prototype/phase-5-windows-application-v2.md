@@ -1467,3 +1467,13 @@ TaskのYAML Sequence順を一覧表示順とする。
 PrototypeではSortを行わない。
 
 CreateではTaskをSequence末尾へ追加し、Modifyでは既存Taskの位置を維持する。
+
+#### 4.4.5 Task File Existence
+
+Prototypeでは、`tasks.yaml`が事前に存在することを前提とする。
+
+Applicationによる`tasks.yaml`の自動生成および初期化処理は実装しない。
+
+Taskが0件の場合は正常な空集合として扱う。一方、`tasks.yaml`が存在しない場合はRead Failureとし、空集合とは区別する。
+
+Project / Workspaceの初期化方式はPrototypeの対象外とし、Coreで必要に応じて検討する。
