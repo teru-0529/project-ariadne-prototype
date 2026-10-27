@@ -1484,7 +1484,9 @@ Project / Workspaceの初期化方式はPrototypeの対象外とし、Coreで必
 
 ##### Task Retrieval
 
-Task Listでは、`ListTasks`を使用してTaskの一覧を取得する。
+Task Listは`TaskListPage`で表示する。
+
+`TaskListPage`では、`ListTasks`を使用してTaskの一覧を取得する。
 
 取得結果には`TaskSummary`を使用する。
 
@@ -1512,3 +1514,49 @@ Task数が一覧表示領域を超える場合は、一覧領域内でスクロ�
 ##### Task Selection
 
 一覧からTaskを選択した場合、対象Taskの詳細画面へ遷移する。
+
+#### 4.5.2 Task Detail
+
+##### Initial Display
+
+Task ListでTaskを選択すると、`TaskDetailPage`へ遷移する。
+
+`TaskDetailPage`の初期Modeは`reference`とする。
+
+Task Listで保持している`TaskSummary`を詳細表示に流用せず、選択したTaskのIDを使って`GetTask`で再取得する。
+
+取得結果にはPublic Modelの`Task`を使用する。
+
+##### Display Mode
+
+`TaskDetailPage`には、`reference / edit`を切り替えるToggleを配置する。
+
+| Mode | Behavior |
+|---|---|
+| `reference` | Taskの内容を参照表示する |
+| `edit` | Taskの内容を編集する |
+
+ToggleによるMode切替は実装済みとする。Edit機能の実装はStep 6で行う。
+
+##### Mode Transition
+
+| Transition | Task Data Handling | Implementation |
+|---|---|---|
+| List → Detail（reference） | IDを使って`GetTask`で再取得する | 実装済み |
+| reference → edit（Toggle） | Referenceで保持しているTaskをそのまま利用する | 未実装 |
+| edit → reference（Toggle） | IDを使って`GetTask`で再取得する | 未実装 |
+| edit → reference（更新成功） | 更新成功後、IDを使って`GetTask`で再取得する | 未実装 |
+
+Referenceへ戻る際は、Edit中の入力値を参照表示に流用せず、永続化されたTaskを再取得する。
+
+##### Unsaved Changes
+
+Edit中に未保存の変更がある状態で別画面へ遷移しようとした場合、またはToggleでReferenceへ切り替えようとした場合は、Confirmation Modalを表示する。
+
+ユーザーが遷移を承認した場合は、変更を破棄して遷移する。
+
+ユーザーが遷移をキャンセルした場合は、Edit画面を維持する。
+
+未保存の変更がない場合は、Confirmation Modalを表示せずに遷移する。
+
+この振る舞いはStep 6で実装する。
