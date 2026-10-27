@@ -1046,7 +1046,7 @@ Validation成功時、AriadneFormはConfirmation Modalを表示する。
 
 Validation失敗時、Confirmation Modalは表示せず、入力画面を維持する。
 
-Confirmation ModalのConfirm / Cancelに対する動作は4.1.2 Common Layout Componentsおよび4.1.4 Confirmation Modalに従う。
+Confirmation ModalのConfirm / Cancelに対する動作は、4.1.2のAriadneFormおよび4.1.4 Confirmation Modalに従う。
 
 ModalのConfirm時にはValidationを再実行せず、利用側へ業務処理の実行を通知する。
 
