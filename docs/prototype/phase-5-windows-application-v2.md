@@ -1282,3 +1282,58 @@ Backend全体のError Chain、公開用Errorへの変換、Loggingについて�
 Prototypeでは、Backup GenerationおよびCrash Recovery機構を実装しない。
 
 Windows上でのCanonical Fileの安全な置き換え方法は、実装時の技術検証対象とする。
+
+### 4.4 Task Data Specification
+
+#### 4.4.1 Business Task
+
+##### Task Properties
+
+Business Taskは、Task管理におけるBusiness Modelとする。
+
+```text
+Task
+├─ id
+├─ title
+├─ description
+├─ priority
+└─ status
+```
+
+| Property | Definition |
+|---|---|
+| `id` | ULID。TaskのIdentity |
+| `title` | 必須。空文字・空白のみ不可。最大80文字 |
+| `description` | 任意。複数行可 |
+| `priority` | 必須。1〜5。値が大きいほどPriorityが高い |
+| `status` | 必須。`TODO / DOING / DONE` |
+
+Business Taskは`createdAt / updatedAt`を持たない。これらはPersistence Modelで管理する。
+
+##### Task Identity
+
+TaskのIdentityにはULIDを使用する。
+
+新規Taskの生成時にIDを設定し、Business Taskが成立した時点でIdentityが確定していることを保証する。
+
+Persistence AdapterはIDを生成・変更しない。
+
+既存Taskの変更時は、Identityを維持する。
+
+##### Task Validation
+
+Taskの成立条件はBusiness Modelに一元化する。
+
+Taskの新規生成、変更、Persistence Modelからの復元では、共通の成立条件を適用する。
+
+成立条件を満たさないTaskは、Business Modelとして成立させない。
+
+Validation Failureは、Taskとして成立できないことを表す。Application上のErrorへの変換は、発生したContextに応じて行う。
+
+##### Responsibility
+
+Application Serviceは、Taskの生成・変更を指示し、成立したBusiness TaskをPersistence Portへ渡す。
+
+Business Modelは自身の成立条件を保証する。
+
+Persistence Adapterは、成立済みのBusiness Taskを永続化し、保存データからBusiness Taskを復元する。
