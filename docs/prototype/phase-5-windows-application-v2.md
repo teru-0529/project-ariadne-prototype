@@ -999,3 +999,43 @@ Submit時には、全Single Field Validationが成功した場合に限り、全
 CorrelationValidatorは自身のValidityとError Messageを保持し、両者を整合する組として更新する。
 
 Correlation Errorの表示先と優先順位は、4.2.5 Validation Error Presentationで定義する。
+
+#### 4.2.4 Form Submission Validation
+
+##### Submit Availability
+
+FormのSubmitボタンは、以下の条件をすべて満たす場合に有効とする。
+
+- いずれかのFieldに変更がある。
+- すべてのFieldのValidityがINVALIDではない。
+- すべてのCorrelationValidatorのValidityがINVALIDではない。
+
+ValidityがUNKNOWNの場合は、Submitボタンの有効化を妨げない。
+
+業務Componentは各FieldおよびCorrelationValidatorの状態からSubmit可否を導出し、AriadneFormへ渡す。
+
+Submitボタンの有効状態と、Submit時のValidation成功条件は区別する。
+
+##### Submit Validation
+
+Submit時には、業務Componentが以下の順序でValidationを実行する。
+
+1. 全FieldのError表示を有効化する。
+2. 全FieldのSingle Field Validationを実行する。
+3. 全FieldのValidityを確認する。
+4. 全FieldがVALIDの場合のみ、全CorrelationValidatorをactivateし、Correlation Validationを実行する。
+5. 全Fieldおよび全CorrelationValidatorがVALIDの場合に限り、Validation成功とする。
+
+全FieldがVALIDでない場合は、Correlation Validationを実行しない。これは、CorrelationValidatorが既にACTIVEの場合も同様とする。
+
+##### Submit Result
+
+業務Componentは、Validationの成否をAriadneFormへ返す。
+
+Validation成功時、AriadneFormはConfirmation Modalを表示する。
+
+Validation失敗時、Confirmation Modalは表示せず、入力画面を維持する。
+
+Confirmation ModalのConfirm / Cancelに対する動作は4.1.2 Common Layout Componentsおよび4.1.4 Confirmation Modalに従う。
+
+ModalのConfirm時にはValidationを再実行せず、利用側へ業務処理の実行を通知する。
