@@ -1124,3 +1124,54 @@ PrototypeではCriteriaを実装しない。
 
 PrototypeのTask管理では、上記Operationを使用する。Deleteに相当する操作は現時点では対象外とする。
 
+#### 4.3.2 File Persistence
+
+##### File Storage
+
+PROJECT ARIADNEは、ファイルによる永続化を基本とする。
+
+Persistence Adapterは、Persistence Portから要求されたBusiness Model単位の取得・格納を、ファイルの読み書きによって実現する。
+
+ファイルの具体的な形式・構造は、保存対象のデータごとに定義する。
+
+##### File Read
+
+ファイルからの取得は、全量Readを基本とする。
+
+Persistence Adapterは、ファイルを読み込み、保存形式の解析・検証を行い、Persistence ModelからBusiness Modelへ復元する。
+
+復元されたBusiness Modelは、その成立条件を満たしていなければならない。
+
+ファイルが存在しない場合はRead Failureとし、正常な空集合とは区別する。
+
+##### File Write
+
+格納操作では、Business Model単位のDepositまたはReplaceをファイルの内容へ反映する。
+
+| StoreIntent | Behavior |
+|---|---|
+| `Deposit` | 新しいBusiness Modelを格納する |
+| `Replace` | 指定された既存Business Modelを置き換える |
+
+Persistence Adapterは、StoreIntentに従って対象データを更新し、ファイル全体を書き込む。
+
+Storeに渡されるBusiness Modelは、識別子を含め、既に成立条件を満たしていることを前提とする。Persistence Adapterは識別子を生成しない。
+
+ファイルの書き込みは全量Writeを基本とする。
+
+Canonical Fileへの直接上書きは行わず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
+
+Safe Writeと失敗時の取り扱いは4.3.4で定義する。
+
+##### Record Metadata
+
+Persistence Adapterは、永続化に必要な記録管理情報として`createdAt`と`updatedAt`を管理する。
+
+| StoreIntent | `createdAt` | `updatedAt` |
+|---|---|---|
+| `Deposit` | 現在日時を設定 | `createdAt`と同じ日時を設定 |
+| `Replace` | 既存値を維持 | 現在日時に更新 |
+
+TimestampはTimezoneを含むRFC3339 / ISO 8601形式を使用する。
+
+これらのTimestampはPersistence Modelで保持し、Business Modelの成立条件には含めない。Application ServiceはTimestampを管理しない。
