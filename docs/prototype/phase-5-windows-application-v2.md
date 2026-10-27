@@ -947,3 +947,55 @@ FieldはValidityとは独立して、Error表示の有効状態を管理する�
 値変更時にはError表示の有効状態を維持する。
 
 具体的なError Messageの選択と表示優先順位は、4.2.5 Validation Error Presentationで定義する。
+
+#### 4.2.3 Correlation Validation Behavior
+
+##### Responsibility
+
+CorrelationValidatorは、複数Fieldの値の関係に対するValidationを管理する。
+
+各CorrelationValidatorは、以下の状態を保持する。
+
+- 自身のValidityとError Message
+- 自身の実行状態（INITIAL / ACTIVE）
+- 関連Fieldの値とValidity
+
+CorrelationValidatorはFieldを直接参照せず、利用側の業務Componentから関連Fieldの値とValidityを受け取る。
+
+##### State Update
+
+関連Fieldの値が変更された場合、CorrelationValidatorは対象Fieldの値を更新し、保持している対象FieldのValidityをUNKNOWNにする。
+
+関連FieldのValidityが通知された場合、CorrelationValidatorは対象FieldのValidityを更新する。
+
+いずれの場合も、自身のValidityをUNKNOWN、Error Messageをnullに更新する。
+
+これらの状態更新ではCorrelation Validationを実行せず、INITIAL / ACTIVEの状態も変更しない。
+
+##### Validation Execution
+
+Correlation Validationは、以下の条件に従って実行する。
+
+| Condition | Behavior |
+|---|---|
+| INITIAL | 相関条件を評価せず、UNKNOWN / nullとする |
+| ACTIVE、かつ関連FieldがすべてVALID | 相関条件を評価し、VALIDまたはINVALIDと対応するError Messageを設定する |
+| ACTIVE、かつ関連FieldにVALID以外が存在 | 相関条件を評価せず、UNKNOWN / nullとする |
+
+`activate()`は実行状態をACTIVEに変更する。既にACTIVEの場合は状態を変更しない。
+
+`activate()`自体は相関条件を評価しない。相関条件の評価は`validate()`で実行する。
+
+##### Validation Timing
+
+Focus Out時には、業務ComponentがFieldからの通知を受け、関連するCorrelationValidatorの`validate()`を呼び出す。
+
+Submit時には、全Single Field Validationが成功した場合に限り、全CorrelationValidatorを`activate()`し、`validate()`を実行する。
+
+具体的なSubmit手順は4.2.4 Form Submission Validationで定義する。
+
+##### Validation Result
+
+CorrelationValidatorは自身のValidityとError Messageを保持し、両者を整合する組として更新する。
+
+Correlation Errorの表示先と優先順位は、4.2.5 Validation Error Presentationで定義する。
