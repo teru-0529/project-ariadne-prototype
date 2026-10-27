@@ -1422,3 +1422,48 @@ Persistence ModelからBusiness Modelへの変換では、Propertyの存在を�
 | Business → Persistence | `nil`を空文字列`""`へ変換する |
 
 その他のPropertyは、それぞれのModelの定義に従って変換する。
+
+#### 4.4.4 Task YAML Format
+
+##### File Structure
+
+Taskの永続化ファイルは`tasks.yaml`とする。
+
+Rootは以下の構造を持つ。
+
+```yaml
+format: ariadne-tasks
+version: "2.1"
+
+tasks: []
+```
+
+| Property | Definition |
+|---|---|
+| `format` | `ariadne-tasks`固定 |
+| `version` | Prototypeでは`2.1` |
+| `tasks` | Persistence TaskのSequence |
+
+Versionの互換性と保存時の更新規則は4.3.3 Format / Version Compatibilityに従う。
+
+##### Task Representation
+
+Taskが0件の場合は`tasks: []`とする。
+
+`description`が空の場合は、以下の形式で保存する。
+
+```yaml
+description: ""
+```
+
+`description`に値がある場合は、1行の場合も含めてLiteral Block `|`を使用する。
+
+複数行の`description`は、Read / Write後も内容を維持する。
+
+##### Task Sequence
+
+TaskのYAML Sequence順を一覧表示順とする。
+
+PrototypeではSortを行わない。
+
+CreateではTaskをSequence末尾へ追加し、Modifyでは既存Taskの位置を維持する。
