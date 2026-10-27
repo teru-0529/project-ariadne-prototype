@@ -1175,3 +1175,52 @@ Persistence Adapterは、永続化に必要な記録管理情報として`create
 TimestampはTimezoneを含むRFC3339 / ISO 8601形式を使用する。
 
 これらのTimestampはPersistence Modelで保持し、Business Modelの成立条件には含めない。Application ServiceはTimestampを管理しない。
+
+#### 4.3.3 Format / Version Compatibility
+
+##### Format Identification
+
+永続化ファイルは、保存対象のデータ形式を識別する`format`と、その形式のVersionを表す`version`を持つ。
+
+`format`の具体的な値と対応Versionは、保存対象のデータごとに定義する。
+
+##### Version Scheme
+
+VersionはStringによる`Major.Minor`形式とする。
+
+- Major：互換性を維持できない形式変更を表す。
+- Minor：同一Major内での形式変更を表す。
+
+##### Read Compatibility
+
+Applicationは、自身が対応するVersionを基準に、次の条件をすべて満たすファイルを読み込み可能とする。
+
+- `format`が期待する形式と一致する。
+- MajorがApplicationの対応Majorと一致する。
+- FileのMinorがApplicationの対応Minor以下である。
+
+条件を満たさないVersionはUnsupported Versionとして扱う。
+
+`format`の不一致はRead Failureとして扱う。
+
+##### Write Version
+
+ファイル保存時は、読み込み元のMinor Versionにかかわらず、**Applicationが対応する最新のMinor Versionで保存する**。
+
+Major VersionはApplicationが対応するMajor Versionを使用する。
+
+これにより、旧Minor Versionのファイルを読み込んだ場合も、保存後はApplicationが対応するVersionへ更新される。
+
+##### Example
+
+Applicationの対応Versionが`2.1`の場合：
+
+| File Version | Read | Save後のVersion |
+|---|---|---|
+| `2.0` | OK | `2.1` |
+| `2.1` | OK | `2.1` |
+| `2.2` | NG | — |
+| `1.0` | NG | — |
+| `3.0` | NG | — |
+
+Versionの検証と保存時の更新はPersistence Adapterが担当する。
