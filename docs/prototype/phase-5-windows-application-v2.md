@@ -213,7 +213,7 @@ PROJECT ARIADNEでは、設計判断を保持するDocument、BehaviorとTestの
 | Phase正本 | 目的、設計原則、Architecture、Application Specificationなどの重要な設計判断を保持する | PR運用（アリアドネ） | 設計判断の確定・変更時に更新する |
 | Behavior Map | Phase全体のBehaviorを整理し、Step計画の入力とする | PR運用（アリアドネ） | Phase開始時に作成し、Behaviorや計画の変更に応じて更新する |
 | Behavior Test Specification | BehaviorごとのTest対象、条件、期待結果を定義する | PR運用（アリアドネ） | 各Behaviorの実装直前に具体化し、変更に応じて更新する |
-| Validation Rules | FieldおよびCorrelation Validationの判定条件を定義する | PR運用（アリアドネ） | 独立Documentとして維持するか第4章へ統合するかは、第4章の再編集時に判断する |
+| Validation Rules | FieldおよびCorrelation Validationの判定条件を定義する | PR運用（アリアドネ） | 独立Documentとして維持し、Task固有のSingle Field／Correlation Validationの判定条件を管理する |
 | GitHub Issue | Activity、Task、未決定事項、進捗、検討結果を管理する | 直接更新（アリアドネ） | 作業や検討の進行に合わせて更新する |
 | Source Code | Applicationの実装を保持する | PR運用（テル） | テルが自ら実装し、変更を管理する |
 
@@ -260,13 +260,17 @@ Frontendでは、Public Modelをそのまま画面の状態として扱うとは
 
 各モデルの変換責務はBackend Architectureで、Frontend内部の状態管理と公開IFへの適合はFrontend Architectureで定義する。
 
-##### Persistence Independence
+##### File-based Persistence
 
-Application Serviceは、具体的な永続化方式に依存せず、Persistence Portを介して永続化操作を要求する。
+PROJECT ARIADNEは、ファイルによる永続化を基本方針とする。Databaseへの置き換えを前提とした永続化方式の抽象化は行わない。
+
+Persistence Portは、Business Model単位の取得・格納を契約とし、登録と更新には共通の`Store` Operationを使用する。
+
+`Store`は`StoreIntent`によって新規登録（Deposit）と既存データの置き換え（Replace）を区別する。部分UpdateをPersistence Portの基本操作とはしない。
+
+Application Serviceは、ファイルの具体的な形式・構造・読み書き手順を認識せず、Persistence Adapterがそれらを担当する。
 
 Application Serviceが定義するPersistence PortをPersistence Adapterが実装する。
-
-Application ServiceはPersistence Modelを認識せず、永続化方式に必要な変換と読み書きはPersistence Adapterが担当する。
 
 Package間の依存方向およびPort / Adapterの詳細はBackend Architectureで定義する。
 
@@ -625,3 +629,952 @@ Frontendでは、公開用に処理済みであることを確認できないErr
 Prototypeでは、Errorの原因情報を失わない構造を優先し、本格的なApplication Loggingは必須実装としない。
 
 具体的なLogger、出力先、Log Format、Log Rotation等はCoreで検討する。
+
+## 4. Application Specification
+
+本章では、PROJECT ARIADNEのApplication共通仕様と、Prototypeで題材とするTask管理の具体的な仕様を扱う。共通仕様はPROJECT ARIADNEのベースとなる振る舞いを定義し、必要に応じてPrototypeでの適用を示す。Task固有の仕様は4.4および4.5で定義する。
+
+### 4.1 Common UI Specification
+
+#### 4.1.1 Application Shell / Navigation
+
+##### Application Shell
+
+PROJECT ARIADNEのApplicationは、Header、Footer、Primary Navigation、および選択された機能の表示領域から構成する。
+
+- **Header**：Applicationを識別する情報を表示する。
+- **Footer**：Applicationに関する補助情報を表示する。
+- **Primary Navigation**：Applicationが提供する機能を切り替える。
+- **Feature Area**：選択された機能の画面を表示する。
+
+各機能は、必要に応じてSide NavigationとMain Areaを持つ。
+
+Prototypeでは、Headerに`PROJECT ARIADNE`を表示し、Primary NavigationにTaskとConfigを配置する。
+
+Task機能ではSide NavigationとMain Areaを使用する。Configは画面切替を確認するためのDummy Pageとし、設定機能自体は実装しない。
+
+##### Navigation
+
+Navigationは、Application全体の機能を切り替えるPrimary Navigationと、各機能内の画面を切り替えるFeature Navigationに分ける。
+
+Feature Navigationの表示には、必要に応じてSide Navigationを使用する。
+
+Primary Navigationによって機能を切り替えた場合は、選択された機能の画面を表示し、切替前の機能に属する画面とStateを破棄する。
+
+画面遷移では、ユーザーによるNavigation操作と、実際の遷移成立を区別する。
+
+遷移先で必要なデータがある場合は、遷移確定前に取得・準備する。準備に成功した場合のみ、Navigationの選択状態と表示画面を切り替える。
+
+準備に失敗した場合は遷移を確定せず、現在のNavigation選択状態と表示画面を維持し、Error Toastを表示する。
+
+PrototypeのTask管理では、Feature NavigationにSide Navigationを使用する。Task固有の画面構成、データ取得および遷移条件は、4.5 Task Functional Specificationで定義する。
+
+#### 4.1.2 Common Layout Components
+
+PROJECT ARIADNEでは、Pageの構造、業務固有の表示・入力内容、および共通的な表示・操作の振る舞いを分離する。
+
+業務Page・業務Component・Fieldの構成と、各Ariadne系共通Componentの利用関係は、3.3.1 Frontend Structureで定義する。本節では、共通Layout Componentの具体的な表示・操作仕様を定義する。
+
+##### AriadnePage
+
+`AriadnePage`は、4.1.1で定義したFeature Area内に表示される業務Pageの共通構造を提供する。
+
+Page HeaderとContentsの表示領域を持つ。Page HeaderはApplication全体のHeaderとは別の領域とする。
+
+Contents自体はスクロールを管理せず、必要なスクロールは内部に配置されたComponentが担当する。
+
+##### AriadneView
+
+`AriadneView`は、参照表示のための共通コンテナを提供する。
+
+配置されたコンテンツが表示領域に収まらない場合は、コンテナ内部でスクロールする。
+
+表示するFieldの種類・配置・寸法は、利用側の業務Componentが決定する。
+
+##### AriadneForm
+
+`AriadneForm`は、入力領域の共通構造、内部スクロール、操作ボタンの配置、Submit受付、およびConfirmation Modalによる意思確認を提供する。
+
+操作ボタンはFormの表示領域の右下に固定する。入力内容との重なりは許容する。
+
+Submit時には利用側の業務ComponentへValidationを要求する。Validationが成功した場合のみConfirmation Modalを表示し、Confirm / Cancelの判断を受け付ける。
+
+Confirmされた場合は、利用側へ業務処理の実行を通知する。
+
+Confirmation ModalでCancelされた場合は、Modalを閉じてSubmitを中止する。業務処理の実行や画面遷移は要求しない。
+
+業務固有の入力項目、Validation Ruleおよび業務処理そのものは定義しない。
+
+Validationの具体的な動作は4.2 Validation Specificationで、Confirmation Modalの表示仕様は4.1.4で定義する。
+
+##### AriadneListTable
+
+`AriadneListTable`は、一覧表の表示領域、表示件数、および内部スクロールを提供する。
+
+一覧表の行・列の構成および表示するデータは、利用側の業務Componentが決定する。
+
+##### Layout / Scrolling
+
+業務Componentは、親から割り当てられた領域を利用してコンテンツを構成する。
+
+コンテンツの寸法は基本的に固定とし、Windowの縮小に合わせて自動的に縮小しない。
+
+スクロールが必要な場合は、該当する表示領域を管理するComponentが自身の内部でスクロールを提供する。
+
+Prototypeでは、Task一覧に`AriadneListTable`、Task詳細参照に`AriadneView`、Task作成に`AriadneForm`を利用する。
+
+#### 4.1.3 Common Field / Input Components
+
+PROJECT ARIADNEでは、Fieldの共通表示構造と、値の種類に応じた表示・入力方法を分離する。
+
+Fieldの構成、責務およびVariantの定義は3.3.1 Frontend Structureに従う。本節では、Fieldの共通的な表示・入力仕様を定義する。
+
+##### AriadneField
+
+`AriadneField`は、Label、Value、Errorの表示領域と共通の装飾を提供する。
+
+値の型や業務上の意味は扱わず、各Field Componentが値に応じた表示・入力方法を提供する。
+
+Fieldの幅と配置は利用側の業務Componentが決定し、Fieldは割り当てられた領域内で表示と必要な高さを管理する。
+
+##### Common Field / Variant
+
+共通Fieldは以下の3種類とし、用途に応じてVariantを使い分ける。
+
+| Field | reference | edit | cell |
+|---|:---:|:---:|:---:|
+| TextField | ○ | ○ | ○ |
+| SubTextField | ○ | — | ○ |
+| TextareaField | ○ | ○ | — |
+
+各Variantの表示・入力仕様は以下とする。
+
+**TextField**
+
+- `reference`：指定された行数に応じた固定の高さで表示する。省略表示は例外的な扱いとし、Tooltipによる補完は行わない。
+- `edit`：単一行Textの入力を提供する。
+- `cell`：一覧表のCell内に表示する。必要に応じて省略表示とTooltipによる補完を行う。
+
+**SubTextField**
+
+- `reference`：補助的なTextを表示する。省略時もTooltipによる補完は基本的に行わない。
+- `cell`：一覧表等で補助的なTextを表示する。省略時もTooltipによる補完は基本的に行わない。
+
+**TextareaField**
+
+- `reference`：固定の高さで表示し、内容が収まらない場合は内部スクロールによって全文を閲覧できるようにする。
+- `edit`：改行を含むTextの入力を提供する。
+
+##### Input / Validation
+
+`edit`では、入力値およびValidation Stateを利用側から受け取り、Fieldの表示に反映する。
+
+Validationの実行タイミング、Error StateおよびError Messageの表示仕様は4.2 Validation Specificationで定義する。
+
+##### Prototypeでの適用
+
+Prototypeでは、共通Fieldとして`TextField`、`SubTextField`、`TextareaField`を使用する。
+
+Task固有のFieldとして`TaskPriorityField`と`TaskStatusField`を使用する。これらの業務上の意味と表示内容は、4.5 Task Functional Specificationで定義する。
+
+#### 4.1.4 Confirmation Modal
+
+Confirmation Modalは、ユーザーによる最終的な意思確認が必要な操作で使用する共通UIとする。
+
+Modalは操作の実行可否についてユーザーの判断を受け付けるものであり、業務処理の実行や処理結果の通知は担当しない。
+
+##### Display / Operation
+
+Confirmation Modalは、確認対象の操作内容を表示し、ConfirmとCancelの選択肢を提供する。
+
+- **Confirm**：Modalを閉じ、呼び出し元へ確定の判断結果を返す。
+- **Cancel**：Modalを閉じ、呼び出し元へ取消の判断結果を返す。
+
+Modal自体は、業務処理の実行、入力Stateの変更、および画面遷移を行わない。
+
+##### Usage
+
+Confirmation Modalは、以下のような意思確認に使用する。
+
+- **業務操作の最終確認**：登録・更新等の処理を実行するか確認する。
+- **未保存変更がある場合の離脱確認**：変更を破棄して画面遷移を続行するか確認する。
+
+Modalの判断結果に応じた処理は、呼び出し元が担当する。
+
+##### Formとの連携
+
+`AriadneForm`から業務操作の最終確認に使用する場合、必要なValidationが成功した後にConfirmation Modalを表示する。
+
+Confirmされた場合は、Formが利用側へ業務処理の実行を通知する。
+
+Cancelされた場合は、FormがSubmitを中止し、業務処理の実行や画面遷移を要求しない。
+
+##### Prototypeでの適用
+
+Prototypeでは、Taskの登録・更新時の最終確認、および未保存変更がある場合の画面離脱確認にConfirmation Modalを使用する。
+
+#### 4.1.5 Notification Toast
+
+Notification Toastは、Applicationからユーザーへ情報やErrorを通知するための共通UIとする。
+
+Toastは指定された通知内容を表示するものであり、通知の必要性の判断、業務処理の結果判定、およびErrorの解釈は担当しない。
+
+##### Notification Types
+
+Notification Toastは、以下の種類を提供する。
+
+| Type | Purpose | Display | Dismissal |
+|---|---|---|---|
+| Info | 正常終了等の情報通知 | 青色のToast | 3秒後に自動消去、または外側クリックで消去 |
+| Error | Application Errorの通知 | 赤色のToast | 外側クリックで消去。自動消去しない |
+
+##### Display / Operation
+
+- Toastは画面右上に表示する。
+- 同時に表示するToastは最大1件とし、新しい通知が発生した場合は既存のToastを置き換える。
+- Close Buttonは設けない。
+- Toastの表示は、業務処理や画面遷移を妨げない。
+
+##### Usage
+
+- **Application Info**：業務操作の正常終了等を通知する。
+- **Application Error**：Backend処理の失敗、データ取得の失敗等を通知する。
+- **Frontend Validation Error**：原則としてToastを使用せず、対象Field付近に表示する。
+
+Frontend Validation ErrorとApplication Errorの区別、およびValidation Errorの表示仕様は4.2 Validation Specificationで定義する。
+
+##### Prototypeでの適用
+
+Prototypeでは、Taskの取得・登録・更新等で発生したApplication ErrorをError Toastで通知する。
+
+登録・更新の成功通知にはInfo Toastを使用する。
+
+### 4.2 Validation Specification
+
+#### 4.2.1 Validation Principles / State
+
+##### Validation Principles
+
+Frontend Validationは、入力時にユーザーが不正な値や項目間の不整合を確認・修正できるよう支援することを目的とする。
+
+Frontend ValidationはBusiness Modelの成立条件を保証するものではない。Business Modelの成立条件はBackendで保証する。
+
+Frontend Validationは、以下の2種類に分ける。
+
+| Type | Responsibility |
+|---|---|
+| Single Field Validation | 個々のFieldの値に対する判定 |
+| Correlation Validation | 複数Fieldの値の関係に対する判定 |
+
+Single Field ValidationとCorrelation Validationは、それぞれ独立したValidation結果を管理する。
+
+Validation Ruleは業務ごとに定義する。PrototypeのTask固有の判定条件は`validation-rules.md`に定義する。
+
+##### Validation State
+
+各Validationは、判定結果を表すValidityと、必要に応じたError Messageを保持する。
+
+ValidityとError Messageは、整合性を保ちながら一体として更新する。
+
+Single Field ValidationとCorrelation Validationは、それぞれ自身のValidation結果を管理する。
+
+FieldとCorrelationValidatorは、それぞれ自身のStateを正本として保持する。業務Componentは公開されたStateからForm全体の状態を導出し、同じStateを別の正本として複製・管理しない。
+
+##### Correlation Validation Mode
+
+各`CorrelationValidator`は、自身の実行状態として`INITIAL / ACTIVE`を保持する。Form全体で共通のModeを別途保持しない。
+
+| Mode | Meaning |
+|---|---|
+| INITIAL | Submitに伴うActivationをまだ受けていない状態 |
+| ACTIVE | 全Single Field Validation成功後にActivationされた状態 |
+
+各CorrelationValidatorのModeは、以下の契機で変化する。
+
+| 契機 | Mode |
+|---|---|
+| Formの初期表示 | INITIAL |
+| Focus Out | 現在のModeを維持 |
+| Submit時にSingle Field Validationが失敗 | 現在のModeを維持 |
+| 全Single Field Validation成功後、各CorrelationValidatorの`activate()`を実行 | ACTIVE |
+| Confirmation ModalでCancel | ACTIVEを維持 |
+| 保存失敗 | ACTIVEを維持 |
+| Form Reset | INITIAL |
+
+ACTIVEでは、関連Fieldの値が変更された場合に、該当するCorrelation Validationを再評価する。
+
+Correlation Validationの実行条件、評価順序、およびErrorの扱いは4.2.3 Correlation Validation Behaviorで定義する。
+
+Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義する。
+
+#### 4.2.2 Field Validation Behavior
+
+##### Responsibility
+
+Fieldは、自身の入力値とSingle Field Validationの結果を管理する。
+
+Fieldの値は、変更前の値`originalValue: T | null`と現在の入力値`currentValue: T`で管理する。`originalValue`の`null`は変更前の値が存在しないことを表し、`currentValue`は`null`を取らない。
+
+変更有無は`isChanged()`で両者を比較して導出し、独立した変更フラグを保持しない。Createでは`originalValue`を`null`とし、Editでは取得した変更前の値を設定する。具体的な初期値はTask Create / Editの仕様で定義する。
+
+Validation結果は`UNKNOWN`、`VALID`、`INVALID`のValidityとError Messageで表し、両者を整合する組として更新する。
+
+##### Validation Timing
+
+| Trigger | Behavior |
+|---|---|
+| 初期化 | 必須判定のみ実行し、違反ならINVALID、それ以外はUNKNOWNとする |
+| 値変更 | 必須判定のみ実行し、違反ならINVALID、それ以外はUNKNOWNとする |
+| Focus Out | 完全なSingle Field Validationを実行する |
+| Form Submit | 全Fieldに対して完全なSingle Field Validationを実行する |
+
+値変更時には完全なValidationを実行しない。
+
+Focus Outを経ずにSubmitされた場合も、Submit時に全Fieldを検証する。
+
+##### Field Notification
+
+Fieldは、以下のCallbackを利用側へ提供する。
+
+| Callback | Notification |
+|---|---|
+| `onChange` | 入力値の変更 |
+| `onValidated` | Single Field Validationの完了とValidity |
+| `onFocusOut` | Focus Out処理の完了 |
+
+値変更時は、入力値の更新、必須判定、`onChange`通知の順に処理する。
+
+Focus Out時は、Error表示の有効化、Single Field Validation、`onValidated`通知、`onFocusOut`通知の順に処理する。
+
+FieldはCorrelationValidatorを直接参照しない。Callbackを受け取る業務Componentが両者を接続する。
+
+##### Error Display State
+
+FieldはValidityとは独立して、Error表示の有効状態を管理する。
+
+初期状態ではError表示を抑止し、Focus OutまたはForm Submitによって有効化する。
+
+値変更時にはError表示の有効状態を維持する。
+
+具体的なError Messageの選択と表示優先順位は、4.2.5 Validation Error Presentationで定義する。
+
+#### 4.2.3 Correlation Validation Behavior
+
+##### Responsibility
+
+CorrelationValidatorは、複数Fieldの値の関係に対するValidationを管理する。
+
+各CorrelationValidatorは、以下の状態を保持する。
+
+- 自身のValidityとError Message
+- 自身の実行状態（INITIAL / ACTIVE）
+- 関連Fieldの値とValidity
+
+CorrelationValidatorはFieldを直接参照せず、利用側の業務Componentから関連Fieldの値とValidityを受け取る。
+
+##### State Update
+
+関連Fieldの値が変更された場合、CorrelationValidatorは対象Fieldの値を更新し、保持している対象FieldのValidityをUNKNOWNにする。
+
+関連FieldのValidityが通知された場合、CorrelationValidatorは対象FieldのValidityを更新する。
+
+いずれの場合も、自身のValidityをUNKNOWN、Error Messageをnullに更新する。
+
+これらの状態更新ではCorrelation Validationを実行せず、INITIAL / ACTIVEの状態も変更しない。
+
+##### Validation Execution
+
+Correlation Validationは、以下の条件に従って実行する。
+
+| Condition | Behavior |
+|---|---|
+| INITIAL | 相関条件を評価せず、UNKNOWN / nullとする |
+| ACTIVE、かつ関連FieldがすべてVALID | 相関条件を評価し、VALIDまたはINVALIDと対応するError Messageを設定する |
+| ACTIVE、かつ関連FieldにVALID以外が存在 | 相関条件を評価せず、UNKNOWN / nullとする |
+
+`activate()`は実行状態をACTIVEに変更する。既にACTIVEの場合は状態を変更しない。
+
+`activate()`自体は相関条件を評価しない。相関条件の評価は`validate()`で実行する。
+
+##### Validation Timing
+
+Focus Out時には、業務ComponentがFieldからの通知を受け、関連するCorrelationValidatorの`validate()`を呼び出す。
+
+Submit時には、全Single Field Validationが成功した場合に限り、全CorrelationValidatorを`activate()`し、`validate()`を実行する。
+
+具体的なSubmit手順は4.2.4 Form Submission Validationで定義する。
+
+##### Validation Result
+
+CorrelationValidatorは自身のValidityとError Messageを保持し、両者を整合する組として更新する。
+
+Correlation Errorの表示先と優先順位は、4.2.5 Validation Error Presentationで定義する。
+
+#### 4.2.4 Form Submission Validation
+
+##### Submit Availability
+
+FormのSubmitボタンは、以下の条件をすべて満たす場合に有効とする。
+
+- いずれかのFieldに変更がある。
+- すべてのFieldのValidityがINVALIDではない。
+- すべてのCorrelationValidatorのValidityがINVALIDではない。
+
+ValidityがUNKNOWNの場合は、Submitボタンの有効化を妨げない。
+
+業務Componentは各FieldおよびCorrelationValidatorの状態からSubmit可否を導出し、AriadneFormへ渡す。
+
+Submitボタンの有効状態と、Submit時のValidation成功条件は区別する。
+
+##### Submit Validation
+
+Submit時には、業務Componentが以下の順序でValidationを実行する。
+
+1. 全FieldのError表示を有効化する。
+2. 全FieldのSingle Field Validationを実行する。
+3. 全FieldのValidityを確認する。
+4. 全FieldがVALIDの場合のみ、全CorrelationValidatorをactivateし、Correlation Validationを実行する。
+5. 全Fieldおよび全CorrelationValidatorがVALIDの場合に限り、Validation成功とする。
+
+全FieldがVALIDでない場合は、Correlation Validationを実行しない。これは、CorrelationValidatorが既にACTIVEの場合も同様とする。
+
+##### Submit Result
+
+業務Componentは、Validationの成否をAriadneFormへ返す。
+
+Validation成功時、AriadneFormはConfirmation Modalを表示する。
+
+Validation失敗時、Confirmation Modalは表示せず、入力画面を維持する。
+
+Confirmation ModalのConfirm / Cancelに対する動作は4.1.2 Common Layout Componentsおよび4.1.4 Confirmation Modalに従う。
+
+ModalのConfirm時にはValidationを再実行せず、利用側へ業務処理の実行を通知する。
+
+#### 4.2.5 Validation Error Presentation
+
+##### Error Display Activation
+
+Fieldは、Validation結果と独立してError表示の有効状態（`errorActivated`）を管理する。
+
+初期状態ではError表示を抑止する。
+
+Focus OutまたはForm SubmitによってError表示を有効化し、以降の値変更では有効状態を維持する。
+
+Error表示が有効であっても、表示対象となるError Messageが存在しない場合は何も表示しない。
+
+##### Error Message Selection
+
+1つのFieldに表示するError Messageは最大1件とする。
+
+複数のError Messageが存在する場合、以下の優先順位で選択する。
+
+1. 対象Field自身のSingle Field Error
+2. 対象Fieldに関連するCorrelation Error
+
+複数のCorrelation Errorが存在する場合は、業務Componentが定めた優先順位に従って1件を選択する。
+
+業務Componentは選択したCorrelation ErrorをFieldへ渡し、Fieldが最終的な表示対象を決定する。
+
+##### Error Display
+
+Fieldは、選択されたError Messageを対象Field付近に表示する。
+
+Error Messageを表示する場合は、対象Fieldの枠線を赤色にして視覚的に強調する。
+
+Error Messageが表示されない場合は、通常の枠線に戻す。
+
+Validation ErrorはField上で表示し、Notification Toastは使用しない。
+
+Backendで検出されたValidation ErrorはApplication Errorとして扱い、Notification Toastで通知する。
+
+### 4.3 Persistence Specification
+
+#### 4.3.1 Persistence Port Operations
+
+##### Operation Contract
+
+Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義する。
+
+PROJECT ARIADNEはファイルによる永続化を前提とし、Business Model単位の取得・格納を基本とする。
+
+Operationは、永続化技術ではなくApplication Serviceの操作意図に基づいて定義する。
+
+| Operation | Responsibility |
+|---|---|
+| `Retrieve` | Business Modelの集合を取得する |
+| `Pick` | 識別子を指定してBusiness Modelを1件取得する |
+| `Store` | 指定された意図に従ってBusiness Modelを格納する |
+
+各OperationはBusiness Modelを扱い、Persistence Modelやファイル形式を公開しない。
+
+具体的なInterfaceの引数・戻り値は、保存対象のデータ仕様で定義する。
+
+##### Store Intent
+
+`Store`は、格納操作の意図を`StoreIntent`で明示する。
+
+| StoreIntent | Responsibility |
+|---|---|
+| `Deposit` | 新しいBusiness Modelを初めて格納する |
+| `Replace` | 既存のBusiness Modelを置き換える |
+
+Persistence Adapterは、Business Modelの状態からStoreIntentを推測しない。
+
+部分UpdateはPersistence Portの基本操作としない。
+
+##### Retrieval Criteria
+
+`Retrieve`では、必要に応じてCriteriaによる取得条件の指定を可能とする。
+
+Criteriaは、以下の観点で構成する。
+
+- Filter：取得対象の絞り込み
+- Sort：取得結果の並び順
+- Range：取得範囲
+
+すべての`Retrieve`がCriteriaを必須引数として持つことは要求しない。
+
+PrototypeではCriteriaを実装しない。
+
+##### Scope
+
+PrototypeのTask管理では、`Retrieve / Pick / Store`を使用し、Deleteは実装しない。
+
+#### 4.3.2 File Persistence
+
+##### File Storage
+
+PROJECT ARIADNEは、ファイルによる永続化を基本とする。
+
+Persistence Adapterは、Persistence Portから要求されたBusiness Model単位の取得・格納を、ファイルの読み書きによって実現する。
+
+ファイルの具体的な形式・構造は、保存対象のデータごとに定義する。
+
+##### File Read
+
+ファイルからの取得は、全量Readを基本とする。
+
+Persistence Adapterは、ファイルを読み込み、保存形式の解析・検証を行い、Persistence ModelからBusiness Modelへ復元する。
+
+復元されたBusiness Modelは、その成立条件を満たしていなければならない。
+
+ファイルが存在しない場合はRead Failureとし、正常な空集合とは区別する。
+
+##### File Write
+
+格納操作では、Business Modelに対するDepositまたはReplaceをファイルに反映する。
+
+| StoreIntent | Behavior |
+|---|---|
+| `Deposit` | 新しいBusiness Modelを格納する |
+| `Replace` | 指定された既存Business Modelを置き換える |
+
+Persistence Adapterは、StoreIntentに従って対象データを更新し、ファイル全体を書き込む。
+
+Storeに渡されるBusiness Modelは、識別子を含め、既に成立条件を満たしていることを前提とする。Persistence Adapterは識別子を生成しない。
+
+ファイルの書き込みは全量Writeを基本とする。
+
+Canonical Fileへの直接上書きは行わず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
+
+Safe Writeと失敗時の取り扱いは4.3.4で定義する。
+
+##### Record Metadata
+
+Persistence Adapterは、永続化に必要な記録管理情報として`createdAt`と`updatedAt`を管理する。
+
+| StoreIntent | `createdAt` | `updatedAt` |
+|---|---|---|
+| `Deposit` | 現在日時を設定 | `createdAt`と同じ日時を設定 |
+| `Replace` | 既存値を維持 | 現在日時に更新 |
+
+TimestampはTimezoneを含むRFC3339 / ISO 8601形式を使用する。
+
+これらのTimestampはPersistence Modelで保持し、Business Modelの成立条件には含めない。Application ServiceはTimestampを管理しない。
+
+#### 4.3.3 Format / Version Compatibility
+
+##### Format Identification
+
+永続化ファイルは、保存対象のデータ形式を識別する`format`と、その形式のVersionを表す`version`を持つ。
+
+`format`の具体的な値と対応Versionは、保存対象のデータごとに定義する。
+
+##### Version Scheme
+
+VersionはStringによる`Major.Minor`形式とする。
+
+- Major：互換性を維持できない形式変更を表す。
+- Minor：同一Major内での形式変更を表す。
+
+##### Read Compatibility
+
+Applicationは、自身が対応するVersionを基準に、次の条件をすべて満たすファイルを読み込み可能とする。
+
+- `format`が期待する形式と一致する。
+- MajorがApplicationの対応Majorと一致する。
+- FileのMinorがApplicationの対応Minor以下である。
+
+MajorがApplicationの対応Majorと異なる場合はUnsupported Versionとして扱う。
+
+Majorが一致していても、FileのMinorがApplicationの対応Minorを超える場合はRead Failureとして扱う。
+
+`format`の不一致はRead Failureとして扱う。
+
+##### Write Version
+
+ファイル保存時は、読み込み元のMinor Versionにかかわらず、**Applicationが対応する最新のMinor Versionで保存する**。
+
+Major VersionはApplicationが対応するMajor Versionを使用する。
+
+これにより、旧Minor Versionのファイルを読み込んだ場合も、保存後はApplicationが対応するVersionへ更新される。
+
+##### Example
+
+Applicationの対応Versionが`2.1`の場合：
+
+| File Version | Read | Save後のVersion |
+|---|---|---|
+| `2.0` | OK | `2.1` |
+| `2.1` | OK | `2.1` |
+| `2.2` | NG | — |
+| `1.0` | NG | — |
+| `3.0` | NG | — |
+
+Versionの検証と保存時の更新はPersistence Adapterが担当する。
+
+#### 4.3.4 Safe Write / Failure Handling
+
+##### Safe Write
+
+ファイル保存時は、既存のCanonical Fileを直接上書きせず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
+
+```text
+Business Model
+    ↓
+Persistence Model
+    ↓
+Temporary Fileへ全量Write
+    ↓ Write成功
+Canonical FileをReplace
+```
+
+Safe Writeは、書き込み処理の失敗によって既存のCanonical Fileが不完全な内容に置き換わることを防ぐための仕組みとする。
+
+##### Write Failure
+
+Temporary FileへのWriteに失敗した場合は、Canonical Fileの置き換えを行わず、既存ファイルを維持する。
+
+Canonical FileのReplaceに失敗した場合は、Write Failureとして扱う。
+
+いずれの場合も、保存処理が正常に完了したものとして扱わない。
+
+##### Read Failure
+
+Persistence Adapterは、ファイルの読み込み・解析・検証・Business Modelへの復元に失敗した場合、原因情報を保持してRead Failureを返す。
+
+ただし、Applicationの対応Majorと異なるVersionは、Read Failureと区別してUnsupported Versionとする。同一MajorでApplicationの対応Minorを超えるVersionはRead Failureとする。
+
+指定された識別子に対応するデータが存在しない場合は、ファイルの読み込み失敗とは区別してNot Foundとする。
+
+##### Error Propagation
+
+Persistence Adapterは、下位で発生したErrorの原因情報を維持し、Persistence Portの契約に従ってApplication Serviceへ伝達する。
+
+Application Serviceは、具体的なFile I/Oの失敗原因に依存せず、Persistence OperationとしてのErrorを扱う。
+
+Backend全体のError Chain、公開用Errorへの変換、LoggingについてはBackend ArchitectureのError Handling仕様に従う。
+
+##### Scope
+
+Prototypeでは、Backup GenerationおよびCrash Recovery機構を実装しない。
+
+Windows上でのCanonical Fileの安全な置き換え方法は、実装時の技術検証対象とする。
+
+### 4.4 Task Data Specification
+
+#### 4.4.1 Business Task
+
+##### Task Properties
+
+Business Taskは、Task管理におけるBusiness Modelとする。
+
+```text
+Task
+├─ id
+├─ title
+├─ description
+├─ priority
+└─ status
+```
+
+| Property | Definition |
+|---|---|
+| `id` | ULID。TaskのIdentity |
+| `title` | 必須。空文字・空白のみ不可。最大50文字 |
+| `description` | 任意。複数行可 |
+| `priority` | 必須。1〜5。値が大きいほどPriorityが高い |
+| `status` | 必須。`TODO / DOING / DONE` |
+
+Business Taskは`createdAt / updatedAt`を持たない。これらはPersistence Modelで管理する。
+
+##### Task Identity
+
+TaskのIdentityにはULIDを使用する。
+
+新規Taskの生成時にIDを設定し、Business Taskが成立した時点でIdentityが確定していることを保証する。
+
+Persistence AdapterはIDを生成・変更しない。
+
+既存Taskの変更時は、Identityを維持する。
+
+##### Task Validation
+
+Taskの成立条件はBusiness Modelに一元化する。
+
+Taskの新規生成、変更、Persistence Modelからの復元では、共通の成立条件を適用する。
+
+成立条件を満たさないTaskは、Business Modelとして成立させない。
+
+Validation Failureは、Taskが成立条件を満たしていないことを表す。Application Errorへの変換は、発生したContextに応じて行う。
+
+##### Responsibility
+
+Application Serviceは、Taskの生成・変更を指示し、成立したBusiness TaskをPersistence Portへ渡す。
+
+Business Modelは自身の成立条件を保証する。
+
+Persistence Adapterは、成立済みのBusiness Taskを永続化し、保存データからBusiness Taskを復元する。
+
+#### 4.4.2 Public Task Models
+
+##### Overview
+
+Public Task Modelは、Application ServiceがFrontendへ公開するTaskのData Modelとする。
+
+Business Modelとは独立して定義し、Frontendとの出力契約として使用する。
+
+Prototypeでは、以下のPublic Modelを定義する。
+
+| Model | Purpose |
+|---|---|
+| `TaskSummary` | `ListTasks`の返却 |
+| `Task` | `GetTask`の返却 |
+
+##### TaskSummary
+
+Task List表示用のPublic Modelとする。
+
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `priority` | Number |
+| `status` | String |
+
+`description / createdAt / updatedAt`は公開しない。
+
+##### Task
+
+Task詳細取得用のPublic Modelとする。
+
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `description` | String |
+| `priority` | Number |
+| `status` | String |
+
+`createdAt / updatedAt`は公開しない。
+
+Business Modelで`description`が未設定の場合、Public Modelでは空文字列`""`として公開する。
+
+##### Model Conversion
+
+Business ModelからPublic Modelへの変換はApplication Serviceが担当する。
+
+#### 4.4.3 Persistence Task
+
+##### Task Properties
+
+Persistence Taskは、Business TaskのPropertyに加え、永続化に必要な記録管理情報を保持する。
+
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `description` | String |
+| `priority` | Number |
+| `status` | String |
+| `createdAt` | String |
+| `updatedAt` | String |
+
+すべてのPropertyを必須とし、YAML上に存在しない場合はFormat Errorとして検出する。Persistence Adapterは、このFormat Errorを原因情報として保持し、Read Failureを返す。
+
+`description`は空文字列`""`を許容する。ただし、Property自体の省略は許容しない。
+
+`createdAt / updatedAt`はPersistence Modelで保持し、Business Taskには含めない。
+
+##### Model Conversion
+
+Business ModelとPersistence Modelの相互変換はPersistence Adapterが担当する。
+
+Persistence ModelからBusiness Modelへの変換では、Propertyの存在を検証した後、Business Modelの成立条件を検証する。
+
+`description`は、Model間で以下の変換を行う。
+
+| Direction | Conversion |
+|---|---|
+| Persistence → Business | 空文字列・空白のみの値を`nil`へ正規化する |
+| Business → Persistence | `nil`を空文字列`""`へ変換する |
+
+その他のPropertyは、それぞれのModelの定義に従って変換する。
+
+#### 4.4.4 Task YAML Format
+
+##### File Structure
+
+Taskの永続化ファイルは`tasks.yaml`とする。
+
+Rootは以下の構造を持つ。
+
+```yaml
+format: ariadne-tasks
+version: "2.1"
+
+tasks: []
+```
+
+| Property | Definition |
+|---|---|
+| `format` | `ariadne-tasks`固定 |
+| `version` | Prototypeでは`2.1` |
+| `tasks` | Persistence TaskのSequence |
+
+Versionの互換性と保存時の更新規則は4.3.3 Format / Version Compatibilityに従う。
+
+##### Task Representation
+
+Taskが0件の場合は`tasks: []`とする。
+
+`description`が空の場合は、以下の形式で保存する。
+
+```yaml
+description: ""
+```
+
+`description`に値がある場合は、1行の場合も含めてLiteral Block `|`を使用する。
+
+複数行の`description`は、Read / Write後も内容を維持する。
+
+##### Task Sequence
+
+TaskはYAML Sequenceとして保持する。
+
+CreateではTaskをSequence末尾へ追加し、Modifyでは既存Taskの位置を維持する。
+
+#### 4.4.5 Task File Existence
+
+Prototypeでは、`tasks.yaml`が事前に存在することを前提とする。
+
+Applicationによる`tasks.yaml`の自動生成および初期化処理は実装しない。
+
+Taskが0件の場合は正常な空集合として扱う。一方、`tasks.yaml`が存在しない場合はRead Failureとし、空集合とは区別する。
+
+Project / Workspaceの初期化方式はPrototypeの対象外とし、Coreで必要に応じて検討する。
+
+### 4.5 Task Functional Specification
+
+#### 4.5.1 Task List
+
+##### Task Retrieval
+
+Task Listは`TaskListPage`で表示する。
+
+`TaskListPage`では、`ListTasks`を使用してTaskの一覧を取得する。
+
+取得結果には`TaskSummary`を使用する。
+
+Taskは全件取得し、全件を一覧表示する。
+
+##### Task Order
+
+Taskの一覧順序は、`tasks.yaml`のSequence順とする。
+
+Frontendでは取得したTaskの順序を変更しない。
+
+Prototypeでは以下を実装しない。
+
+- Sort
+- Filter
+- Search
+- Pagination
+
+##### Task Display
+
+Task Listには、`TaskSummary`のPropertyを表示する。
+
+Task数が一覧表示領域を超える場合は、一覧領域内でスクロールできるようにする。
+
+##### Retrieval Failure
+
+`ListTasks`による取得に失敗した場合は、遷移を確定せず、現在の画面とNavigationの選択状態を維持してError Toastを表示する。
+
+ファイルの読み込み・解析・復元の失敗、および同一Majorで対応Minorを超えるVersionはRead Failureとする。対応Majorが異なる場合はUnsupported Versionとする。
+
+##### Task Selection
+
+一覧からTaskを選択した場合、対象Taskの詳細画面へ遷移する。
+
+#### 4.5.2 Task Detail
+
+##### Initial Display
+
+Task ListでTaskを選択すると、`TaskDetailPage`へ遷移する。
+
+`TaskDetailPage`の初期Modeは`reference`とする。
+
+Task Listで保持している`TaskSummary`を詳細表示に流用せず、選択したTaskのIDを使って`GetTask`で再取得する。
+
+取得結果にはPublic Modelの`Task`を使用する。
+
+`GetTask`による取得に失敗した場合は、Task Detailへの遷移を確定せず、Task Listの画面とNavigationの選択状態を維持してError Toastを表示する。対象Taskが存在しない場合はNot Found、ファイルの読み込み・解析・復元の失敗はRead Failureとする。対応Majorが異なる場合はUnsupported Versionとする。
+
+##### Display Mode
+
+`TaskDetailPage`には、`reference / edit`を切り替えるToggleを配置する。
+
+| Mode | Behavior |
+|---|---|
+| `reference` | Taskの内容を参照表示する |
+| `edit` | Taskの内容を編集する |
+
+ToggleによるMode切替は実装済みとする。Edit機能の実装はStep 6で行う。
+
+##### Mode Transition
+
+| Transition | Task Data Handling | Implementation |
+|---|---|---|
+| List → Detail（reference） | IDを使って`GetTask`で再取得する | 実装済み |
+| reference → edit（Toggle） | Referenceで保持しているTaskをそのまま利用する | 未実装 |
+| edit → reference（Toggle） | IDを使って`GetTask`で再取得する | 未実装 |
+| edit → reference（更新成功） | 更新成功後、IDを使って`GetTask`で再取得する | 未実装 |
+
+Referenceへ戻る際は、Edit中の入力値を参照表示に流用せず、永続化されたTaskを再取得する。
+
+##### Unsaved Changes
+
+Edit中に未保存の変更がある状態で別画面へ遷移しようとした場合、またはToggleでReferenceへ切り替えようとした場合は、Confirmation Modalを表示する。
+
+ユーザーが遷移を承認した場合は、変更を破棄して遷移する。
+
+ユーザーが遷移をキャンセルした場合は、Edit画面を維持する。
+
+未保存の変更がない場合は、Confirmation Modalを表示せずに遷移する。
+
+この振る舞いはStep 6で実装する。
+
+#### 4.5.3 Task Create
+
+#### 4.5.4 Task Edit
