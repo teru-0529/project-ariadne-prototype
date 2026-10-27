@@ -19,11 +19,9 @@ type Task struct {
 // FUNCTION: 新しいタスクを作成する関数
 func NewTask(id string, title string, description string, priority int, status string) (*Task, error) {
 
-	if id != "" {
-		if _, err := ulid.ParseStrict(id); err != nil {
-			return nil, &ModelValidationError{
-				Detail: "id is not a valid ULID",
-			}
+	if _, err := ulid.ParseStrict(id); err != nil {
+		return nil, &ModelValidationError{
+			Detail: "id is not a valid ULID",
 		}
 	}
 
