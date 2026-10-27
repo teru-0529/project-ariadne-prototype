@@ -1337,3 +1337,51 @@ Application Serviceは、Taskの生成・変更を指示し、成立したBusine
 Business Modelは自身の成立条件を保証する。
 
 Persistence Adapterは、成立済みのBusiness Taskを永続化し、保存データからBusiness Taskを復元する。
+
+#### 4.4.2 Public Task Models
+
+##### Overview
+
+Public Task Modelは、Application ServiceがFrontendへ公開するTaskのData Modelとする。
+
+Business Modelとは独立して定義し、Frontendとの出力契約として使用する。
+
+Prototypeでは、以下のPublic Modelを定義する。
+
+| Model | Purpose |
+|---|---|
+| `TaskSummary` | `ListTasks`の返却 |
+| `Task` | `GetTask`の返却 |
+
+##### TaskSummary
+
+Task List表示用のPublic Modelとする。
+
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `priority` | Number |
+| `status` | String |
+
+`description / createdAt / updatedAt`は公開しない。
+
+##### Task
+
+Task詳細取得用のPublic Modelとする。
+
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `description` | String |
+| `priority` | Number |
+| `status` | String |
+
+`createdAt / updatedAt`は公開しない。
+
+Business Modelで`description`が未設定の場合、Public Modelでは空文字列`""`として公開する。
+
+##### Model Conversion
+
+Business ModelからPublic Modelへの変換はApplication Serviceが担当する。
