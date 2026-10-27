@@ -900,3 +900,50 @@ ACTIVEでは、関連Fieldの値が変更された場合に、該当するCorrel
 Correlation Validationの実行条件、評価順序、およびErrorの扱いは4.2.3 Correlation Validation Behaviorで定義する。
 
 Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義する。
+
+#### 4.2.2 Field Validation Behavior
+
+##### Responsibility
+
+Fieldは、自身の入力値とSingle Field Validationの結果を管理する。
+
+Validation結果は`UNKNOWN`、`VALID`、`INVALID`のValidityとError Messageで表し、両者を整合する組として更新する。
+
+##### Validation Timing
+
+| Trigger | Behavior |
+|---|---|
+| 初期化 | 必須判定のみ実行し、違反ならINVALID、それ以外はUNKNOWNとする |
+| 値変更 | 必須判定のみ実行し、違反ならINVALID、それ以外はUNKNOWNとする |
+| Focus Out | 完全なSingle Field Validationを実行する |
+| Form Submit | 全Fieldに対して完全なSingle Field Validationを実行する |
+
+値変更時には完全なValidationを実行しない。
+
+Focus Outを経ずにSubmitされた場合も、Submit時に全Fieldを検証する。
+
+##### Field Notification
+
+Fieldは、以下のCallbackを利用側へ提供する。
+
+| Callback | Notification |
+|---|---|
+| `onChange` | 入力値の変更 |
+| `onValidated` | Single Field Validationの完了とValidity |
+| `onFocusOut` | Focus Out処理の完了 |
+
+値変更時は、入力値の更新、必須判定、`onChange`通知の順に処理する。
+
+Focus Out時は、Error表示の有効化、Single Field Validation、`onValidated`通知、`onFocusOut`通知の順に処理する。
+
+FieldはCorrelationValidatorを直接参照しない。Callbackを受け取る業務Componentが両者を接続する。
+
+##### Error Display State
+
+FieldはValidityとは独立して、Error表示の有効状態を管理する。
+
+初期状態ではError表示を抑止し、Focus OutまたはForm Submitによって有効化する。
+
+値変更時にはError表示の有効状態を維持する。
+
+具体的なError Messageの選択と表示優先順位は、4.2.5 Validation Error Presentationで定義する。
