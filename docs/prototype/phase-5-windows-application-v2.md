@@ -808,3 +808,39 @@ Cancelされた場合は、FormがSubmitを中止し、業務処理の実行や�
 ##### Prototypeでの適用
 
 Prototypeでは、Taskの登録・更新時の最終確認、および未保存変更がある場合の画面離脱確認にConfirmation Modalを使用する。
+
+#### 4.1.5 Notification Toast
+
+Notification Toastは、Applicationからユーザーへ情報やErrorを通知するための共通UIとする。
+
+Toastは指定された通知内容を表示するものであり、通知の必要性の判断、業務処理の結果判定、およびErrorの解釈は担当しない。
+
+##### Notification Types
+
+Notification Toastは、以下の種類を提供する。
+
+| Type | Purpose | Dismissal |
+|---|---|---|
+| Info | 正常終了等の情報通知 | 3秒後に自動消去、または外側クリックで消去 |
+| Error | Application Errorの通知 | 外側クリックで消去。自動消去しない |
+
+##### Display / Operation
+
+- Toastは画面右上に表示する。
+- 同時に表示するToastは最大1件とし、新しい通知が発生した場合は既存のToastを置き換える。
+- Close Buttonは設けない。
+- Toastの表示は、業務処理や画面遷移を妨げない。
+
+##### Usage
+
+- **Application Info**：業務操作の正常終了等を通知する。
+- **Application Error**：Backend処理の失敗、データ取得の失敗等を通知する。
+- **Frontend Validation Error**：原則としてToastを使用せず、対象Field付近に表示する。
+
+Frontend Validation ErrorとApplication Errorの区別、およびValidation Errorの表示仕様は4.2 Validation Specificationで定義する。
+
+##### Prototypeでの適用
+
+Prototypeでは、Taskの取得・登録・更新等で発生したApplication ErrorをError Toastで通知する。
+
+登録・更新の成功通知にはInfo Toastを使用する。
