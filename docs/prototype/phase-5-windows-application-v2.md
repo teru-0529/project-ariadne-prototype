@@ -718,3 +718,57 @@ Validationの具体的な動作は4.2 Validation Specificationで、Confirmation
 スクロールが必要な場合は、該当する表示領域を管理するComponentが自身の内部でスクロールを提供する。
 
 Prototypeでは、Task一覧に`AriadneListTable`、Task詳細参照に`AriadneView`、Task作成に`AriadneForm`を利用する。
+
+#### 4.1.3 Common Field / Input Components
+
+PROJECT ARIADNEでは、Fieldの共通表示構造と、値の種類に応じた表示・入力方法を分離する。
+
+Fieldの構成、責務およびVariantの定義は3.3.1 Frontend Structureに従う。本節では、Fieldの共通的な表示・入力仕様を定義する。
+
+##### AriadneField
+
+`AriadneField`は、Label、Value、Errorの表示領域と共通の装飾を提供する。
+
+値の型や業務上の意味は扱わず、各Field Componentが値に応じた表示・入力方法を提供する。
+
+Fieldの幅と配置は利用側の業務Componentが決定し、Fieldは割り当てられた領域内で表示と必要な高さを管理する。
+
+##### Common Field / Variant
+
+共通Fieldは以下の3種類とし、用途に応じてVariantを使い分ける。
+
+| Field | reference | edit | cell |
+|---|:---:|:---:|:---:|
+| TextField | ○ | ○ | ○ |
+| SubTextField | ○ | — | ○ |
+| TextareaField | ○ | ○ | — |
+
+各Variantの表示・入力仕様は以下とする。
+
+**TextField**
+
+- `reference`：指定された行数に応じた固定の高さで表示する。省略表示は例外的な処置とし、Tooltipによる補完は行わない。
+- `edit`：単一行Textの入力を提供する。
+- `cell`：一覧表のCell内に表示する。必要に応じて省略表示とTooltipによる補完を行う。
+
+**SubTextField**
+
+- `reference`：補助的なTextを表示する。省略時もTooltipによる補完は基本的に行わない。
+- `cell`：一覧表等で補助的なTextを表示する。省略時もTooltipによる補完は基本的に行わない。
+
+**TextareaField**
+
+- `reference`：固定の高さで表示し、内容が収まらない場合は内部スクロールによって全文を閲覧できるようにする。
+- `edit`：改行を含むTextの入力を提供する。
+
+##### Input / Validation
+
+`edit`では、入力値およびValidation Stateを利用側から受け取り、Fieldの表示に反映する。
+
+Validationの実行タイミング、Error StateおよびError Messageの表示仕様は4.2 Validation Specificationで定義する。
+
+##### Prototypeでの適用
+
+Prototypeでは、共通Fieldとして`TextField`、`SubTextField`、`TextareaField`を使用する。
+
+Task固有のFieldとして`TaskPriorityField`と`TaskStatusField`を使用する。これらの業務上の意味と表示内容は、4.5 Task Functional Specificationで定義する。
