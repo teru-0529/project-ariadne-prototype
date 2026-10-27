@@ -1402,7 +1402,7 @@ Persistence Taskは、Business TaskのPropertyに加え、永続化に必要な�
 | `createdAt` | String |
 | `updatedAt` | String |
 
-すべてのPropertyを必須とし、YAML上に存在しない場合はFormat Errorとする。
+すべてのPropertyを必須とし、YAML上に存在しない場合はFormat Errorとして検出する。Persistence Adapterは、このFormat Errorを原因情報として保持し、Read Failureを返す。
 
 `description`は空文字列`""`を許容する。ただし、Property自体の省略は許容しない。
 
@@ -1462,9 +1462,7 @@ description: ""
 
 ##### Task Sequence
 
-TaskのYAML Sequence順を一覧表示順とする。
-
-PrototypeではSortを行わない。
+TaskはYAML Sequenceとして保持する。
 
 CreateではTaskをSequence末尾へ追加し、Modifyでは既存Taskの位置を維持する。
 
