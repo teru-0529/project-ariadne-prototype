@@ -260,13 +260,17 @@ Frontendでは、Public Modelをそのまま画面の状態として扱うとは
 
 各モデルの変換責務はBackend Architectureで、Frontend内部の状態管理と公開IFへの適合はFrontend Architectureで定義する。
 
-##### Persistence Independence
+##### File-based Persistence
 
-Application Serviceは、具体的な永続化方式に依存せず、Persistence Portを介して永続化操作を要求する。
+PROJECT ARIADNEは、ファイルによる永続化を基本方針とする。Databaseへの置き換えを前提とした永続化方式の抽象化は行わない。
+
+Persistence Portは、Business Model単位の取得・格納を契約とし、登録と更新には共通の`Store` Operationを使用する。
+
+`Store`は`StoreIntent`によって新規登録（Deposit）と既存データの置き換え（Replace）を区別する。部分UpdateをPersistence Portの基本操作とはしない。
+
+Application Serviceは、ファイルの具体的な形式・構造・読み書き手順を認識せず、Persistence Adapterがそれらを担当する。
 
 Application Serviceが定義するPersistence PortをPersistence Adapterが実装する。
-
-Application ServiceはPersistence Modelを認識せず、永続化方式に必要な変換と読み書きはPersistence Adapterが担当する。
 
 Package間の依存方向およびPort / Adapterの詳細はBackend Architectureで定義する。
 
@@ -1076,3 +1080,47 @@ Error Messageが表示されない場合は、通常の枠線に戻す。
 Validation ErrorはField上で表示し、Notification Toastは使用しない。
 
 Backendで検出されたValidation ErrorはApplication Errorとして扱い、Notification Toastで通知する。
+
+### 4.3 Persistence Specification
+
+#### 4.3.1 Persistence Port Operations
+
+##### Operation Contract
+
+Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義する。
+
+PROJECT ARIADNEはファイルによる永続化を前提とし、Business Model単位の取得・格納を基本とする。操作はCRUDの意図を踏まえて定義するが、部分Updateを基本操作とはしない。
+
+Prototypeでは以下のOperationを使用する。
+
+| Operation | Responsibility |
+|---|---|
+| `Retrieve()` | 格納されているTaskの集合を取得する |
+| `Pick(ID)` | IDを指定して1件のTaskを取得する |
+| `Store(Task, StoreIntent)` | 指定された意図に従ってTaskを格納する |
+
+各OperationはBusiness Modelを扱い、Persistence Modelやファイル形式を公開しない。
+
+##### Store Intent
+
+`Store`は、格納操作の意図を`StoreIntent`で明示する。
+
+| StoreIntent | Responsibility |
+|---|---|
+| `Deposit` | 新しいTaskを初めて格納する |
+| `Replace` | 既存のTaskを置き換える |
+
+Persistence Adapterは、Taskの状態から格納Intentを推測しない。
+
+Business Model単位のReplaceは、物理ファイル全体の書き換えを意味しない。ファイルの読み書き方法はPersistence Adapterが決定する。
+
+##### Retrieval Criteria
+
+将来、`Retrieve`に取得条件が必要になった場合は、絞り込み・並び順・取得範囲などを表すCriteriaの導入を検討する。
+
+PrototypeではCriteriaを実装しない。
+
+##### Scope
+
+PrototypeのTask管理では、上記Operationを使用する。Deleteに相当する操作は現時点では対象外とする。
+
