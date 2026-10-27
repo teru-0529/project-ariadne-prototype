@@ -1303,7 +1303,7 @@ Task
 | Property | Definition |
 |---|---|
 | `id` | ULID。TaskのIdentity |
-| `title` | 必須。空文字・空白のみ不可。最大80文字 |
+| `title` | 必須。空文字・空白のみ不可。最大50文字 |
 | `description` | 任意。複数行可 |
 | `priority` | 必須。1〜5。値が大きいほどPriorityが高い |
 | `status` | 必須。`TODO / DOING / DONE` |
@@ -1385,3 +1385,40 @@ Business Modelで`description`が未設定の場合、Public Modelでは空文�
 ##### Model Conversion
 
 Business ModelからPublic Modelへの変換はApplication Serviceが担当する。
+
+#### 4.4.3 Persistence Task
+
+##### Task Properties
+
+Persistence Taskは、Business TaskのPropertyに加え、永続化に必要な記録管理情報を保持する。
+
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `description` | String |
+| `priority` | Number |
+| `status` | String |
+| `createdAt` | String |
+| `updatedAt` | String |
+
+すべてのPropertyを必須とし、YAML上に存在しない場合はFormat Errorとする。
+
+`description`は空文字列`""`を許容する。ただし、Property自体の省略は許容しない。
+
+`createdAt / updatedAt`はPersistence Modelで保持し、Business Taskには含めない。
+
+##### Model Conversion
+
+Business ModelとPersistence Modelの相互変換はPersistence Adapterが担当する。
+
+Persistence ModelからBusiness Modelへの変換では、Propertyの存在を検証した後、Business Modelの成立条件を検証する。
+
+`description`は、Model間で以下の変換を行う。
+
+| Direction | Conversion |
+|---|---|
+| Persistence → Business | 空文字列・空白のみの値を`nil`へ正規化する |
+| Business → Persistence | `nil`を空文字列`""`へ変換する |
+
+その他のPropertyは、それぞれのModelの定義に従って変換する。
