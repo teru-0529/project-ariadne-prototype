@@ -1089,17 +1089,19 @@ Backendで検出されたValidation ErrorはApplication Errorとして扱い、N
 
 Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義する。
 
-PROJECT ARIADNEはファイルによる永続化を前提とし、Business Model単位の取得・格納を基本とする。操作はCRUDの意図を踏まえて定義するが、部分Updateを基本操作とはしない。
+PROJECT ARIADNEはファイルによる永続化を前提とし、Business Model単位の取得・格納を基本とする。
 
-Prototypeでは以下のOperationを使用する。
+Operationは、永続化技術ではなくApplication Serviceの操作意図に基づいて定義する。
 
 | Operation | Responsibility |
 |---|---|
-| `Retrieve()` | 格納されているTaskの集合を取得する |
-| `Pick(ID)` | IDを指定して1件のTaskを取得する |
-| `Store(Task, StoreIntent)` | 指定された意図に従ってTaskを格納する |
+| `Retrieve` | Business Modelの集合を取得する |
+| `Pick` | 識別子を指定してBusiness Modelを1件取得する |
+| `Store` | 指定された意図に従ってBusiness Modelを格納する |
 
 各OperationはBusiness Modelを扱い、Persistence Modelやファイル形式を公開しない。
+
+具体的なInterfaceの引数・戻り値は、保存対象のデータ仕様で定義する。
 
 ##### Store Intent
 
@@ -1107,22 +1109,30 @@ Prototypeでは以下のOperationを使用する。
 
 | StoreIntent | Responsibility |
 |---|---|
-| `Deposit` | 新しいTaskを初めて格納する |
-| `Replace` | 既存のTaskを置き換える |
+| `Deposit` | 新しいBusiness Modelを初めて格納する |
+| `Replace` | 既存のBusiness Modelを置き換える |
 
-Persistence Adapterは、Taskの状態から格納Intentを推測しない。
+Persistence Adapterは、Business Modelの状態からStoreIntentを推測しない。
 
-Business Model単位のReplaceは、物理ファイル全体の書き換えを意味しない。ファイルの読み書き方法はPersistence Adapterが決定する。
+部分UpdateはPersistence Portの基本操作としない。
 
 ##### Retrieval Criteria
 
-将来、`Retrieve`に取得条件が必要になった場合は、絞り込み・並び順・取得範囲などを表すCriteriaの導入を検討する。
+`Retrieve`では、必要に応じてCriteriaによる取得条件の指定を可能とする。
+
+Criteriaは、以下の観点で構成する。
+
+- Filter：取得対象の絞り込み
+- Sort：取得結果の並び順
+- Range：取得範囲
+
+すべての`Retrieve`がCriteriaを必須引数として持つことは要求しない。
 
 PrototypeではCriteriaを実装しない。
 
 ##### Scope
 
-PrototypeのTask管理では、上記Operationを使用する。Deleteに相当する操作は現時点では対象外とする。
+PrototypeのTask管理では、`Retrieve / Pick / Store`を使用し、Deleteは実装しない。
 
 #### 4.3.2 File Persistence
 
