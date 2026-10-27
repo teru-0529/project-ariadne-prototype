@@ -844,3 +844,59 @@ Frontend Validation ErrorとApplication Errorの区別、およびValidation Err
 Prototypeでは、Taskの取得・登録・更新等で発生したApplication ErrorをError Toastで通知する。
 
 登録・更新の成功通知にはInfo Toastを使用する。
+
+### 4.2 Validation Specification
+
+#### 4.2.1 Validation Principles / State
+
+##### Validation Principles
+
+Frontend Validationは、入力時にユーザーが不正な値や項目間の不整合を確認・修正できるよう支援することを目的とする。
+
+Frontend ValidationはBusiness Modelの成立条件を保証するものではない。Business Modelの成立条件はBackendで保証する。
+
+Frontend Validationは、以下の2種類に分ける。
+
+| Type | Responsibility |
+|---|---|
+| Single Field Validation | 個々のFieldの値に対する判定 |
+| Correlation Validation | 複数Fieldの値の関係に対する判定 |
+
+Single Field ValidationとCorrelation Validationは、それぞれ独立したValidation結果を管理する。
+
+Validation Ruleは業務ごとに定義する。PrototypeのTask固有の判定条件は`validation-rules.md`に定義する。
+
+##### Validation State
+
+各Validationは、判定結果を表すValidityと、必要に応じたError Messageを保持する。
+
+ValidityとError Messageは、一つのValidation結果として整合性を保って更新する。
+
+Single Field ValidationとCorrelation Validationは、それぞれ自身のValidation結果を管理する。
+
+##### Correlation Validation Mode
+
+各`CorrelationValidator`は、自身の実行状態として`INITIAL / ACTIVE`を保持する。Form全体で共通のModeを別途保持しない。
+
+| Mode | Meaning |
+|---|---|
+| INITIAL | Submitに伴うActivationをまだ受けていない状態 |
+| ACTIVE | 全Single Field Validation成功後にActivationされた状態 |
+
+各CorrelationValidatorのModeは、以下の契機で変化する。
+
+| 契機 | Mode |
+|---|---|
+| Formの初期表示 | INITIAL |
+| Focus Out | 現在のModeを維持 |
+| Submit時にSingle Field Validationが失敗 | 現在のModeを維持 |
+| 全Single Field Validation成功後、各CorrelationValidatorの`activate()`を実行 | ACTIVE |
+| Confirmation ModalでCancel | ACTIVEを維持 |
+| 保存失敗 | ACTIVEを維持 |
+| Form Reset | INITIAL |
+
+ACTIVEでは、関連Fieldの値が変更された場合に、該当するCorrelation Validationを再評価する。
+
+Correlation Validationの実行条件、評価順序、およびErrorの扱いは4.2.3 Correlation Validation Behaviorで定義する。
+
+Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義する。
