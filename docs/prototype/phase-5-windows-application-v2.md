@@ -823,10 +823,10 @@ Toastは指定された通知内容を表示するものであり、通知の必
 
 Notification Toastは、以下の種類を提供する。
 
-| Type | Purpose | Dismissal |
-|---|---|---|
-| Info | 正常終了等の情報通知 | 3秒後に自動消去、または外側クリックで消去 |
-| Error | Application Errorの通知 | 外側クリックで消去。自動消去しない |
+| Type | Purpose | Display | Dismissal |
+|---|---|---|---|
+| Info | 正常終了等の情報通知 | 青色のToast | 3秒後に自動消去、または外側クリックで消去 |
+| Error | Application Errorの通知 | 赤色のToast | 外側クリックで消去。自動消去しない |
 
 ##### Display / Operation
 
