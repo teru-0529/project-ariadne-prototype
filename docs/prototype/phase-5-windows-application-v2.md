@@ -1477,3 +1477,38 @@ Applicationによる`tasks.yaml`の自動生成および初期化処理は実装
 Taskが0件の場合は正常な空集合として扱う。一方、`tasks.yaml`が存在しない場合はRead Failureとし、空集合とは区別する。
 
 Project / Workspaceの初期化方式はPrototypeの対象外とし、Coreで必要に応じて検討する。
+
+### 4.5 Task Functional Specification
+
+#### 4.5.1 Task List
+
+##### Task Retrieval
+
+Task Listでは、`ListTasks`を使用してTaskの一覧を取得する。
+
+取得結果には`TaskSummary`を使用する。
+
+Taskは全件取得し、全件を一覧表示する。
+
+##### Task Order
+
+Taskの一覧順序は、`tasks.yaml`のSequence順とする。
+
+Frontendでは取得したTaskの順序を変更しない。
+
+Prototypeでは以下を実装しない。
+
+- Sort
+- Filter
+- Search
+- Pagination
+
+##### Task Display
+
+Task Listには、`TaskSummary`のPropertyを表示する。
+
+Task数が一覧表示領域を超える場合は、一覧領域内でスクロールできるようにする。
+
+##### Task Selection
+
+一覧からTaskを選択した場合、対象Taskの詳細画面へ遷移する。
