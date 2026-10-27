@@ -695,7 +695,7 @@ Contents自体はスクロールを管理せず、必要なスクロールは内
 
 `AriadneForm`は、入力領域の共通構造、内部スクロール、操作ボタンの配置、Submit受付、およびConfirmation Modalによる意思確認を提供する。
 
-操作ボタンはFormに割り当てられた表示領域の右下に固定し、入力内容との重なりを許容する。
+操作ボタンはFormの表示領域の右下に固定する。入力内容との重なりは許容する。
 
 Submit時には利用側の業務ComponentへValidationを要求する。Validationが成功した場合のみConfirmation Modalを表示し、Confirm / Cancelの判断を受け付ける。
 
@@ -751,7 +751,7 @@ Fieldの幅と配置は利用側の業務Componentが決定し、Fieldは割り�
 
 **TextField**
 
-- `reference`：指定された行数に応じた固定の高さで表示する。省略表示は例外的な処置とし、Tooltipによる補完は行わない。
+- `reference`：指定された行数に応じた固定の高さで表示する。省略表示は例外的な扱いとし、Tooltipによる補完は行わない。
 - `edit`：単一行Textの入力を提供する。
 - `cell`：一覧表のCell内に表示する。必要に応じて省略表示とTooltipによる補完を行う。
 
@@ -874,7 +874,7 @@ Validation Ruleは業務ごとに定義する。PrototypeのTask固有の判定�
 
 各Validationは、判定結果を表すValidityと、必要に応じたError Messageを保持する。
 
-ValidityとError Messageは、一つのValidation結果として整合性を保って更新する。
+ValidityとError Messageは、整合性を保ちながら一体として更新する。
 
 Single Field ValidationとCorrelation Validationは、それぞれ自身のValidation結果を管理する。
 
@@ -913,7 +913,7 @@ Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義�
 
 Fieldは、自身の入力値とSingle Field Validationの結果を管理する。
 
-Fieldの値のStateは、変更前の値`originalValue: T | null`と現在の入力値`currentValue: T`で表す。`originalValue`の`null`は変更前の値が存在しないことを表し、`currentValue`は`null`を取らない。
+Fieldの値は、変更前の値`originalValue: T | null`と現在の入力値`currentValue: T`で管理する。`originalValue`の`null`は変更前の値が存在しないことを表し、`currentValue`は`null`を取らない。
 
 変更有無は`isChanged()`で両者を比較して導出し、独立した変更フラグを保持しない。Createでは`originalValue`を`null`とし、Editでは取得した変更前の値を設定する。具体的な初期値はTask Create / Editの仕様で定義する。
 
@@ -1162,7 +1162,7 @@ Persistence Adapterは、ファイルを読み込み、保存形式の解析・�
 
 ##### File Write
 
-格納操作では、Business Model単位のDepositまたはReplaceをファイルの内容へ反映する。
+格納操作では、Business Modelに対するDepositまたはReplaceをファイルに反映する。
 
 | StoreIntent | Behavior |
 |---|---|
@@ -1336,7 +1336,7 @@ Taskの新規生成、変更、Persistence Modelからの復元では、共通�
 
 成立条件を満たさないTaskは、Business Modelとして成立させない。
 
-Validation Failureは、Taskとして成立できないことを表す。Application上のErrorへの変換は、発生したContextに応じて行う。
+Validation Failureは、Taskが成立条件を満たしていないことを表す。Application Errorへの変換は、発生したContextに応じて行う。
 
 ##### Responsibility
 
