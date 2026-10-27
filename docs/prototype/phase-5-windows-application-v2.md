@@ -1224,3 +1224,51 @@ Applicationの対応Versionが`2.1`の場合：
 | `3.0` | NG | — |
 
 Versionの検証と保存時の更新はPersistence Adapterが担当する。
+
+#### 4.3.4 Safe Write / Failure Handling
+
+##### Safe Write
+
+ファイル保存時は、既存のCanonical Fileを直接上書きせず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
+
+```text
+Business Model
+    ↓
+Persistence Model
+    ↓
+Temporary Fileへ全量Write
+    ↓ Write成功
+Canonical FileをReplace
+```
+
+Safe Writeは、書き込み処理の失敗によって既存のCanonical Fileが不完全な内容に置き換わることを防ぐための仕組みとする。
+
+##### Write Failure
+
+Temporary FileへのWriteに失敗した場合は、Canonical Fileの置き換えを行わず、既存ファイルを維持する。
+
+Canonical FileのReplaceに失敗した場合は、Write Failureとして扱う。
+
+いずれの場合も、保存処理が正常に完了したものとして扱わない。
+
+##### Read Failure
+
+Persistence Adapterは、ファイルの読み込み・解析・検証・Business Modelへの復元に失敗した場合、原因情報を保持してRead Failureを返す。
+
+ただし、対応していないVersionは、Read Failureと区別してUnsupported Versionとする。
+
+指定された識別子に対応するデータが存在しない場合は、ファイルの読み込み失敗とは区別してNot Foundとする。
+
+##### Error Propagation
+
+Persistence Adapterは、下位で発生したErrorの原因情報を維持し、Persistence Portの契約に従ってApplication Serviceへ伝達する。
+
+Application Serviceは、具体的なFile I/Oの失敗原因に依存せず、Persistence OperationとしてのErrorを扱う。
+
+Backend全体のError Chain、公開用Errorへの変換、LoggingについてはBackend ArchitectureのError Handling仕様に従う。
+
+##### Scope
+
+Prototypeでは、Backup GenerationおよびCrash Recovery機構を実装しない。
+
+Windows上でのCanonical Fileの安全な置き換え方法は、実装時の技術検証対象とする。
