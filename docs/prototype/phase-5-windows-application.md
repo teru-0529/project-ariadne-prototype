@@ -1,88 +1,236 @@
 # Project ARIADNE — Prototype Phase 5：Windows Application
+## 1. Purpose & Scope
 
-**Status:** IN PROGRESS
+### 1.1 Purpose
 
----
+Prototype Phase 5では、Svelte / Wails v3 / GoによるWindows Applicationを実装し、PROJECT ARIADNEのWindows Applicationとしての技術的成立性を検証する。
 
-## 1. 目的
+Task管理Applicationを題材に、Frontend、Wails Boundary、Application Service、File Persistenceを連携させ、Taskの参照・作成・編集・永続化・復元までを実際に動作させる。
 
-Prototype Phase 5では、Svelte + Wails v3 + GoによるWindows
-Applicationを実装し、 Project ARIADNEのWindows
-Applicationとしての技術的成立性を検証する。
+本Phaseの目的は、Applicationが動作することの確認だけではない。採用したApplication Architectureについて、責務分離と境界が設計どおりに実装可能であることに加え、**その設計判断自体が妥当であるか**を実装・検証を通じて確かめる。
 
-Phase 0で定義したとおり、Prototype
-ApplicationではTask管理アプリを題材として、
-以下の一連の動作を実際に実装・確認する。
+### 1.2 Design Principles
 
-- ローカルYAMLからTaskを読み込む
-- Task一覧を画面へ表示する
-- Taskを新規作成する
-- Taskを編集する
-- TaskをローカルYAMLへ保存する
-- Application再起動後に保存内容を復元する
-- Svelte / Wails / Go間で正常系・異常系を適切に伝達する
-- Windows実行ファイルとしてBuildし、単体で起動・操作できることを確認する
+Phase 5では、以下の4原則に基づいて設計・開発する。
 
-Prototype Phase 5は、Phase 2〜4で設計したElements / API /
-DDLをApplicationから操作するPhaseではない。
+1. **理解と納得に基づく設計**  
+   採用する設計の理由と選択肢を理解し、納得したうえで決定する。テルとアリアドネは、提案・疑問・反論を交わしながら設計判断を深める。既存の実装が動くことだけを理由に判断を固定しない。
+2. **全体の整合性を守る**  
+   個々の機能や局所的な実装の都合だけでなく、Architecture全体の責務境界、採用済み設計判断、関連文書との整合性を重視する。
+3. **小さく成立させ、検証を通じて育てる**  
+   完成形を一度に作り込まず、小さな単位で設計・実装・Test・Build・実機確認を繰り返す。未知の技術要素は段階的に検証し、その結果を次の判断に反映する。
+4. **美しく、無理のない構造を選ぶ**  
+   不必要な複雑さや先回りした抽象化を避け、責務が明確で、自然に成立する構造を選ぶ。実装コストだけでなく、構造のわかりやすさと将来の変更容易性を考慮する。
 
-Elements / API /
-DDLについてはPrototypeではモデルおよび変換構造の設計検証までとし、
-それらを扱うApplication機能、Validator / Resolver /
-Generator等の実装はCoreで行う。
+具体的な開発サイクル、Test・Buildの運用、設計判断の記録方法および協働の進め方は、第2章 Development Processで扱う。
 
----
+### 1.3 Scope
 
-## 2. Protptype の基本方針
+Prototype Phase 5では、Task管理を題材として、以下を対象とする。
 
-Prototype では、完成形を事前に詳細設計してから実装するのではなく、
-小さな機能単位で実装・テスト・Build・実機確認を繰り返しながら進める。
+- Taskの一覧・詳細参照、新規作成、編集
+- ローカルYAMLへのTask保存、およびApplication再起動後の復元
+- TaskのValidationと、正常系・異常系のApplication内での伝達・処理
+- Windows ApplicationとしてのUI、Build、Test、実機での起動・操作確認
+- Frontend / Wails Boundary / Application Service / File Persistenceの連携、責務分離およびArchitecture設計判断の検証
 
-基本方針を以下とする。
+Taskの**新規作成**は対象に含む。一方、Task管理環境の**初回初期化**（`tasks.yaml` が存在しない場合の初期化を含む）は対象外とし、Coreで扱う。Taskが0件であること自体は正常な状態として扱う。
 
-- 小さな単位で機能追加しながら進める
-- 詳細な設計ドキュメントの作成は必須としない
-- 実装を通じて確定した重要な設計判断や、後から参照する価値のある事項のみ本ドキュメントへ記載する
-- コードから明らかな内容をドキュメントへ重複記載しない
-- Prototypeでは内部Databaseを使用せず、Fileを使用する
-- 機能追加の節目ごとにBuildを行い、リリースモジュールとして実際に起動・操作できることを確認する
-- テストを通過していない状態ではBuildしない
-- `test.sh` / `build.sh` をPhase
-  5初期に整備し、その後の開発サイクルの基盤とする
-- 未知の技術要素については、一度に完成形まで実装せず、小さな単位で動作を確認しながら段階的に進める
+Phase 2〜4で扱ったElements / API / DDLのモデルおよび変換構造を、Applicationから操作する機能は本Phaseの対象外とする。それらを扱うApplication機能やValidator / Resolver / Generator等の実装はCoreで扱う。
 
-Prototype では、動くApplicationを作ることだけでなく、 Svelte / Wails / Go /
-Fileの責務を説明できる状態で実装することを重視する。
+### 1.4 Completion Criteria
 
----
+Phase 5の完了は、以下の観点で判断する。
+
+1. **Applicationの成立**：Task管理の対象操作とYAML永続化・復元が、Windows Applicationとして動作する。
+2. **Architectureの成立**：採用した責務分離と境界に基づいてApplicationを構成でき、その設計判断の妥当性を検証できている。
+3. **検証の成立**：必要な自動Test、BuildおよびWindows実機での動作確認が成立している。
+4. **判断の整理**：検証を通じて確定した重要な設計判断、残課題およびCoreへの引継ぎ事項が整理されている。
+
+個別BehaviorやTestの詳細な合否条件は、第2〜4章および関連するBehavior Map・Test文書で定義する。
+
+## 2. Development Process
+
+### 2.1 Development Approach
+
+PROJECT ARIADNEのPrototype Phase 5では、小さな単位で設計・実装・検証を繰り返す反復型の開発プロセスを採用する。
+
+開発はPlanning、Design、Implementation & Test、Build & Verificationを基本的な活動として構成し、TDDを実装の基本手法とする。
+
+各活動は一方向に完了するものではない。Testや実機確認によって設計上の問題、仕様の不足、計画の不整合が明らかになった場合は、必要な段階へ戻って見直す。
+
+重要なのは、当初の計画を守り切ることではなく、実装と検証を通じて設計判断の妥当性を確かめ、Application全体を無理のない構造として成立させることである。
+
+### 2.2 Planning Process
+
+Phaseの目的とScopeを明確にしたうえで、実現する主要なBehaviorをBehavior Mapとして整理する。
+
+Behaviorは原則として1つのユーザーActionを基本単位とし、同じActionに対する結果の分岐はResult Patternとして整理する。各Behaviorについて、開始状態、Action、結果、Frontend / Backendの関与を明らかにする。
+
+Behavior Mapは、Test対象を整理するためだけの文書ではない。Phase全体で実現する振る舞いを俯瞰し、Stepの分割と実施順序を検討するための入力情報とする。
+
+Stepは、機能間の依存関係と段階的な検証の成立順序を考慮して分割する。各Stepでは、必要な課題検討、設計、実装、検証を小さな単位で進められることを重視する。
+
+後続Step固有の詳細仕様を先行して決定しなければ現在のStepが成立しない場合は、安易に先回りするのではなく、Behavior MapやStepの分割・順序が適切かを再検討する。
+
+ただし、現在のStepで設計する共通機構について、既知の後続Behaviorとの整合性を考慮することは妨げない。
+
+Behavior MapとStep計画は固定的なものではない。開発中に新たなBehaviorや依存関係が明らかになった場合は、必要に応じて更新する。
+
+### 2.3 Design Process
+
+各Stepでは、実装に先立って課題検討と設計を行う。
+
+まず、実現したいこと、前提条件、制約、既存の設計判断、未決定事項を整理する。そのうえで、責務境界と必要な構造を検討し、実現方法を具体化する。
+
+設計では、最初に挙がった案や既存実装を無条件に採用しない。必要に応じて代替案を比較し、それぞれの成立条件、複雑さ、トレードオフを明らかにする。
+
+設計判断は、その理由を理解し、納得したうえで確定する。重要な判断は、第3章Application Architecture、第4章Application Specificationなど、該当する正本へ反映する。
+
+Testや実装を通じて設計の不足・矛盾が明らかになった場合は、設計へ戻る。問題がBehaviorの定義やStepの分割・実施順序に及ぶ場合は、Planning Processまで戻って見直す。
+
+Testを通すためだけに、不自然な構造や例外的な処理を積み重ねない。
+
+### 2.4 Implementation & Test Process
+
+#### Test Strategy
+
+PROJECT ARIADNEでは、Testを技術要素ではなく、保証する範囲によって分類する。
+
+基本戦略は、Frontend Module Test（FMT）とBackend Module Test（BMT）によってBehaviorを保証することである。
+
+**Frontend Module Test（FMT）**
+
+対象BehaviorのFrontend側の振る舞いを、公開されたSvelte Componentの適切な境界から確認する。
+
+Backendを利用する場合はWailsが生成するBindingをMockし、ユーザー操作に対する表示、状態変化、Validation Message、Toastなどを確認する。
+
+子Component単位で網羅的にTestすることは目的とせず、1 Behavior = 1 Component = 1 Test Fileとも規定しない。
+
+VitestとSvelte Testing Libraryを使用する。Test Codeは実装と分離したTest用Directoryに配置し、Behavior単位で整理する。
+
+**Backend Module Test（BMT）**
+
+対象BehaviorのBackend側の振る舞いを、Wails Boundaryを介さず、Application Serviceの公開Operationを直接呼び出して確認する。
+
+Test Codeは実装とは分離したTest用Packageに配置し、Behavior単位で整理する。1 Behavior = 1 Test Fileとは規定せず、Result PatternやTest Caseに応じて複数ファイルへ分割してよい。
+
+File I/Oを伴う場合も、原則としてFile SystemをMockせず、`t.TempDir()`などで用意した一時Directory上で実際のFile AdapterとFile I/Oを使用する。
+
+Application ErrorはServiceの公開APIを通じて分類とError Chainを確認する。Wails PublicErrorへの変換はBMTの対象外とする。
+
+**Logic / Development Step Test**
+
+FMT/BMTのModule TestだけではTest Patternが過大になる複雑なLogicや、未知の技術要素を段階的に検証する場合に限り、補助的に使用する。
+
+Development Stepとして作成したTestは、上位のModule Testが成立した後、継続して保証する価値がなければ削除してよい。
+
+Logic / Development Step Testは通常の`test.sh`およびBuild Gateには含めない。必要な場合は`backend-test.sh --logic`で実行する。
+
+#### Behavior Test Specification
+
+Behavior Mapで定義したBehaviorについて、各Stepの課題検討・実装設計を終えた後、実装直前にBehavior Test Specificationを具体化する。
+
+Behavior Test Specificationでは、Result Patternごとに必要なFrontend / Backend Testを検討し、Dependency、Given、When、Expectedを明らかにする。
+
+Behavior Mapは振る舞いの正本、Behavior Test Specificationはその保証方法を定義する文書とする。
+
+1つのResult Patternを複数のTest Caseで確認してよい。特にBackendでは、Application上同じ結果になる複数の失敗原因を、必要に応じて個別に検証する。
+
+TestのGivenを構築するために先行Behaviorの機能を利用する場合は、依存先をBehavior Test Specificationに明記する。先行Behaviorの保証内容を重複してTestすることは目的とせず、依存先のTestがGREENであることを前提とする。
+
+Behavior Test Specificationは、Test Codeの内部実装を詳細設計するための文書ではない。
+
+#### TDD Implementation Cycle
+
+Behavior Test Specificationに基づき、実装より先にModule Testを作成する。
+
+Module Testは対象Behaviorの完成条件を示すものであり、GREENにするための最短経路で実装することは目的としない。
+
+基本サイクルは次のとおりとする。
+
+1. 対象BehaviorとResult Patternを選択する。
+2. 必要なModule Testを作成し、REDとなることを確認する。
+3. 既存のModule TestのGREENを維持しながら、小さな技術的・機能的単位で実装を進める。
+4. 必要に応じてLogic / Development Step Testを利用し、段階ごとに動作を確認する。
+5. 新たに作成したModule Testを含め、すべてのModule TestがGREENとなることを確認する。
+6. 必要に応じてRefactorし、再びALL GREENを確認する。
+
+新たなModule TestがREDである間も、既存のModule TestはGREENを維持することを原則とする。
+
+実装中に設計上の疑問が生じた場合は、必要な設計判断へ戻る。問題がStep計画に及ぶ場合はPlanning Processまで戻る。
+
+### 2.5 Build & Verification Process
+
+Implementation & Test Processで成立した実装を、Windows ApplicationとしてBuildし、実機で確認する。
+
+日常的なModule Testの統一入口は`test.sh`とする。
+
+`test.sh`は`backend-test.sh`と`frontend-test.sh`を実行し、両方がPASSした場合のみPASSとする。Logic / Development Step Testは通常実行に含めない。
+
+Frontend / Backendの各Test Scriptは、日常的に確認しやすいコンパクトな結果表示とする。TestごとのPASS / FAIL、Total、Error Rate、実行時間を基本とし、Errorの詳細はFailure時に表示する。冗長なDOMやStack Traceなどのノイズを抑制する。
+
+`build.sh`は、既存のBuild成果物を削除した後、`test.sh`をBuild Gateとして実行する。
+
+Module TestがすべてPASSした場合のみWails ApplicationをBuildする。FAILした場合はBuildせず、以前の成果物も残さない。
+
+Build後は、Windows実機でApplicationを起動し、操作、画面表示、状態遷移、FrontendからBackendおよびFile Persistenceまでの連携を確認する。
+
+CSS、Layout、Color、Spacing、SizeなどのVisual Designは、原則として自動Module Testの保証対象とせず、実機で確認する。
+
+一方、表示の有無、Validation Message、Toast、画面状態の変化など、Behaviorとして意味を持つUI状態はFMTの対象とする。
+
+Buildと実機確認はModule Testの代替ではない。異なる保証範囲を持つ検証として組み合わせる。
+
+### 2.6 Communication & Collaboration
+
+PROJECT ARIADNEでは、テルとアリアドネが対話を通じて設計・開発を進める。
+
+テルは、実現したいこと、目的、譲れない条件を提示し、設計判断を確定する主体となる。
+
+アリアドネは、目的や課題の構造化、実現方法の提案、代替案の比較、疑問・矛盾の指摘、反論、記録の整理を担う。
+
+両者は単に提案と承認を繰り返すのではなく、設計判断の理由を共有し、理解と納得に至るまで議論する。
+
+アリアドネはテルの提案を無条件に肯定しない。既存実装や過去の決定についても、必要であれば疑問を呈する。
+
+一方、テルが設計上の疑問を持っている段階で、アリアドネが先行して実装を進めない。
+
+設計判断が確定したら、小さな単位で実装・検証を進め、結果を共有する。問題が見つかった場合は、原因と影響範囲を確認し、必要な段階へ戻って協議する。
+
+### 2.7 Development Artifacts & Management
+
+PROJECT ARIADNEでは、設計判断を保持するDocument、BehaviorとTestの関連文書、作業管理情報、Source Codeについて、それぞれの役割と更新方法を区別する。
+
+設計判断の継続的な参照先は正本とし、IssueやPull Requestを正本の代替としない。
+
+| 対象 | 役割 | 更新方式 | 管理方針 |
+| --- | --- | --- | --- |
+| Phase正本 | 目的、設計原則、Architecture、Application Specificationなどの重要な設計判断を保持する | PR運用（アリアドネ） | 設計判断の確定・変更時に更新する |
+| Behavior Map | Phase全体のBehaviorを整理し、Step計画の入力とする | PR運用（アリアドネ） | Phase開始時に作成し、Behaviorや計画の変更に応じて更新する |
+| Behavior Test Specification | BehaviorごとのTest対象、条件、期待結果を定義する | PR運用（アリアドネ） | 各Behaviorの実装直前に具体化し、変更に応じて更新する |
+| Validation Rules | FieldおよびCorrelation Validationの判定条件を定義する | PR運用（アリアドネ） | 独立Documentとして維持し、Task固有のSingle Field／Correlation Validationの判定条件を管理する |
+| GitHub Issue | Activity、Task、未決定事項、進捗、検討結果を管理する | 直接更新（アリアドネ） | 作業や検討の進行に合わせて更新する |
+| Source Code | Applicationの実装を保持する | PR運用（テル） | テルが自ら実装し、変更を管理する |
+
+DocumentationのPR運用では、アリアドネがBranch上で編集・Commitし、Pull Requestを作成する。テルがレビューし、合意後にMergeする。
+
+Source Codeの実装・変更・Mergeはテルが行う。
+
+各Stepの完了時には、実装・検証結果、確定した設計判断、残課題を整理し、必要なDocumentとIssueを更新する。
+
 
 ## 3. Application Architecture
 
 ### 3.1 Architecture Overview
 
-PROJECT ARIADNE では、**Go Service First** を基本方針とし、Application Serviceを中心としたアーキテクチャを採用する。
+PROJECT ARIADNEでは、**Go Service First**を基本方針とし、Application Serviceを中心としたArchitectureを採用する。
 
-Frontend、Wails Boundary、Application Service、Persistence Adapterの責務を分離し、それぞれの境界で扱うデータモデルを明確にする。
+**Frontend、Wails Boundary、Backendの3つをApplicationの基本構造とし、BackendにApplication Serviceが含まれる。**
 
-#### Architecture Diagram
+Frontendは画面表示・入力および画面状態を扱い、Wails Boundaryを通じてBackendの機能を利用する。BackendはApplication Serviceを中心に業務処理と永続化を担う。
 
-```mermaid
-flowchart TD
-    FE["Frontend<br/>Svelte / TypeScript"]
-    WB["Wails Boundary<br/>Wails v3"]
-    AS["Application Service<br/>Go"]
-    FA["Persistence Adapter<br/>Go"]
-    YAML["tasks.yaml"]
-
-    FE <-->|Public Model| WB
-    WB <-->|Public Model| AS
-    AS <-->|Business Model| FA
-    FA <-->|Persistence Model| YAML
-```
-
-この図は、Applicationの主要な構成要素と、それぞれの境界で受け渡すデータモデルを示す。
-
-矢印はデータの受け渡しを模式的に表しており、Package間の依存方向や、実際の呼び出し経路を厳密に表すものではない。
+各構成要素の内部構造と責務は、後続の節で定義する。
 
 #### Architecture Principles
 
@@ -94,1130 +242,1058 @@ WailsはFrontendとBackendを接続するために利用し、業務処理をWai
 
 ##### Model Separation
 
-Application内部では、以下の3種類のモデルを明確に分離する。
+Application内部では、責務に応じてモデルと状態の表現を分離する。
 
-- **Business Model**：業務上、本来あるべきデータの姿を表す。
-- **Public Model**：Application Serviceの入出力契約を表す。取得結果だけでなく、Create / Modify等の入力モデルも含む。
-- **Persistence Model**：YAMLやDB等の永続化方式に適したデータの姿を表す。
+Backendでは、以下の3種類のモデルを区別する。
 
-Business Modelをそのまま外部へ公開せず、必ず独立したPublic Modelを使用する。
+- **Business Model**：業務上の概念と成立条件を表す。
+- **Public Model**：Application Serviceが提供するOperationの入出力契約を表す。
+- **Persistence Model**：永続化方式に適したデータ表現を表す。
 
-Application ServiceはBusiness ModelとPublic Modelを認識し、公開する情報の範囲と表現を決定する。
+Public ModelはBusiness Modelの完全な写像ではなく、Operationの目的に応じて必要な入出力を表す。取得用のPublic Modelと登録・更新用の入力モデルは独立して定義し、取得用モデルをそのまま入力モデルとして流用しない。
 
-一方、Persistence Modelは永続化技術に依存するため、Application Serviceからは認識しない。
+Frontendでは、Public Modelをそのまま画面の状態として扱うとは限らない。必要に応じてPublic Modelの表現を変換し、画面の表示・入力・操作に必要な情報や状態を管理する。
 
-##### Persistence Independence
+各モデルの変換責務はBackend Architectureで、Frontend内部の状態管理と公開IFへの適合はFrontend Architectureで定義する。
 
-Application ServiceはPersistence Portを介してデータの永続化を要求する。
+##### File-based Persistence
 
-Persistence PortはBusiness Modelを扱うInterfaceとして定義し、File Persistence Adapterがこれを実装する。
+PROJECT ARIADNEは、ファイルによる永続化を基本方針とする。Databaseへの置き換えを前提とした永続化方式の抽象化は行わない。
 
-File Persistence AdapterはBusiness ModelとPersistence Modelの相互変換、およびローカルYAMLへの読み書きを担当する。
+Persistence Portは、Business Model単位の取得・格納を契約とし、登録と更新には共通の`Store` Operationを使用する。
 
-これにより、Application Serviceを特定の永続化方式から独立させる。
+`Store`は`StoreIntent`によって新規登録（Deposit）と既存データの置き換え（Replace）を区別する。部分UpdateをPersistence Portの基本操作とはしない。
 
-なお、Architecture Diagramでは全体像を優先してPersistence Portを省略している。具体的な依存関係と変換責務はSection 3.2で定義する。
+Application Serviceは、ファイルの具体的な形式・構造・読み書き手順を認識せず、Persistence Adapterがそれらを担当する。
+
+Application Serviceが定義するPersistence PortをPersistence Adapterが実装する。
+
+Package間の依存方向およびPort / Adapterの詳細はBackend Architectureで定義する。
 
 ##### Wails Boundary
 
 FrontendとApplication Serviceの接続にはWails v3を使用する。
 
-Wails Boundaryでは公開APIを制御し、Frontendとのデータ受け渡しにはPublic Modelを使用する。
+Wails Boundaryは、FrontendとApplication Serviceの接続およびデータの受け渡しを担う。境界を越えて受け渡すデータにはPublic Modelを使用し、Business Modelを直接公開しない。
 
 Wailsが生成するBindingはFramework管理のコードとして扱い、手動編集しない。
 
-公開メソッド、Binding、エラー変換の詳細はSection 3.3で定義する。
+Application Serviceとの接続、Bindingおよび境界でのエラー変換はWails Boundaryで定義する。
 
 ##### Source of Truth
 
-Prototype では、TaskデータのSource of Truthをローカルの `tasks.yaml` とする。
+Applicationが管理するデータのSource of Truthは、Persistence Adapterを通じて永続化されたデータとする。
 
-Frontendの状態やApplication Service内のBusiness Modelは、永続化されたTaskデータの正本とはしない。
+Frontend StateやApplication Service内のBusiness Modelは、永続化データの正本とはしない。
 
-YAMLの具体的な構造とPersistence Modelの定義はSection 5で扱う。
-
----
+具体的な永続化方式、データ構造および読み書きの仕様はApplication Specificationで定義する。
 
 ### 3.2 Backend Architecture
 
-Backendは、Application Service、Persistence Port、Persistence Adapterを中心に構成する。
+#### 3.2.1 Backend Structure
 
-Application ServiceはBusiness Modelを中心にユースケースを実現し、Public Modelによって外部との入出力契約を定義する。
+Backendでは、**Business Modelを中心にApplicationを構成する。**
 
-Persistence Adapterは永続化技術を担当し、Persistence Portを介してApplication Serviceから利用される。
+Business Modelは業務上の概念と成立条件を表し、**登録・更新・復元のいずれにおいても、成立した時点ですべての成立条件を満たすことを保証する。** 成立条件を満たす前の入力情報や中間状態はBusiness Modelとして扱わず、不正な状態のBusiness Modelを生成・変更・復元させない。
 
-#### 3.2.1 Model Separation
+Business Modelの成立条件違反は、モデルとして成立しないことを表す。これをApplication上のどのErrorとして扱うかは、そのBusiness Modelを生成・変更・復元しようとした呼び出し元の文脈に応じて決定する。
 
-Backendでは、以下の3種類のモデルを独立して定義する。
+Application Serviceが業務処理を担い、Persistence AdapterがBusiness Modelの保存・復元を担う。
 
-| Model             | Purpose                                   | Application Serviceからの認識 |
-| ----------------- | ----------------------------------------- | ----------------------------- |
-| Business Model    | 業務上、本来あるべきデータを表現する      | 認識する                      |
-| Public Model      | Application Serviceの入出力契約を表現する | 認識する                      |
-| Persistence Model | 永続化方式に適したデータを表現する        | 認識しない                    |
+Wails BoundaryとPersistence Adapterは、いずれもApplication Service側に依存するAdapterとして位置づける。
 
-Business ModelとPublic Modelは、必ず異なるPackageで定義する。
+```mermaid
+flowchart TB
+    S["Application Service<br/>Business Model"]
+    W["Wails Boundary<br/>(Inbound Adapter)"]
+    P["Persistence Adapter<br/>(Outbound Adapter)"]
+    W -->|依存| S
+    P -->|依存| S
+```
 
-Public Modelには、取得結果のモデルだけでなく、Create / Modify等の入力モデルも含める。
+図の矢印は、処理やデータの流れではなく、**ソースコード上の依存方向**を示す。Wails BoundaryはApplication ServiceのOperationを呼び出し、Persistence AdapterはApplication Service側で定義されたPersistence Portを実装する。
 
-取得用のPublic Modelを、そのまま登録・更新用の入力モデルとして流用しない。
+Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義するInterfaceであり、Application Serviceと同じPackageに配置する。これにより、Application ServiceはPersistence Adapterの具体的な実装に依存しない。
 
-Public Modelは、Business Modelと同じ名称を使用してもよい。両者は異なる責務を持つ独立したモデルであり、同じ概念であっても値の表現が異なる場合がある。
-
-例えばTaskの任意項目 `description` は、Business Modelでは未設定を `nil` として扱い、Public Modelでは空文字列として公開する。
-
-Persistence Modelは、YAMLやDB等の永続化方式に合わせたモデルであり、Application Serviceの入出力契約には使用しない。
+Persistence Portは、Application Serviceが必要とする操作を契約として定義する。操作の命名と粒度は、永続化技術の機能ではなく、Application Serviceが表現したい操作意図に基づいて決定する。
 
 #### 3.2.2 Application Service
 
-Application Serviceは、Frontendから要求されるApplication Operationを実現する。
+Application Serviceは、Business Modelを中心に、Applicationが提供する業務処理を実現する。
+
+Business Modelが保証する成立条件を前提として、Operationに必要な処理を組み立てる。
 
 主な責務は以下とする。
 
-- Business Modelの成立条件を管理し、ユースケースを実現する
-- Public Modelによって外部への入出力契約を定義する
-- Business ModelとPublic Modelの相互変換を行う
-- Persistence Portを介してデータの取得・格納を要求する
+- Business Modelを用いた業務処理の実行
+- Public ModelによるOperationの入出力契約の定義
+- Business ModelとPublic Modelの相互変換
+- Persistence Portを介したBusiness Modelの取得・保存要求
 
-Application Serviceは、Frontendの表示方法やWails固有の処理を認識しない。
+Application Serviceは、Frontendの画面表示や具体的な永続化方式を認識しない。
 
-また、YAML Format、File I/O、Persistence Model、ULID生成方式、Timestampの取得・維持といった永続化技術の詳細も認識しない。
+#### 3.2.3 Persistence Adapter
 
-Prototypeでは以下のOperationを基本とする。
+Persistence Adapterは、Business Modelの保存・復元を実現する。
 
-```text
-ListTasks()
-GetTask(ID)
-CreateTask(Properties)
-ModifyTask(ID, Properties)
-```
+永続化方式に応じたPersistence Modelを定義し、Business Modelとの相互変換を担当する。
 
-各Operationの入出力にはPublic Modelを使用する。具体的なTaskモデルと入力項目はSection 5で定義する。
+Application Serviceが操作の意図を決定し、Persistence AdapterはPersistence Portで定義された契約に従って実行する。
 
-Create / Modifyの入力モデルについては、操作ごとに独立したモデルを使用する。
+Persistence Adapterは、具体的な保存形式や入出力処理を担当する。
 
-#### 3.2.3 Persistence Port
+#### 3.2.4 Model Separation
 
-Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義するInterfaceである。
+Backendでは、**Business Modelを中心とし、目的に応じてPublic ModelとPersistence Modelを定義する。**
 
-Persistence PortはBusiness Modelを扱い、Persistence Modelを公開しない。
+Public Modelは、Application Serviceが提供するOperationの入出力契約を表す。取得系ではBusiness Modelの必要な側面を公開し、登録・更新系ではBusiness Modelを成立・変更させるための要求を表す。Business ModelとPublic Modelは一対一に対応する必要はない。
 
-Prototypeでは以下のOperationを基本とする。
+Persistence Modelは、Business Modelを永続化方式に適合させた表現であり、保存・復元に使用する。
 
-```text
-Retrieve()
-Pick(ID)
-Store(Task, StoreIntent)
-```
+Persistence Modelには、`createdAt`・`updatedAt`のような記録管理用Timestampを持たせることができる。これらはBusiness Modelの成立条件を表すものではなく、Business Modelには含めない。記録管理用TimestampはPersistence Adapterが生成・維持し、画面表示には使用しない。業務上必要な日時情報は、Business Modelに別途定義する。
 
-- `Retrieve`：格納されているTask群を取得する
-- `Pick`：IDを指定して1件のTaskを取得する
-- `Store`：Taskを格納する
+Business ModelとPublic Modelは、それぞれ独立したPackageで定義する。
 
-`StoreIntent` は格納操作の意図を明示する。
+モデル間の変換責務は以下とする。
 
-```text
-Deposit
-    新しいTaskを初めて格納する
+| 変換 | 担当 |
+| --- | --- |
+| Business Model ↔ Public Model | Application Service |
+| Business Model ↔ Persistence Model | Persistence Adapter |
 
-Replace
-    既存のTaskを置き換える
-```
+Application ServiceはPersistence Modelを認識せず、Persistence AdapterはPublic Modelを認識しない。
 
-Persistence AdapterはTaskの状態から格納Intentを推測しない。
 
-将来、`Retrieve` に取得条件が必要になった場合は、Conditions / Order / Range等を含むCriteriaの導入を検討する。Prototypeでは実装しない。
+### 3.3 Frontend Architecture
 
-#### 3.2.4 Persistence Adapter
+#### 3.3.1 Frontend Structure
 
-Persistence AdapterはPersistence Portを実装し、具体的な永続化方式を担当する。
+Frontendの画面は、**業務Page、業務Component、Fieldの3階層**で構成する。
 
-Prototype ではFile Persistence Adapterを使用し、ローカルYAMLへの永続化を行う。
-
-主な責務は以下とする。
-
-- `tasks.yaml` のRead / Write
-- YAML Parse / Serialization
-- `format / version` Validation
-- Persistence ModelとBusiness Modelの相互変換
-- Deposit時のULID生成
-- `createdAt / updatedAt` の生成・維持
-- Temporary Fileへの全量WriteとCanonical FileへのReplaceによるSafe Write
-
-Persistence Adapterは、Persistence Portで定義されたBusiness Modelを受け取り、永続化方式に適したPersistence Modelへ変換する。
-
-取得時にはPersistence ModelをBusiness Modelへ変換して返却する。
-
-#### 3.2.5 Dependency and Conversion Boundaries
-
-Backendの依存関係とモデル変換の責務は、以下の原則に従う。
-
-| Boundary               | Model Conversion                   | Responsibility      |
-| ---------------------- | ---------------------------------- | ------------------- |
-| Public ↔ Business      | Public Model ↔ Business Model      | Application Service |
-| Business ↔ Persistence | Business Model ↔ Persistence Model | Persistence Adapter |
-
-Application ServiceはPersistence PortのInterfaceに依存し、Persistence Adapterの具体的な実装には依存しない。
-
-Persistence AdapterはPersistence Portの契約に従って動作する。
-
-これにより、公開契約の変更と永続化方式の変更を、それぞれ独立した責務として扱える。
-
----
-
-### 3.3 Wails Boundary
-
-Wails Boundaryは、FrontendとGo Application Serviceを接続するApplication境界である。
-
-Application ServiceはWailsに依存せず、Wails BoundaryがFrontendへ公開するOperationとErrorの表現を制御する。
-
-#### 3.3.1 Public API
-
-Frontendへ公開するMethodは、Wails Boundaryで明示的に定義する。
-
-Application ServiceのMethodを無条件にFrontendへ公開するのではなく、Wails Boundaryを通じて公開範囲を制御する。
-
-Prototypeでは以下のOperationを基本とする。
-
-```text
-ListTasks()
-GetTask(ID)
-CreateTask(Properties)
-ModifyTask(ID, Properties)
-```
-
-Wails Boundaryは、Frontendからの要求を対応するApplication ServiceのOperationへ委譲する。
-
-Business Logic、Task Validation、Persistence処理はWails Boundaryに実装しない。
-
-#### 3.3.2 Public Model and Binding
-
-FrontendとWails Boundaryの間ではPublic Modelを使用する。
-
-Public ModelはApplication Serviceの入出力契約であり、Business Modelとは独立したPackageで定義する。
-
-Wails BoundaryはBusiness Modelを直接Frontendへ公開しない。
-
-Wailsが生成するTypeScript BindingおよびModelはFrameworkが管理する成果物として扱い、手動編集しない。
-
-```text
-Frontend
-    ↓
-Generated TypeScript Binding
-    ↓
-Wails Runtime
-    ↓
-Wails Boundary
-    ↓
-Application Service
-```
-
-Public ModelからFrontend向けのTypeScript表現への変換は、WailsのBinding生成・Runtimeによって行われる。
-
-Wails Boundaryは公開範囲と接続を担当し、Public Modelの業務上の意味や項目構成を独自に決定しない。
-
-Create / Modifyの入力モデルにはPublic Modelを使用する。
-
-#### 3.3.3 Error Boundary
-
-Wails Boundaryは、Backend内部で発生したErrorをFrontend向けの公開用Errorへ変換する。
-
-Backend内部のError ChainをFrontendへ直接公開せず、公開用Messageと処理済みであることを示す情報を伝達する。
-
-Frontend向けのErrorは、以下の構造を基本とする。
-
-```go
-type PublicError struct {
-    Processed bool
-    Message   string
-}
-```
-
-`Processed` は、Wails Boundaryで公開用に処理されたErrorであることを表す。
-
-`Message` は、Frontendへ表示する公開用Messageである。
-
-Application Error Codeは設けない。
-
-Prototypeでは、Wails Boundaryによるpanicの捕捉・回復処理は実装しない。
-
-通常のBackend Errorについては、Wails Boundaryで公開用Errorへ変換する。
-
-#### 3.3.4 Wails Error Conversion
-
-Wails v3では、Go側から返却されたErrorがWails Runtimeを経由し、FrontendではJavaScriptのErrorとして受け取られる。
-
-BackendのWails Boundaryで生成した `PublicError` は、Wails Runtimeによる変換後、Frontendでは `Error.cause` に格納される。
-
-```text
-Backend
-    PublicError
-        Processed = true
-        Message = 公開用Message
-            ↓
-        Wails Runtime
-            ↓
-Frontend
-    Error
-        cause
-            Processed = true
-            Message = 公開用Message
-```
-
-Frontendでは、`Error.cause.Processed == true` によって、Wails Boundaryで公開用に処理されたErrorであることを識別する。
-
-公開用Messageは `Error.cause.Message` から取得する。
-
-Frontendにおける処理済みErrorの識別と、未処理Errorに対するFallbackはSection 3.5.3で定義する。
-
-#### 3.3.5 Error Boundary Verification
-
-Wails BoundaryにおけるError変換・伝搬は、テストの保証範囲を分けて検証する。
-
-| Test                          | Guarantee                                                 |
-| ----------------------------- | --------------------------------------------------------- |
-| Backend Module Test           | Application Serviceの公開APIからBackend Errorの分類を検証 |
-| Logic / Development Step Test | Wails BoundaryにおけるPublicErrorへの変換処理             |
-| Frontend Module Test          | Wails変換後のErrorを受け取った際のFrontendの振る舞い      |
-
-Wails BoundaryのError変換処理は、Backend Module Testの対象に含めず、Logic / Development Step Testで補助的に検証する。
-
-Frontend Module Testでは、Wails Runtimeによる変換後のError形状をMockで再現する。
-
-Wails Runtimeによる実際のError変換・伝搬は、
-Frontend Module TestのMockだけでは保証できない。
-
-そのため、Applicationの実機確認時に、
-代表的なErrorの伝搬とFrontendでの表示を確認する。
-
----
-
-### 3.4 Frontend Architecture
-
-FrontendはSvelte / TypeScriptで構成し、画面表示、ユーザー操作、Frontend State、Application Serviceとの連携を担当する。
-
-Frontendでは、Componentによる表示責務と、TypeScript Moduleによる状態管理・処理責務を分離する。
-
-BackendのBusiness Modelを直接扱わず、WailsのGenerated Bindingを通じてPublic Modelを取得・操作する。
-
-#### 3.4.1 Component Structure
-
-Frontendは、Application全体を構成するComponent、各機能を管理するComponent、および複数の機能から利用可能な共通Componentに分けて構成する。
-
-Prototypeでは、以下のComponent構造を基本とする。
+各階層は、必要な下位要素を構成し、Ariadne系の共通Componentを利用して共通の表示構造や振る舞いを備える。Ariadne系Componentは独立した階層ではない。
 
 ```mermaid
-flowchart TD
-    App["App.svelte"]
-    Header["Header / Primary Navigation"]
-    Task["TaskManagement.svelte"]
-    Config["Config Dummy Page"]
-    Footer["Footer"]
-    Toast["AriadneToast.svelte"]
-    Side["AriadneSideNavigation.svelte"]
-    ListPage["TaskListPage.svelte"]
-    DetailPage["TaskDetailPage.svelte"]
-    CreatePage["TaskCreatePage.svelte"]
-    Page["AriadnePage.svelte"]
-    Table["AriadneListTable.svelte"]
-    TaskView["TaskView.svelte"]
-    AriadneView["AriadneView.svelte"]
-    TaskEntry["TaskEntry.svelte"]
-    Form["AriadneForm.svelte"]
-    Button["AriadneButton.svelte"]
-    Field["Field Components"]
-    Toggle["AriadneToggle.svelte"]
-
-    App --> Header
-    App --> Task
-    App --> Config
-    App --> Footer
-    App --> Toast
-    Task -.-> Side
-    Task --> ListPage
-    Task --> DetailPage
-    Task --> CreatePage
-    ListPage --> Page
-    DetailPage --> Page
-    CreatePage --> Page
-    ListPage --> Table
-    DetailPage --> TaskView
-    CreatePage --> TaskEntry
-    TaskView --> AriadneView
-    AriadneView --> Field
-    TaskEntry --> Form
-    Form --> Field
-    Form --> Button
-    DetailPage -.-> Toggle
+flowchart TB
+    P["業務Page"]
+    C["業務Component"]
+    F["Field"]
+    AP["AriadnePage"]
+    AC["AriadneView / AriadneForm / AriadneListTable"]
+    AF["AriadneField"]
+    P -->|構成・利用| C
+    C -->|選択・配置| F
+    P -.->|利用| AP
+    C -.->|利用| AC
+    F -.->|利用| AF
 ```
 
-実線は主要なComponentの構成関係を示す。
+図の実線は画面構成上の3階層の関係、破線は各階層が共通Componentを利用する関係を示す。処理の実行順序やデータ変換経路、厳密なSvelte Componentの包含関係を示すものではない。
 
-破線は共通Componentの利用関係を示す。共通Componentは特定の機能に依存せず、他の機能からも利用できる構造とする。
+##### Field
 
-図では主要なComponentのみを示し、すべての内部Componentや利用関係を網羅しない。
+Fieldは、個々の値の表示・入力を担当する。Text、Textareaなどの汎用Fieldに加え、業務固有の意味や表示方法を持つFieldを定義できる。
 
-各Componentの責務は以下とする。
+Fieldは`AriadneField`を利用し、Label、Value、Errorの共通構造と装飾を備える。個々のFieldは値の種類に応じた表示・入力方法を担当する。
 
-| Component             | Responsibility                                                   |
-| --------------------- | ---------------------------------------------------------------- |
-| App                   | Application全体の構成、Primary Navigation、Toast Stateの管理     |
-| TaskManagement        | Task機能内のNavigation操作の受付、画面遷移の制御、表示画面の切替 |
-| AriadneSideNavigation | 渡されたNavigation項目の表示と、ユーザー操作の通知               |
-| TaskListPage          | Task一覧画面の構成と表示データの受け渡し                         |
-| TaskDetailPage        | Task詳細画面の構成と表示データの受け渡し                         |
-| TaskView              | Task固有の参照Fieldの構成・配置                                  |
-| TaskCreatePage        | Task作成画面の構成                                               |
-| TaskEntry             | Task固有の入力Fieldの構成・配置                                  |
-| AriadneView           | 汎用参照コンテナと内部スクロール                                 |
-| AriadneForm           | 入力領域の内部スクロール、操作ボタンの配置、Submit受付             |
-| AriadneButton         | 共通ボタンの表示・操作                                           |
-| AriadnePage           | Page共通の構造とContents領域の提供                               |
-| AriadneListTable      | 一覧表の構造、表示、スクロール制御                               |
-| AriadneToggle         | 選択肢を切り替える共通UIの表示と操作通知                         |
-| AriadneField          | Field共通のLabel、Value、Error領域の構造                         |
-| AriadneToast          | Notificationの表示                                               |
-| Header / Footer       | Application共通情報の表示                                        |
+Fieldの表示形態は`reference`（参照表示）、`edit`（入力・変更）、`cell`（一覧表のセル表示）を区別する。各Fieldは用途に応じて必要な表示形態を実装し、3形態すべてを一律に要求しない。
 
-`AriadneSideNavigation` は、ユーザーの選択操作を通知するが、Navigationの成立可否や遷移先の確定は担当しない。
+##### 業務Component
 
-Task List / DetailのPageは、TaskContextから取得したデータを表示Componentへ渡す。データ取得処理やStoreの生成は担当しない。Task Createの入力内容はTaskEntryが構成する。
+業務Componentは、必要なFieldを選択し、値を割り当て、組み合わせと配置を決定する。
 
-Configへの切替時にはTaskManagementを破棄し、Task機能に属するStateを維持しない。
+業務Componentは、用途に応じて`AriadneView`、`AriadneForm`、`AriadneListTable`などを利用し、共通の表示・入力構造と振る舞いを備える。業務Component自身が、Field群の構成と利用する共通Componentの両方を決定する。
 
-##### Page / View / Form / Common Component
+- `AriadneView`：参照表示の共通構造とスクロール
+- `AriadneForm`：入力領域の共通構造、スクロール、Submit受付、操作ボタンの配置
+- `AriadneListTable`：一覧表示の共通構造、行・列の表示、スクロール
 
-Frontendの画面は、Pageによる画面構成、業務固有Componentによる表示・入力内容の構成、共通Componentによる表示領域内の振る舞いを分離する。
+##### 業務Page
 
-`AriadnePage` はHeaderとContentsの表示領域を提供する。Contents自体はスクロールを管理せず、配置されたComponentが必要に応じて自身の領域内でスクロールを管理する。
+業務Pageは、画面全体を構成し、必要な業務Componentを利用する。
 
-業務固有Componentは、親から与えられた領域を利用してField等の配置を決定する。コンテンツの寸法は基本的に固定とし、Windowの縮小に合わせて自動的に縮小しない。
+業務Pageは`AriadnePage`を利用し、HeaderとContentsの共通構造を備える。`AriadnePage`はContents自体のスクロールを管理せず、必要なスクロールは内部のComponentが担当する。
 
-共通Componentは、親から割り当てられた領域内で自身の責務を果たす。親のPage構造や業務固有のField構成には依存しない。
+業務PageはStore / Contextと業務Componentを結びつけるが、Backendを直接呼び出さない。データ変換、入力値の再構成、登録・更新における要求内容の構築は3.3.2で定義する。
 
-- `AriadneListTable` は、一覧表の表示と内部スクロールを管理する。
-- `AriadneView` は、参照表示の共通コンテナとして、子コンテンツの内部スクロールを管理する。
-- `AriadneForm` は、入力内容の内部スクロール、操作ボタンの配置、Submit受付を管理する。操作ボタンはFormに割り当てられた表示領域の右下に固定し、入力内容との重なりを許容する。
+##### Modal / Toast
 
-Task詳細画面では `TaskView` が `AriadneView` を利用し、Task作成画面では `TaskEntry` が `AriadneForm` を利用する。
+Confirmation ModalとNotification Toastは、画面構成の3階層とは別に、複数の画面から利用する共通Componentとする。
 
-`AriadneForm` のSubmit受付は実装済みだが、Validation、Confirmation Modal、登録処理への連携は後続Behaviorで実装・検証する。
+- **Confirmation Modal**：意思確認を行い、判断結果を呼び出し元へ返す。業務処理の実行やNavigationの確定は担当しない。
+- **Notification Toast**：指定された通知内容を表示する。通知内容の決定や業務処理の結果判定は担当しない。
 
-`TaskEntry` はCreate / Editで共通利用する方針とする。Createでの利用は確認済みだが、Editへの適用はStep 6で検証する。
+Form利用時の意思確認と正常な登録・更新結果の通知は3.3.2、未保存変更がある場合の離脱確認は3.3.3、Error通知とLoggingの関係は3.5で定義する。
 
-これにより、業務固有の表示・入力内容と、スクロールや操作ボタンなどの共通的な振る舞いを分離する。
+#### 3.3.2 Frontend Data Management
 
-##### Field Components
+Frontendでは、データの取得・保持、業務データの分解・統合、個々の値の表現、画面における業務操作を、それぞれの責務に応じて分担する。
 
-Fieldは、値の意味と表示方法を扱うComponentと、共通の表示構造を扱うComponentに分ける。
+##### Responsibility
 
-`AriadneField` は、Fieldに共通するLabel、Value、Errorの表示領域と装飾を担当する。値の型や業務上の意味は扱わない。
+| 要素 | 責務 |
+| --- | --- |
+| **Feature Management** | Feature内の画面遷移を制御する |
+| **Context** | 遷移準備中の状態を含め、画面に対応するStoreを管理する |
+| **Store** | Backendからデータを取得・保持し、必要に応じて技術的な表現差異を補正する |
+| **業務Page** | 画面表示を構成し、画面における業務操作とBackendへの要求内容の構築を担当する |
+| **業務Component** | 業務データの分解・統合とFieldの配置を担当する |
+| **Field** | 個々の値の入力・表示と表現変換を担当する |
 
-各Field Componentは、`AriadneField` を利用しながら、値の意味に応じた表示方法を担当する。
+##### Data Management
 
-Prototypeでは以下のFieldを使用する。
+Application全体で共有するStateはApplication側で管理し、特定のFeatureに属するStateは、そのFeatureの有効期間内で管理する。
 
-| Field             | Responsibility                         |
-| ----------------- | -------------------------------------- |
-| TextField         | 単一行または固定行数のText表示         |
-| SubTextField      | 一覧表等における補助的なText表示       |
-| TextareaField     | 改行を含むTextの表示と領域内スクロール |
-| TaskPriorityField | Task Priorityの星表示                  |
-| TaskStatusField   | Task StatusのBadge表示                 |
+Feature内のデータ管理では、Contextが画面に対応するStoreを管理する。画面遷移の準備中に必要なStoreもContextが管理し、画面遷移の制御はFeature Managementが担当する。
 
-`TaskPriorityField` および `TaskStatusField` はTask固有の意味を持つため、Task機能内に配置する。
+StoreはBackendから取得したPublic Modelを保持する。業務画面固有の加工は行わず、Wails Binding等による技術的な表現差異がある場合のみ必要な補正を行う。
 
-Fieldは以下のVariantを共通して使用する。
+Storeは、Application Serviceの正常応答として想定しない`null`を受け取った場合、Errorとして扱う。
 
-| Variant   | Purpose                        |
-| --------- | ------------------------------ |
-| reference | 参照画面における値の表示       |
-| edit      | 更新画面における値の編集       |
-| cell      | 一覧表のCell内における値の表示 |
+業務PageはContextを介してStoreのデータを取得し、業務Componentへ渡す。
 
-Variantの型定義は `AriadneField` から共有する。
+業務Componentは業務データを個々のFieldへ分解し、Fieldから受け取った値を統合する。Fieldの選択・配置も担当する。
 
-Fieldの幅と配置は、利用側の業務固有Component（TaskView / TaskEntry等）が決定する。Fieldは与えられた領域の中で、値の表示方法と必要な高さを管理する。
+Fieldは個々の値の表示・入力と表現変換を担当する。業務データ全体の構造は認識しない。
 
-Reference表示では以下を基本とする。
+入力値の変更有無はFieldが自身の保持する状態から判定し、上位Componentはその判定結果を利用する。上位Componentで変更有無を重複して判定しない。
 
-- TextFieldは指定された行数に応じた固定の高さを持つ。表示しきれない場合の省略は例外的な処置とし、Tooltipによる補完を前提としない。
-- TextareaFieldは固定の高さを持ち、内容が収まらない場合は内部スクロールで全文を閲覧できるようにする。
-- Cell内のTextFieldは必要に応じて省略表示とTooltipを利用する。
-- SubTextFieldは補助情報として表示し、省略時もTooltipを基本的に使用しない。
+業務Componentによる統合はFieldの値をまとめるところまでとし、Backendへ渡すPublic Modelの構築は業務Pageが担当する。
 
-Reference表示の構造はL02で検証済みとする。
+##### Validation
 
-Edit Variantの入力操作、Validation、変更検出等の具体的な振る舞いは、Task Create / EditのBehavior実装時に確定する。
+Frontend Validationは、個々のFieldを対象とするSingle Field Validationと、複数Fieldの関係を対象とするCorrelation Validationに分ける。
 
-##### Future Components
+Frontend Validationは入力時の利用者支援を目的とし、Business Modelの成立条件を保証するものではない。Business Modelの成立条件はBackendで保証する。
 
-Task Createの基本的な画面構造は実装済みとする。
+Field単位のValidationと複数FieldにまたがるValidationは、責務を分離して管理する。
 
-共通化は、実際の利用箇所と責務に基づいて判断し、不要な抽象化を先行させない。
+具体的な判定条件や実行タイミングはApplication Specificationで定義する。
 
-#### 3.4.2 State Management
+##### Operation Control
 
-Frontendでは、Stateの用途と有効期間に応じて管理責務を分離する。
+業務Pageは、登録・更新など画面における業務操作を制御する。
 
-Application全体で必要なStateはAppが管理し、特定の機能に属するStateは、その機能を管理するComponentまたはTypeScript Moduleが保持する。
+業務操作に必要な入力データを業務Componentから受け取り、Backendへの要求を構成する。
 
-PrototypeのTask管理機能では、Navigation Stateと、各画面で利用するデータを区別して管理する。
+登録・更新におけるBackend呼び出しは、Storeによるデータ取得とは別の責務として扱う。具体的な呼び出し方式と担当要素は、実装時に決定する。
 
-##### Task Management State
+利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは判断結果を返すのみで、業務処理を実行しない。
 
-Task管理機能では、以下の責務分担とする。
+業務Pageは登録・更新の成功時にNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。この成功通知は未実装とする。
 
-| Element         | Responsibility                                              |
-| --------------- | ----------------------------------------------------------- |
-| TaskManagement  | Navigation操作の受付、画面遷移の制御、表示画面の切替        |
-| TaskContext     | 遷移準備中・確定済みの画面と、その画面で利用するStoreの管理 |
-| TaskListStore   | Task一覧の取得、取得結果の検証と保持                        |
-| TaskDetailStore | 指定されたIDによるTask詳細の取得、取得結果の検証と保持      |
-| TaskListPage    | TaskContextからTask一覧データを取得し、表示Componentへ渡す  |
-| TaskDetailPage  | TaskContextからTask詳細データを取得し、TaskViewへ渡す |
+#### 3.3.3 Navigation Management
 
-`TaskContext` は、遷移準備中のStateと確定済みのStateを区別する。
-
-画面遷移に必要なデータは、遷移を確定する前に準備する。
-
-準備が成功した場合のみ、TaskContextのStateを確定する。準備に失敗した場合は、現在のStateを維持する。
-
-具体的なNavigationの振る舞いはSection 3.4.3で定義する。
-
-##### Task List Data
-
-Task一覧の取得と保持には `TaskListStore` を使用する。
-
-```text
-TaskManagement
-    ↓ 遷移準備を要求
-TaskContext
-    ↓ TaskListStoreを生成
-TaskListStore
-    ↓ ListTasks()
-Wails Generated Binding
-    ↓
-Application Service
-    ↓ Task一覧を返却
-TaskListStore
-    ↓ 取得データを保持
-TaskContext
-    ↓ 遷移確定後にデータを提供
-TaskListPage
-    ↓
-画面表示
-```
-
-`TaskListStore` は、生成時にBackendからTask一覧を取得し、その結果を保持する。
-
-`TaskContext` は、現在の画面に対応するStoreを管理し、表示Componentからのデータ取得要求に応じて、そのStoreのデータを提供する。
-
-`TaskListPage` は、TaskContextを通じて取得したデータを表示に使用する。
-
-Task一覧の取得処理やStoreの生成は担当しない。
-
-##### Task Detail Data
-
-Task詳細の取得と保持には `TaskDetailStore` を使用する。
-
-Task詳細画面へのNavigationでは、対象TaskのIDを指定してデータを取得する。
-
-```text
-TaskManagement
-    ↓ IDを含む遷移準備を要求
-TaskContext
-    ↓ TaskDetailStoreを生成
-TaskDetailStore
-    ↓ GetTask(ID)
-Wails Generated Binding
-    ↓
-Application Service
-    ↓ Task詳細を返却
-TaskDetailStore
-    ↓ 取得データを保持
-TaskContext
-    ↓ 遷移確定後にデータを提供
-TaskDetailPage
-    ↓ TaskViewへ渡す
-画面表示
-```
-
-`TaskDetailStore` は、指定されたIDに対応するTask詳細を取得し、その結果を保持する。
-
-`TaskDetailPage` は、TaskContextを通じて取得したTask詳細を `TaskView` に渡す。
-
-Task詳細の取得処理やStoreの生成は担当しない。
-
-##### Store Data Contract
-
-Backend ServiceとWails Generated Bindingでは、戻り値のNullabilityが異なる場合がある。
-
-Prototypeでは、Backend Serviceが正常終了した場合、`ListTasks()` は非nilの一覧を、`GetTask(ID)` は非nilのTaskを返却する。
-
-一方、Wails Generated BindingのTypeScript型では、戻り値に `null` が含まれる。
-
-この差異はStoreで吸収する。
-
-- TaskListStoreは正常な一覧データを保持する。Taskが0件の場合は空配列として扱う。
-- TaskDetailStoreは正常なTask詳細データを保持する。
-- 正常応答として想定しない `null` を受け取った場合は、StoreでErrorとして扱う。
-- Page / Viewでは、正常に取得されたデータを前提として表示する。
-
-Wails Binding固有のNullabilityを、表示Componentへ伝播させない。
-
-##### State Lifecycle
-
-Task管理機能のStateは、TaskManagementの有効期間に属する。
-
-Primary NavigationでConfigへ切り替えた場合は、TaskManagementとともにTaskContextおよび保持するStoreを破棄する。
-
-Task機能へ再度切り替えた場合は、新しいTaskContextを使用する。
-
-初期表示時におけるデータ取得の扱いについては、Coreで検討する。
-
-#### 3.4.3 Navigation
-
-FrontendのNavigationは、Application全体の機能を切り替えるPrimary Navigationと、各機能内の画面を切り替えるNavigationに分かれる。
-
-それぞれのNavigation Stateは、対応する管理Componentが所有する。
+FrontendのNavigationは、Application全体のFeatureを切り替えるPrimary Navigationと、Feature内の画面を切り替えるFeature Navigationに分ける。
 
 ##### Primary Navigation
 
-Primary Navigationは、Application全体の機能切替を担当し、`App.svelte` が管理する。
+Primary Navigationは、Application全体のFeature切替を担当する。
+
+Featureを切り替える際は、切替前のFeature ComponentとそのStateを破棄する。再度同じFeatureを選択した場合は、新しいStateで開始する。
 
 Prototypeでは、TaskとConfigを切替対象とする。
 
-Primary Navigationの切替により、選択された機能のComponentを表示し、それまで表示していた機能のComponentを破棄する。
-
 ##### Feature Navigation
 
-機能内Navigationは、各機能を管理するComponentが担当する。
+Feature内の画面遷移はFeature Managementが制御する。
 
-PrototypeのTask管理機能では、`TaskManagement.svelte` がNavigation操作を受け付け、`TaskContext` を介して画面遷移を管理する。
+Feature ManagementはNavigation Requestを受け付け、Contextを介して遷移先の準備と確定を行う。
 
-`AriadneSideNavigation.svelte` は共通ComponentとしてNavigation項目を表示し、ユーザー操作を通知する。遷移先の確定は担当しない。
+画面遷移は、**Prepare / Commitの二段階**で扱う。
 
-##### Navigation Transition
+| 段階 | 責務 |
+| --- | --- |
+| **Prepare** | 遷移先画面に必要なデータを取得・準備する。現在の確定済みStateは変更しない |
+| **Commit** | Prepare成功後に遷移先を確定し、Navigation Stateと表示画面を切り替える |
 
-Navigationでは、ユーザーが画面を選択したことと、実際に画面遷移が成立したことを区別する。
+Prepareに失敗した場合はCommitせず、現在のNavigation Stateと表示画面を維持し、Error Handlingへ委ねる。
 
-Task機能内の画面遷移では、`TaskManagement` がNavigation Requestを受け付け、`TaskContext` を通じて遷移先の準備と確定を行う。
+Navigation Stateの確定と表示画面の切替は一貫して行い、選択状態と表示内容の不整合を防ぐ。
 
-遷移は以下の2段階で扱う。
-
-- **Prepare**：遷移先の画面に必要なデータを取得・準備する。現在の確定済みStateは変更しない。
-- **Commit**：準備成功後に遷移先を確定し、Navigation Stateと表示画面を切り替える。
-
-```text
-User Action
-    ↓
-Navigation Request
-    ↓
-TaskContext.prepare(request)
-    ↓
-Success?
-    ├─ YES → TaskContext.commit(screen)
-    │            ↓
-    │        Navigation Stateを確定
-    │            ↓
-    │        Main Areaを切替
-    │
-    └─ NO  → 現在のNavigation Stateを維持
-              現在のMain Areaを維持
-              Error Toastを表示
-```
-
-準備に失敗した場合はCommitを行わず、現在のNavigation選択状態とMain Areaの表示内容を維持する。
-
-Navigation Stateの確定と画面表示の切替を一貫して行い、選択表示とMain Areaの内容が不整合になることを防ぐ。
+遷移処理中は、重複するNavigation Requestを受け付けない。
 
 ##### Navigation Data Refresh
 
-Prototypeでは、Task ListからTask Referenceへ遷移する際、選択されたTaskのIDを使用して `GetTask(ID)` を呼び出す。
+画面遷移に必要なデータは、Prepareの段階でBackendから取得する。
 
-Task一覧で保持しているSummaryを詳細データの代わりに使用せず、遷移時に最新のTask詳細を取得する。
+Prototypeでは、Task ListからTask Referenceへ遷移する際、一覧で保持しているTaskSummaryを流用せず、指定されたIDによりTask詳細を取得する。
 
-この取得に失敗した場合はReference画面へ遷移せず、Task List画面を維持する。
+##### Unsaved Changes
 
-#### 3.4.4 Notification and Error Handling
+未保存の変更がある画面から離脱する場合は、Confirmation Modalを利用して利用者の判断を確認する。
 
-Frontendでは、Applicationの処理結果やErrorをNotification Toastで表示する。
+Confirmation Modalは判断結果を返すのみとし、画面遷移の制御はFeature Managementが担当する。
 
-Toastの表示Stateと自動消去Timerは `App.svelte` が管理し、`AriadneToast.svelte` は表示のみを担当する。
+### 3.4 Wails Boundary
 
-Prototypeでは以下を基本とする。
+Wails Boundaryは、FrontendとApplication Serviceを接続する境界である。
 
-| Severity | Display     | Dismissal            |
-| -------- | ----------- | -------------------- |
-| Info     | 青色のToast | 3秒後に自動消去      |
-| Error    | 赤色のToast | ユーザー操作まで表示 |
+Application ServiceはWailsに依存せず、Wails BoundaryがFrontendとの接続とErrorの公開用変換を担当する。
 
-Toastの外側をクリックした場合はToastを消去する。Close Buttonは設けない。
+#### 3.4.1 Application Service Connection
 
-##### Error Message Conversion
+Wails Boundaryは、Application ServiceのOperationのうち、Frontendから利用するものだけを接続する。
 
-Frontendでは、Errorから公開用Messageを取得する共通処理として `toErrorMessage` を使用する。
+Application Serviceへの処理委譲と、返却されたErrorのPublicErrorへの変換を担当する。
 
-```text
-Error
-    ↓
-toErrorMessage
-    ↓
-公開用Message
-    ↓
-Notification Toast
-```
+Business LogicやValidationは実装しない。
 
-`toErrorMessage` は、Frontendで処理済みの `ProcessedError`、Wails Boundaryで処理済みの `Error.cause.Processed == true`、および未処理Errorを扱う。
+#### 3.4.2 Public Model / Binding
 
-それぞれの識別方法、公開用Messageの決定原則、未処理Errorに対するFallbackおよびLogging方針はSection 3.5で定義する。
+FrontendとApplication Serviceの間で受け渡すデータにはPublic Modelを使用する。
 
-#### 3.4.5 Task Create / Edit
+Wailsが生成するTypeScript BindingおよびModelはFramework管理のコードとして扱い、手動編集しない。
 
-Task Create / Editは、Task List / Referenceと同じMain Area配下の画面として構成する。
-
-Reference表示で確立したPage / View / Fieldの責務分離を基本とし、入力操作、Validation Error表示、変更検出等の振る舞いを追加する。
-
-Confirmation Modalは共通Componentとし、Task Create / Edit等から利用する。
-
-これらについても、Componentの表示責務と、State管理・Application処理の責務を分離する原則を適用する。
-
-Task Createでは、TaskEntryがTask固有の入力Fieldを構成し、AriadneFormが入力領域のスクロール、操作ボタンの配置、Submit受付を担当する構造を採用した。Task EditでもTaskEntry / AriadneFormを共通利用する方針とする。
-
-共通Componentの分割は、実際の機能構成と再利用の必要性を踏まえて判断する。
-
----
 
 ### 3.5 Error Handling / Logging
 
-Applicationでは、FrontendとBackendを通じて、Errorの原因情報を保持しながら、ユーザーへ公開する情報と診断に使用する情報を分離する。
+Applicationでは、Errorの原因情報を保持しながら、内部の診断情報とユーザーへ公開する情報を分離する。
 
-Error Handlingは、Errorの発生箇所、処理責務、公開境界を明確にして設計する。
+Error HandlingはBackend、Wails Boundary、Frontendの責務に分け、LoggingはApplication全体の共通方針として定義する。
 
-#### 3.5.1 Error Handling Principles
-
-FrontendとBackendでは実装技術やErrorの伝達方法が異なるが、以下の原則を共通とする。
-
-- Errorを理由なく握り潰さず、原因を追跡できるようにする。
-- ユーザーへ公開するMessageと、内部の診断情報を分離する。
-- Errorを認識したLayerが、必要に応じてそのLayerで意味のあるErrorへ変換する。
-- 公開用に処理されていないErrorの内部情報を、そのままユーザーへ表示しない。
-- 同じErrorに対する重複したLoggingを避ける。
-
-FrontendとBackendでは、これらの原則を実現する仕組みが異なる。
-
-| Concern         | Frontend                        | Backend                          |
-| --------------- | ------------------------------- | -------------------------------- |
-| Errorの伝達     | JavaScript Error                | Go Error Chain                   |
-| Errorの意味付け | Frontend側で処理済みErrorを識別 | Layerごとに意味のあるErrorへ分類 |
-| 公開用Message   | `toErrorMessage` で決定         | Wails Boundaryで決定             |
-| Logging         | 未処理Errorを検出した箇所で記録 | 原則としてWails Boundaryで記録   |
-
-BackendからFrontendへ返却する通常のErrorは、原則としてWails Boundaryで公開用に処理する。
-
-panicの捕捉・回復はPrototypeの保証対象外とする。
-
-Frontendでは、公開用に処理済みであることを確認できないErrorへの対応を、防御的なFallbackとして設ける。
-
-#### 3.5.2 Backend Error Handling
-
-Backend内部で発生したErrorは、原因情報を維持したままWails Boundaryまで伝達する。
-
-##### Error Chain
+#### 3.5.1 Backend Error Handling
 
 BackendではGoのError Chainを使用し、下位Layerで発生したErrorを必要に応じてWrapして上位Layerへ伝達する。
 
-```text
-Persistence Adapter
-    ↓
-Application Service
-    ↓
-Wails Boundary
-```
+各Layerは、自身の責務に基づいてErrorを意味付けする。
 
-下位Layerで発生した具体的なErrorと、上位Layerが扱うErrorの意味は、必ずしも同一である必要はない。
+- **Persistence Adapter**は、永続化技術に固有の失敗をPersistence Portの契約に沿ったErrorへ変換する。
+- **Application Service**は、Operationの成立可否を判断し、必要に応じてApplicationとして意味のあるErrorへ変換する。
 
-例えばFile I/OやYAML Parseの失敗は、Persistenceとして意味のあるErrorへ変換してよい。
+Errorの変換時には原因情報を保持し、Application ServiceがPersistence Adapterの実装詳細に依存しないようにする。
 
-ただし、変換する場合も元のErrorをWrapし、原因情報を失わない。
+Errorの分類は、Applicationの振る舞いに必要な意味を基準とし、不要な詳細分類を上位Layerへ公開しない。
 
-Application Serviceは、Persistence Adapter内部の具体的な失敗原因を直接認識しない。
+具体的なError分類およびOperationごとの発生条件は第4章で定義する。
 
-##### Error Classification
+#### 3.5.2 Wails Boundary Error Handling
 
-Errorは、Applicationの振る舞いに必要な意味で分類する。
+Wails Boundaryは、Application Serviceから伝達されたErrorを、Frontendへ公開可能な形式に変換する。
 
-Application Serviceの振る舞いが変わらないErrorについては、不要な詳細分類を公開しない。
+Backend内部のError Chainをそのまま公開せず、公開用Messageを持つ`PublicError`へ変換する。
 
-Prototypeでは、以下の分類を基本とする。
+`PublicError`は以下の情報を持つ。
 
-| Error                        | Meaning                                         |
-| ---------------------------- | ----------------------------------------------- |
-| Read Failure                 | 永続化データを正常に読み込み・復元できない      |
-| Write Failure                | 永続化データを正常に格納できない                |
-| Unsupported Version          | Applicationが対応していないデータVersion        |
-| Not Found                    | 指定されたTaskが存在しない                      |
-| Unexpected Application Error | 通常のApplication操作では想定しない不整合や失敗 |
+- `Processed`：公開用に処理済みであることを示す。
+- `Message`：Frontendへ公開するMessage。
 
-例えば、以下の異なる原因は、Application Serviceが区別して振る舞う必要がなければ、同じRead Failureとして扱う。
+Application Error Codeは設けない。
 
-```text
-File Read Failure
-YAML Parse Failure
-Invalid Format
-Invalid Task Data
-    ↓
-Read Failure
-```
+Wails Runtimeを通じて伝達された`PublicError`は、FrontendではJavaScriptの`Error.cause`から参照する。
 
-一方、Unsupported Versionは、Fileの破損とは異なり、運用上発生し得る状態であるため、Read Failureと区別する。
-
-`Pick(ID)` において対象Taskが存在しない場合も、Persistence Operationとして意味のある結果であるため、Not Foundとして区別する。
-
-##### Task Validation Failure
-
-Task Validation Failureは、TaskがBusiness Modelとしての成立条件を満たさないことを表す。
-
-Task Validation Failureは、発生したContextに応じてApplication上の扱いを変える。ただし、いずれの場合も元のTask Validation FailureをError Chainに保持する。
-
-Persistence ModelからBusiness Modelへ復元する際にTask Validationが失敗した場合は、File Persistence AdapterがRead Failureへ変換する。
-
-一方、Create / Modifyでは、Frontendですでに入力Validationを通過していることが前提であるため、Application Service側のTask Validationで失敗した場合は、Unexpected Application Errorとして扱う。
-
-この場合、Frontendの入力項目へValidation Errorを返すのではなく、Application Errorとして通知する。
-
-##### Panic Recovery
-
-Prototypeでは、Wails Boundaryによるpanicの捕捉・回復処理を実装しない。
-
-通常のErrorは、Error Chainを維持してWails Boundaryまで伝達し、LoggingおよびPublicErrorへの変換を行う。
-
-Backendで発生したpanicについては、Wails Runtimeを通じてFrontendへErrorとして伝播し、Frontend側で未処理Errorとして扱う。
-
-Frontendでは、Section 3.5.3に定義するFallback処理により、内部情報を公開せず、共通の予期しないError Messageを表示する。
+Prototypeでは、Backendのpanicに対する捕捉・回復処理を実装しない。想定外の形式で伝達されたErrorは、Frontend側のFallbackで扱う。
 
 #### 3.5.3 Frontend Error Handling
 
-Frontendでは、Backendから伝達されたErrorと、Frontend自身で発生したErrorの双方を扱う。
+Frontendでは、Frontend自身で発生したErrorと、Backendから伝達されたErrorを共通の仕組みで扱う。
 
-Frontendは、受け取ったErrorが公開用に処理済みであるかを識別し、ユーザーへ表示するMessageを決定する。
+公開用に処理済みのErrorは、以下の形式で識別する。
 
-##### Processed Error
+- `ProcessedError`：Frontend側で公開用に処理したError。
+- `Error.cause.Processed == true`：Wails Boundaryで公開用に処理したError。
 
-公開用に処理済みのErrorには、以下の2種類がある。
+共通の`toErrorMessage`は、処理済みErrorから公開用Messageを取得する。
 
-| Error                           | Meaning                                        |
-| ------------------------------- | ---------------------------------------------- |
-| `ProcessedError`                | Frontend側で公開用に処理したError              |
-| `Error.cause.Processed == true` | BackendのWails Boundaryで公開用に処理したError |
+公開用に処理済みであることを確認できないErrorは、未処理Errorとして扱う。この場合、内部情報をそのまま公開せず、共通の予期しないError Messageを使用する。
 
-Frontendでは、共通の `toErrorMessage` により、これらのErrorから公開用Messageを取得する。
+未処理Errorへの対応は、通常のError Handling経路ではなく、想定外のErrorや伝達形式の不整合に備える防御的なFallbackとして位置付ける。
 
-Backendで処理されたErrorのWails経由での伝達方式はSection 3.3で定義する。
+業務操作で発生したErrorは業務Pageが、画面遷移のPrepareで発生したErrorはFeature Managementが、それぞれError Handlingへつなぐ。エラー通知用の公開Messageは`toErrorMessage`によって取得し、Notification Toastへ渡してユーザーへ通知する。Notification Toast自身はErrorの判定やMessageの決定を行わない。
 
-##### Unprocessed Error
-
-上記のいずれにも該当しないErrorは、公開用に処理済みであることを確認できないErrorとして扱う。
-
-これには、Frontend内部で発生した未処理Errorのほか、Wails Runtimeの異常や、BackendからのErrorが想定した形式で届かなかった場合等が含まれる。
-
-BackendからのErrorは原則としてWails Boundaryで処理済みとなるため、この処理は通常のError Handling経路ではなく、防御的なFallbackとして位置付ける。
-
-この場合は、診断情報を記録し、内部情報を含まない共通Error Messageを使用する。
-
-##### Notification
-
-Frontendでは、公開用MessageをNotification Toastで表示する。
-
-ToastのState管理、表示仕様、Dismissal等はSection 3.4で定義する。
+Toastの具体的な表示・操作仕様は第4章で定義する。
 
 #### 3.5.4 Logging
 
-Loggingは、Errorの診断情報を保持しつつ、同じErrorに対する重複記録を避けることを基本とする。
+Loggingは、診断に必要な情報を保持しながら、同じErrorに対する重複記録を避けることを基本とする。
 
-FrontendとBackendでは、Errorの伝達経路が異なるため、Loggingの責務と記録位置を分けて考える。
+**Backend Logging**
 
-##### Backend Logging
-
-Backendでは、Errorを各Layerで重複してLogせず、Error Chainとして上位へ伝達する。
+Backendでは、Errorを各Layerで重複して記録せず、Error Chainとして上位へ伝達する。
 
 原則としてWails Boundaryで診断情報を記録し、Frontendへ公開するMessageとは分離する。
 
-```text
-Error
-    → Error Chainとして上位へ伝達
-    → Wails Boundaryで診断情報を記録
-    → PublicErrorへ変換
-```
-
 Information / Debugについては、その情報を認識しているLayerで記録する。
 
-##### Frontend Logging
+**Frontend Logging**
 
 Frontendでは、公開用に処理済みであることを確認できないErrorを検出した箇所で診断情報を記録する。
 
-`ProcessedError` や、Backendで処理済みの `Error.cause.Processed == true` については、Frontend側で同じErrorを重複して記録しないことを基本とする。
+処理済みErrorについては、原則として重複して記録しない。
 
-##### Logging Implementation
+**Prototype Scope**
 
-本格的なApplication LoggingはPrototypeの必須実装とはしない。
-
-PrototypeではErrorの原因情報を失わない構造を優先する。
+Prototypeでは、Errorの原因情報を失わない構造を優先し、本格的なApplication Loggingは必須実装としない。
 
 具体的なLogger、出力先、Log Format、Log Rotation等はCoreで検討する。
 
----
+## 4. Application Specification
 
-## 4. Application Structure
+本章では、PROJECT ARIADNEのApplication共通仕様と、Prototypeで題材とするTask管理の具体的な仕様を扱う。共通仕様はPROJECT ARIADNEのベースとなる振る舞いを定義し、必要に応じてPrototypeでの適用を示す。Task固有の仕様は4.4および4.5で定義する。
 
-Prototyoe では、以下を基本的なApplication構造とする。
+### 4.1 Common UI Specification
+
+#### 4.1.1 Application Shell / Navigation
+
+##### Application Shell
+
+PROJECT ARIADNEのApplicationは、Header、Footer、Primary Navigation、および選択された機能の表示領域から構成する。
+
+- **Header**：Applicationを識別する情報を表示する。
+- **Footer**：Applicationに関する補助情報を表示する。
+- **Primary Navigation**：Applicationが提供する機能を切り替える。
+- **Feature Area**：選択された機能の画面を表示する。
+
+各機能は、必要に応じてSide NavigationとMain Areaを持つ。
+
+Prototypeでは、Headerに`PROJECT ARIADNE`を表示し、Primary NavigationにTaskとConfigを配置する。
+
+Task機能ではSide NavigationとMain Areaを使用する。Configは画面切替を確認するためのDummy Pageとし、設定機能自体は実装しない。
+
+##### Navigation
+
+Navigationは、Application全体の機能を切り替えるPrimary Navigationと、各機能内の画面を切り替えるFeature Navigationに分ける。
+
+Feature Navigationの表示には、必要に応じてSide Navigationを使用する。
+
+Primary Navigationによって機能を切り替えた場合は、選択された機能の画面を表示し、切替前の機能に属する画面とStateを破棄する。
+
+画面遷移では、ユーザーによるNavigation操作と、実際の遷移成立を区別する。
+
+遷移先で必要なデータがある場合は、遷移確定前に取得・準備する。準備に成功した場合のみ、Navigationの選択状態と表示画面を切り替える。
+
+準備に失敗した場合は遷移を確定せず、現在のNavigation選択状態と表示画面を維持し、Error Toastを表示する。
+
+PrototypeのTask管理では、Feature NavigationにSide Navigationを使用する。Task固有の画面構成、データ取得および遷移条件は、4.5 Task Functional Specificationで定義する。
+
+#### 4.1.2 Common Layout Components
+
+PROJECT ARIADNEでは、Pageの構造、業務固有の表示・入力内容、および共通的な表示・操作の振る舞いを分離する。
+
+業務Page・業務Component・Fieldの構成と、各Ariadne系共通Componentの利用関係は、3.3.1 Frontend Structureで定義する。本節では、共通Layout Componentの具体的な表示・操作仕様を定義する。
+
+##### AriadnePage
+
+`AriadnePage`は、4.1.1で定義したFeature Area内に表示される業務Pageの共通構造を提供する。
+
+Page HeaderとContentsの表示領域を持つ。Page HeaderはApplication全体のHeaderとは別の領域とする。
+
+Contents自体はスクロールを管理せず、必要なスクロールは内部に配置されたComponentが担当する。
+
+##### AriadneView
+
+`AriadneView`は、参照表示のための共通コンテナを提供する。
+
+配置されたコンテンツが表示領域に収まらない場合は、コンテナ内部でスクロールする。
+
+表示するFieldの種類・配置・寸法は、利用側の業務Componentが決定する。
+
+##### AriadneForm
+
+`AriadneForm`は、入力領域の共通構造、内部スクロール、操作ボタンの配置、Submit受付、およびConfirmation Modalによる意思確認を提供する。
+
+操作ボタンはFormの表示領域の右下に固定する。入力内容との重なりは許容する。
+
+Submit時には利用側の業務ComponentへValidationを要求する。Validationが成功した場合のみConfirmation Modalを表示し、Confirm / Cancelの判断を受け付ける。
+
+Confirmされた場合は、利用側へ業務処理の実行を通知する。
+
+Confirmation ModalでCancelされた場合は、Modalを閉じてSubmitを中止する。業務処理の実行や画面遷移は要求しない。
+
+業務固有の入力項目、Validation Ruleおよび業務処理そのものは定義しない。
+
+Validationの具体的な動作は4.2 Validation Specificationで、Confirmation Modalの表示仕様は4.1.4で定義する。
+
+##### AriadneListTable
+
+`AriadneListTable`は、一覧表の表示領域、表示件数、および内部スクロールを提供する。
+
+一覧表の行・列の構成および表示するデータは、利用側の業務Componentが決定する。
+
+##### Layout / Scrolling
+
+業務Componentは、親から割り当てられた領域を利用してコンテンツを構成する。
+
+コンテンツの寸法は基本的に固定とし、Windowの縮小に合わせて自動的に縮小しない。
+
+スクロールが必要な場合は、該当する表示領域を管理するComponentが自身の内部でスクロールを提供する。
+
+Prototypeでは、Task一覧に`AriadneListTable`、Task詳細参照に`AriadneView`、Task作成に`AriadneForm`を利用する。
+
+#### 4.1.3 Common Field / Input Components
+
+PROJECT ARIADNEでは、Fieldの共通表示構造と、値の種類に応じた表示・入力方法を分離する。
+
+Fieldの構成、責務およびVariantの定義は3.3.1 Frontend Structureに従う。本節では、Fieldの共通的な表示・入力仕様を定義する。
+
+##### AriadneField
+
+`AriadneField`は、Label、Value、Errorの表示領域と共通の装飾を提供する。
+
+値の型や業務上の意味は扱わず、各Field Componentが値に応じた表示・入力方法を提供する。
+
+Fieldの幅と配置は利用側の業務Componentが決定し、Fieldは割り当てられた領域内で表示と必要な高さを管理する。
+
+##### Common Field / Variant
+
+共通Fieldは以下の3種類とし、用途に応じてVariantを使い分ける。
+
+| Field | reference | edit | cell |
+|---|:---:|:---:|:---:|
+| TextField | ○ | ○ | ○ |
+| SubTextField | ○ | — | ○ |
+| TextareaField | ○ | ○ | — |
+
+各Variantの表示・入力仕様は以下とする。
+
+**TextField**
+
+- `reference`：指定された行数に応じた固定の高さで表示する。省略表示は例外的な扱いとし、Tooltipによる補完は行わない。
+- `edit`：単一行Textの入力を提供する。
+- `cell`：一覧表のCell内に表示する。必要に応じて省略表示とTooltipによる補完を行う。
+
+**SubTextField**
+
+- `reference`：補助的なTextを表示する。省略時もTooltipによる補完は基本的に行わない。
+- `cell`：一覧表等で補助的なTextを表示する。省略時もTooltipによる補完は基本的に行わない。
+
+**TextareaField**
+
+- `reference`：固定の高さで表示し、内容が収まらない場合は内部スクロールによって全文を閲覧できるようにする。
+- `edit`：改行を含むTextの入力を提供する。
+
+##### Input / Validation
+
+`edit`では、入力値およびValidation Stateを利用側から受け取り、Fieldの表示に反映する。
+
+Validationの実行タイミング、Error StateおよびError Messageの表示仕様は4.2 Validation Specificationで定義する。
+
+##### Prototypeでの適用
+
+Prototypeでは、共通Fieldとして`TextField`、`SubTextField`、`TextareaField`を使用する。
+
+Task固有のFieldとして`TaskPriorityField`と`TaskStatusField`を使用する。これらの業務上の意味と表示内容は、4.5 Task Functional Specificationで定義する。
+
+#### 4.1.4 Confirmation Modal
+
+Confirmation Modalは、ユーザーによる最終的な意思確認が必要な操作で使用する共通UIとする。
+
+Modalは操作の実行可否についてユーザーの判断を受け付けるものであり、業務処理の実行や処理結果の通知は担当しない。
+
+##### Display / Operation
+
+Confirmation Modalは、確認対象の操作内容を表示し、ConfirmとCancelの選択肢を提供する。
+
+- **Confirm**：Modalを閉じ、呼び出し元へ確定の判断結果を返す。
+- **Cancel**：Modalを閉じ、呼び出し元へ取消の判断結果を返す。
+
+Modal自体は、業務処理の実行、入力Stateの変更、および画面遷移を行わない。
+
+##### Usage
+
+Confirmation Modalは、以下のような意思確認に使用する。
+
+- **業務操作の最終確認**：登録・更新等の処理を実行するか確認する。
+- **未保存変更がある場合の離脱確認**：変更を破棄して画面遷移を続行するか確認する。
+
+Modalの判断結果に応じた処理は、呼び出し元が担当する。
+
+##### Formとの連携
+
+`AriadneForm`から業務操作の最終確認に使用する場合、必要なValidationが成功した後にConfirmation Modalを表示する。
+
+Confirmされた場合は、Formが利用側へ業務処理の実行を通知する。
+
+Cancelされた場合は、FormがSubmitを中止し、業務処理の実行や画面遷移を要求しない。
+
+##### Prototypeでの適用
+
+Prototypeでは、Taskの登録・更新時の最終確認、および未保存変更がある場合の画面離脱確認にConfirmation Modalを使用する。
+
+#### 4.1.5 Notification Toast
+
+Notification Toastは、Applicationからユーザーへ情報やErrorを通知するための共通UIとする。
+
+Toastは指定された通知内容を表示するものであり、通知の必要性の判断、業務処理の結果判定、およびErrorの解釈は担当しない。
+
+##### Notification Types
+
+Notification Toastは、以下の種類を提供する。
+
+| Type | Purpose | Display | Dismissal |
+|---|---|---|---|
+| Info | 正常終了等の情報通知 | 青色のToast | 3秒後に自動消去、または外側クリックで消去 |
+| Error | Application Errorの通知 | 赤色のToast | 外側クリックで消去。自動消去しない |
+
+##### Display / Operation
+
+- Toastは画面右上に表示する。
+- 同時に表示するToastは最大1件とし、新しい通知が発生した場合は既存のToastを置き換える。
+- Close Buttonは設けない。
+- Toastの表示は、業務処理や画面遷移を妨げない。
+
+##### Usage
+
+- **Application Info**：業務操作の正常終了等を通知する。
+- **Application Error**：Backend処理の失敗、データ取得の失敗等を通知する。
+- **Frontend Validation Error**：原則としてToastを使用せず、対象Field付近に表示する。
+
+Frontend Validation ErrorとApplication Errorの区別、およびValidation Errorの表示仕様は4.2 Validation Specificationで定義する。
+
+##### Prototypeでの適用
+
+Prototypeでは、Taskの取得・登録・更新等で発生したApplication ErrorをError Toastで通知する。
+
+登録・更新の成功通知にはInfo Toastを使用する。
+
+### 4.2 Validation Specification
+
+#### 4.2.1 Validation Principles / State
+
+##### Validation Principles
+
+Frontend Validationは、入力時にユーザーが不正な値や項目間の不整合を確認・修正できるよう支援することを目的とする。
+
+Frontend ValidationはBusiness Modelの成立条件を保証するものではない。Business Modelの成立条件はBackendで保証する。
+
+Frontend Validationは、以下の2種類に分ける。
+
+| Type | Responsibility |
+|---|---|
+| Single Field Validation | 個々のFieldの値に対する判定 |
+| Correlation Validation | 複数Fieldの値の関係に対する判定 |
+
+Single Field ValidationとCorrelation Validationは、それぞれ独立したValidation結果を管理する。
+
+Validation Ruleは業務ごとに定義する。PrototypeのTask固有の判定条件は`validation-rules.md`に定義する。
+
+##### Validation State
+
+各Validationは、判定結果を表すValidityと、必要に応じたError Messageを保持する。
+
+ValidityとError Messageは、整合性を保ちながら一体として更新する。
+
+Single Field ValidationとCorrelation Validationは、それぞれ自身のValidation結果を管理する。
+
+FieldとCorrelationValidatorは、それぞれ自身のStateを正本として保持する。業務Componentは公開されたStateからForm全体の状態を導出し、同じStateを別の正本として複製・管理しない。
+
+##### Correlation Validation Mode
+
+各`CorrelationValidator`は、自身の実行状態として`INITIAL / ACTIVE`を保持する。Form全体で共通のModeを別途保持しない。
+
+| Mode | Meaning |
+|---|---|
+| INITIAL | Submitに伴うActivationをまだ受けていない状態 |
+| ACTIVE | 全Single Field Validation成功後にActivationされた状態 |
+
+各CorrelationValidatorのModeは、以下の契機で変化する。
+
+| 契機 | Mode |
+|---|---|
+| Formの初期表示 | INITIAL |
+| Focus Out | 現在のModeを維持 |
+| Submit時にSingle Field Validationが失敗 | 現在のModeを維持 |
+| 全Single Field Validation成功後、各CorrelationValidatorの`activate()`を実行 | ACTIVE |
+| Confirmation ModalでCancel | ACTIVEを維持 |
+| 保存失敗 | ACTIVEを維持 |
+| Form Reset | INITIAL |
+
+ACTIVEでは、関連Fieldの値が変更された場合に、該当するCorrelation Validationを再評価する。
+
+Correlation Validationの実行条件、評価順序、およびErrorの扱いは4.2.3 Correlation Validation Behaviorで定義する。
+
+Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義する。
+
+#### 4.2.2 Field Validation Behavior
+
+##### Responsibility
+
+Fieldは、自身の入力値とSingle Field Validationの結果を管理する。
+
+Fieldの値は、変更前の値`originalValue: T | null`と現在の入力値`currentValue: T`で管理する。`originalValue`の`null`は変更前の値が存在しないことを表し、`currentValue`は`null`を取らない。
+
+変更有無は`isChanged()`で両者を比較して導出し、独立した変更フラグを保持しない。Createでは`originalValue`を`null`とし、Editでは取得した変更前の値を設定する。具体的な初期値はTask Create / Editの仕様で定義する。
+
+Validation結果は`UNKNOWN`、`VALID`、`INVALID`のValidityとError Messageで表し、両者を整合する組として更新する。
+
+##### Validation Timing
+
+| Trigger | Behavior |
+|---|---|
+| 初期化 | 必須判定のみ実行し、違反ならINVALID、それ以外はUNKNOWNとする |
+| 値変更 | 必須判定のみ実行し、違反ならINVALID、それ以外はUNKNOWNとする |
+| Focus Out | 完全なSingle Field Validationを実行する |
+| Form Submit | 全Fieldに対して完全なSingle Field Validationを実行する |
+
+値変更時には完全なValidationを実行しない。
+
+Focus Outを経ずにSubmitされた場合も、Submit時に全Fieldを検証する。
+
+##### Field Notification
+
+Fieldは、以下のCallbackを利用側へ提供する。
+
+| Callback | Notification |
+|---|---|
+| `onChange` | 入力値の変更 |
+| `onValidated` | Single Field Validationの完了とValidity |
+| `onFocusOut` | Focus Out処理の完了 |
+
+値変更時は、入力値の更新、必須判定、`onChange`通知の順に処理する。
+
+Focus Out時は、Error表示の有効化、Single Field Validation、`onValidated`通知、`onFocusOut`通知の順に処理する。
+
+FieldはCorrelationValidatorを直接参照しない。Callbackを受け取る業務Componentが両者を接続する。
+
+##### Error Display State
+
+FieldはValidityとは独立して、Error表示の有効状態を管理する。
+
+初期状態ではError表示を抑止し、Focus OutまたはForm Submitによって有効化する。
+
+値変更時にはError表示の有効状態を維持する。
+
+具体的なError Messageの選択と表示優先順位は、4.2.5 Validation Error Presentationで定義する。
+
+#### 4.2.3 Correlation Validation Behavior
+
+##### Responsibility
+
+CorrelationValidatorは、複数Fieldの値の関係に対するValidationを管理する。
+
+各CorrelationValidatorは、以下の状態を保持する。
+
+- 自身のValidityとError Message
+- 自身の実行状態（INITIAL / ACTIVE）
+- 関連Fieldの値とValidity
+
+CorrelationValidatorはFieldを直接参照せず、利用側の業務Componentから関連Fieldの値とValidityを受け取る。
+
+##### State Update
+
+関連Fieldの値が変更された場合、CorrelationValidatorは対象Fieldの値を更新し、保持している対象FieldのValidityをUNKNOWNにする。
+
+関連FieldのValidityが通知された場合、CorrelationValidatorは対象FieldのValidityを更新する。
+
+いずれの場合も、自身のValidityをUNKNOWN、Error Messageをnullに更新する。
+
+これらの状態更新ではCorrelation Validationを実行せず、INITIAL / ACTIVEの状態も変更しない。
+
+##### Validation Execution
+
+Correlation Validationは、以下の条件に従って実行する。
+
+| Condition | Behavior |
+|---|---|
+| INITIAL | 相関条件を評価せず、UNKNOWN / nullとする |
+| ACTIVE、かつ関連FieldがすべてVALID | 相関条件を評価し、VALIDまたはINVALIDと対応するError Messageを設定する |
+| ACTIVE、かつ関連FieldにVALID以外が存在 | 相関条件を評価せず、UNKNOWN / nullとする |
+
+`activate()`は実行状態をACTIVEに変更する。既にACTIVEの場合は状態を変更しない。
+
+`activate()`自体は相関条件を評価しない。相関条件の評価は`validate()`で実行する。
+
+##### Validation Timing
+
+Focus Out時には、業務ComponentがFieldからの通知を受け、関連するCorrelationValidatorの`validate()`を呼び出す。
+
+Submit時には、全Single Field Validationが成功した場合に限り、全CorrelationValidatorを`activate()`し、`validate()`を実行する。
+
+具体的なSubmit手順は4.2.4 Form Submission Validationで定義する。
+
+##### Validation Result
+
+CorrelationValidatorは自身のValidityとError Messageを保持し、両者を整合する組として更新する。
+
+Correlation Errorの表示先と優先順位は、4.2.5 Validation Error Presentationで定義する。
+
+#### 4.2.4 Form Submission Validation
+
+##### Submit Availability
+
+FormのSubmitボタンは、以下の条件をすべて満たす場合に有効とする。
+
+- いずれかのFieldに変更がある。
+- すべてのFieldのValidityがINVALIDではない。
+- すべてのCorrelationValidatorのValidityがINVALIDではない。
+
+ValidityがUNKNOWNの場合は、Submitボタンの有効化を妨げない。
+
+業務Componentは各FieldおよびCorrelationValidatorの状態からSubmit可否を導出し、AriadneFormへ渡す。
+
+Submitボタンの有効状態と、Submit時のValidation成功条件は区別する。
+
+##### Submit Validation
+
+Submit時には、業務Componentが以下の順序でValidationを実行する。
+
+1. 全FieldのError表示を有効化する。
+2. 全FieldのSingle Field Validationを実行する。
+3. 全FieldのValidityを確認する。
+4. 全FieldがVALIDの場合のみ、全CorrelationValidatorをactivateし、Correlation Validationを実行する。
+5. 全Fieldおよび全CorrelationValidatorがVALIDの場合に限り、Validation成功とする。
+
+全FieldがVALIDでない場合は、Correlation Validationを実行しない。これは、CorrelationValidatorが既にACTIVEの場合も同様とする。
+
+##### Submit Result
+
+業務Componentは、Validationの成否をAriadneFormへ返す。
+
+Validation成功時、AriadneFormはConfirmation Modalを表示する。
+
+Validation失敗時、Confirmation Modalは表示せず、入力画面を維持する。
+
+Confirmation ModalのConfirm / Cancelに対する動作は、4.1.2のAriadneFormおよび4.1.4 Confirmation Modalに従う。
+
+ModalのConfirm時にはValidationを再実行せず、利用側へ業務処理の実行を通知する。
+
+#### 4.2.5 Validation Error Presentation
+
+##### Error Display Activation
+
+Fieldは、Validation結果と独立してError表示の有効状態（`errorActivated`）を管理する。
+
+初期状態ではError表示を抑止する。
+
+Focus OutまたはForm SubmitによってError表示を有効化し、以降の値変更では有効状態を維持する。
+
+Error表示が有効であっても、表示対象となるError Messageが存在しない場合は何も表示しない。
+
+##### Error Message Selection
+
+1つのFieldに表示するError Messageは最大1件とする。
+
+複数のError Messageが存在する場合、以下の優先順位で選択する。
+
+1. 対象Field自身のSingle Field Error
+2. 対象Fieldに関連するCorrelation Error
+
+複数のCorrelation Errorが存在する場合は、業務Componentが定めた優先順位に従って1件を選択する。
+
+業務Componentは選択したCorrelation ErrorをFieldへ渡し、Fieldが最終的な表示対象を決定する。
+
+##### Error Display
+
+Fieldは、選択されたError Messageを対象Field付近に表示する。
+
+Error Messageを表示する場合は、対象Fieldの枠線を赤色にして視覚的に強調する。
+
+Error Messageが表示されない場合は、通常の枠線に戻す。
+
+Validation ErrorはField上で表示し、Notification Toastは使用しない。
+
+Backendで検出されたValidation ErrorはApplication Errorとして扱い、Notification Toastで通知する。
+
+### 4.3 Persistence Specification
+
+#### 4.3.1 Persistence Port Operations
+
+##### Operation Contract
+
+Persistence Portは、Application Serviceが永続化に対して要求できる操作を定義する。
+
+PROJECT ARIADNEはファイルによる永続化を前提とし、Business Model単位の取得・格納を基本とする。
+
+Operationは、永続化技術ではなくApplication Serviceの操作意図に基づいて定義する。
+
+| Operation | Responsibility |
+|---|---|
+| `Retrieve` | Business Modelの集合を取得する |
+| `Pick` | 識別子を指定してBusiness Modelを1件取得する |
+| `Store` | 指定された意図に従ってBusiness Modelを格納する |
+
+各OperationはBusiness Modelを扱い、Persistence Modelやファイル形式を公開しない。
+
+具体的なInterfaceの引数・戻り値は、保存対象のデータ仕様で定義する。
+
+##### Store Intent
+
+`Store`は、格納操作の意図を`StoreIntent`で明示する。
+
+| StoreIntent | Responsibility |
+|---|---|
+| `Deposit` | 新しいBusiness Modelを初めて格納する |
+| `Replace` | 既存のBusiness Modelを置き換える |
+
+Persistence Adapterは、Business Modelの状態からStoreIntentを推測しない。
+
+部分UpdateはPersistence Portの基本操作としない。
+
+##### Retrieval Criteria
+
+`Retrieve`では、必要に応じてCriteriaによる取得条件の指定を可能とする。
+
+Criteriaは、以下の観点で構成する。
+
+- Filter：取得対象の絞り込み
+- Sort：取得結果の並び順
+- Range：取得範囲
+
+すべての`Retrieve`がCriteriaを必須引数として持つことは要求しない。
+
+PrototypeではCriteriaを実装しない。
+
+##### Scope
+
+PrototypeのTask管理では、`Retrieve / Pick / Store`を使用し、Deleteは実装しない。
+
+#### 4.3.2 File Persistence
+
+##### File Storage
+
+PROJECT ARIADNEは、ファイルによる永続化を基本とする。
+
+Persistence Adapterは、Persistence Portから要求されたBusiness Model単位の取得・格納を、ファイルの読み書きによって実現する。
+
+ファイルの具体的な形式・構造は、保存対象のデータごとに定義する。
+
+##### File Read
+
+ファイルからの取得は、全量Readを基本とする。
+
+Persistence Adapterは、ファイルを読み込み、保存形式の解析・検証を行い、Persistence ModelからBusiness Modelへ復元する。
+
+復元されたBusiness Modelは、その成立条件を満たしていなければならない。
+
+ファイルが存在しない場合はRead Failureとし、正常な空集合とは区別する。
+
+##### File Write
+
+格納操作では、Business Modelに対するDepositまたはReplaceをファイルに反映する。
+
+| StoreIntent | Behavior |
+|---|---|
+| `Deposit` | 新しいBusiness Modelを格納する |
+| `Replace` | 指定された既存Business Modelを置き換える |
+
+Persistence Adapterは、StoreIntentに従って対象データを更新し、ファイル全体を書き込む。
+
+Storeに渡されるBusiness Modelは、識別子を含め、既に成立条件を満たしていることを前提とする。Persistence Adapterは識別子を生成しない。
+
+ファイルの書き込みは全量Writeを基本とする。
+
+Canonical Fileへの直接上書きは行わず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
+
+Safe Writeと失敗時の取り扱いは4.3.4で定義する。
+
+##### Record Metadata
+
+Persistence Adapterは、永続化に必要な記録管理情報として`createdAt`と`updatedAt`を管理する。
+
+| StoreIntent | `createdAt` | `updatedAt` |
+|---|---|---|
+| `Deposit` | 現在日時を設定 | `createdAt`と同じ日時を設定 |
+| `Replace` | 既存値を維持 | 現在日時に更新 |
+
+TimestampはTimezoneを含むRFC3339 / ISO 8601形式を使用する。
+
+これらのTimestampはPersistence Modelで保持し、Business Modelの成立条件には含めない。Application ServiceはTimestampを管理しない。
+
+#### 4.3.3 Format / Version Compatibility
+
+##### Format Identification
+
+永続化ファイルは、保存対象のデータ形式を識別する`format`と、その形式のVersionを表す`version`を持つ。
+
+`format`の具体的な値と対応Versionは、保存対象のデータごとに定義する。
+
+##### Version Scheme
+
+VersionはStringによる`Major.Minor`形式とする。
+
+- Major：互換性を維持できない形式変更を表す。
+- Minor：同一Major内での形式変更を表す。
+
+##### Read Compatibility
+
+Applicationは、自身が対応するVersionを基準に、次の条件をすべて満たすファイルを読み込み可能とする。
+
+- `format`が期待する形式と一致する。
+- MajorがApplicationの対応Majorと一致する。
+- FileのMinorがApplicationの対応Minor以下である。
+
+MajorがApplicationの対応Majorと異なる場合はUnsupported Versionとして扱う。
+
+Majorが一致していても、FileのMinorがApplicationの対応Minorを超える場合はRead Failureとして扱う。
+
+`format`の不一致はRead Failureとして扱う。
+
+##### Write Version
+
+ファイル保存時は、読み込み元のMinor Versionにかかわらず、**Applicationが対応する最新のMinor Versionで保存する**。
+
+Major VersionはApplicationが対応するMajor Versionを使用する。
+
+これにより、旧Minor Versionのファイルを読み込んだ場合も、保存後はApplicationが対応するVersionへ更新される。
+
+##### Example
+
+Applicationの対応Versionが`2.1`の場合：
+
+| File Version | Read | Save後のVersion |
+|---|---|---|
+| `2.0` | OK | `2.1` |
+| `2.1` | OK | `2.1` |
+| `2.2` | NG | — |
+| `1.0` | NG | — |
+| `3.0` | NG | — |
+
+Versionの検証と保存時の更新はPersistence Adapterが担当する。
+
+#### 4.3.4 Safe Write / Failure Handling
+
+##### Safe Write
+
+ファイル保存時は、既存のCanonical Fileを直接上書きせず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
 
 ```text
-Application
-│
-├─ Header
-│   └─ PROJECT ARIADNE
-│
-├─ Primary Navigation
-│   ├─ Task
-│   └─ Config
-│
-├─ Task Page
-│   ├─ Side Navigation
-│   │   ├─ List
-│   │   └─ Create
-│   │
-│   └─ Main Area
-│       ├─ Task List
-│       ├─ Task Create
-│       └─ Task Edit
-│
-├─ Config Dummy Page
-│
-├─ Confirmation Modal
-│
-└─ Notification / Validation Presentation
-    ├─ Field Validation
-    └─ Notification Toast
+Business Model
+    ↓
+Persistence Model
+    ↓
+Temporary Fileへ全量Write
+    ↓ Write成功
+Canonical FileをReplace
 ```
 
-### 4.1 Header
+Safe Writeは、書き込み処理の失敗によって既存のCanonical Fileが不完全な内容に置き換わることを防ぐための仕組みとする。
 
-HeaderはApplication自体を識別する領域とする。
+##### Write Failure
 
-Prototypeでは `PROJECT ARIADNE` を表示する。
+Temporary FileへのWriteに失敗した場合は、Canonical Fileの置き換えを行わず、既存ファイルを維持する。
 
----
+Canonical FileのReplaceに失敗した場合は、Write Failureとして扱う。
 
-### 4.2 Primary Navigation
+いずれの場合も、保存処理が正常に完了したものとして扱わない。
 
-Applicationの上位機能を切り替えるNavigationとする。
+##### Read Failure
 
-Prototypeでは以下を配置する。
+Persistence Adapterは、ファイルの読み込み・解析・検証・Business Modelへの復元に失敗した場合、原因情報を保持してRead Failureを返す。
 
-- Task
-- Config
+ただし、Applicationの対応Majorと異なるVersionは、Read Failureと区別してUnsupported Versionとする。同一MajorでApplicationの対応Minorを超えるVersionはRead Failureとする。
 
-Primary Navigationの選択によりMain Areaの表示対象を切り替える。
+指定された識別子に対応するデータが存在しない場合は、ファイルの読み込み失敗とは区別してNot Foundとする。
 
-Task選択時はTask Pageを表示し、Task用のSide Navigationを表示する。
+##### Error Propagation
 
-Config選択時はConfig Dummy Pageを表示し、 Task用のSide
-Navigationは表示しない。
+Persistence Adapterは、下位で発生したErrorの原因情報を維持し、Persistence Portの契約に従ってApplication Serviceへ伝達する。
 
----
+Application Serviceは、具体的なFile I/Oの失敗原因に依存せず、Persistence OperationとしてのErrorを扱う。
 
-### 4.3 Task
+Backend全体のError Chain、公開用Errorへの変換、LoggingについてはBackend ArchitectureのError Handling仕様に従う。
 
-TaskはPrototype Applicationの実機能とする。
+##### Scope
 
-#### List
+Prototypeでは、Backup GenerationおよびCrash Recovery機構を実装しない。
 
-Task YAMLから読み込んだTaskを一覧表示する。
+Windows上でのCanonical Fileの安全な置き換え方法は、実装時の技術検証対象とする。
 
-一覧からTaskを選択することで、対象Taskの編集画面へ遷移する。
+### 4.4 Task Data Specification
 
-Prototypeでは以下を対象外とする。
+#### 4.4.1 Business Task
 
-- Sort
-- Filter
-- Search
-- Pagination
+##### Task Properties
 
-Taskは全件を一覧表示する。
-
-一覧順序はYAML Sequence順とし、
-Frontendでは取得したTaskの順序を変更しない。
-
-表示件数が一覧表示領域を超える場合は、
-Main Area内の一覧領域にスクロールバーを表示する。
-
-#### Create
-
-Taskの新規登録画面を表示する。
-
-#### Edit
-
-既存Taskの編集画面を表示する。
-
----
-
-### 4.4 Config
-
-ConfigはApplication設定領域を想定する。
-
-例えばTask YAMLのPath等を設定する可能性があるが、
-Prototype では設定機能そのものは実装しない。
-
-PrototypeではPrimary Navigationによる画面切替を確認するため、
-Config Dummy Pageを設ける。
-
----
-
-### 4.5 Confirmation Modal
-
-Taskの登録・更新等、
-ユーザーによる最終確認が必要な操作ではConfirmation Modalを使用する。
-
-ModalはApplication処理の結果通知ではなく、
-ユーザーに意思決定を求めるUIとして扱う。
-
-登録・更新操作では、
-必要なValidationが成功した場合にのみConfirmation Modalを表示する。
-
----
-
-### 4.6 Validation / Notification
-
-ErrorおよびApplicationからの通知は、
-内容に応じて表示方法を使い分ける。
-
-基本的な考え方は以下とする。
-
-```text
-Validation Error
-      ↓
-Form Field
-
-Application Error
-      ↓
-Error Toast
-
-Application Info
-      ↓
-Info Toast
-```
-
-#### Field Validation
-
-ユーザーが入力内容を修正することで解消できるValidation Errorは、
-対象Form Field付近へ表示する。
-
-基本的な表示方法は以下とする。
-
-- 対象項目の直下にError Messageを表示する
-- 対象項目を視覚的に強調する
-- Error状態が認識できる程度の背景色・Border等を使用する
-
-Frontend Validationは以下の2種類に分けて扱う。
-
-- Single Field Validation
-  - 単独Fieldで判定できるValidation
-- Correlation Validation
-  - 複数Fieldの関係によって判定するValidation
-
-Validationの実行タイミング、評価順序、
-Correlation Validation Modeの状態遷移については、
-`behavior-map.md` に定義する。
-
-Frontend ValidationはSvelte側で実行する。
-
-Application Service側でもBusiness / Applicationの整合性を保証するため
-Validationを実施する場合がある。
-
-Frontend Validationを正常に通過した入力が
-Application Service側でValidation Errorとなった場合は、
-Form Fieldへ戻すのではなくApplication Errorとして扱い、
-Error Toastで通知する。
-
-#### Correlation Validation Mode
-
-Frontendでは、Correlation Validationの実行状態を
-`INITIAL / ACTIVE` の2つのModeで管理する。
-
-- `INITIAL`：全Correlation Validationをまだ実行していない状態
-- `ACTIVE`：全Single Field Validation成功後に、全Correlation Validationを一度実行した状態
-
-Modeは以下のルールで遷移する。
-
-| 契機                                                          | Mode             |
-| ------------------------------------------------------------- | ---------------- |
-| Create / Edit画面の初期表示                                   | INITIAL          |
-| Focus Out                                                     | 現在のModeを維持 |
-| Create / Modify押下時、Single Field Validation失敗            | 現在のModeを維持 |
-| 全Single Field Validation成功後、全Correlation Validation実行 | ACTIVE           |
-| Confirmation Modal Cancel                                     | ACTIVEを維持     |
-| 保存失敗                                                      | ACTIVEを維持     |
-| Create保存成功後のForm Reset                                  | INITIAL          |
-| Edit保存成功後、再取得成功・Reference画面へ遷移              | Edit終了（Mode管理対象外） |
-
-`INITIAL`では、Focus Out時にCorrelation Validationを実行しない。
-
-`ACTIVE`では、Focus Out時に対象Fieldに関連するCorrelation Validationを再実行する。
-
-Correlation Validationは、関連FieldがすべてSingle Field Validation上Validな場合のみ評価する。
-
-評価不能となったRuleに対応する既存Correlation ErrorはClearする。
-
-具体的なActionごとのValidation実行順序およびResult Patternは、
-`behavior-map.md` に定義する。
-
-#### Notification Toast
-
-入力項目の修正では解消できないApplication Errorおよび
-Application処理結果の通知には、
-画面右上のNotification Toastを使用する。
-
-Prototypeでは以下を基本とする。
-
-| Severity | 用途                       | 表示        | 消去                 |
-| -------- | -------------------------- | ----------- | -------------------- |
-| Error    | Application Error          | 赤色のToast | ユーザー操作まで表示 |
-| Info     | 登録・更新成功等の情報通知 | 青色のToast | 3秒後に自動消去      |
-
-Toastの外側をクリックした場合はToastを消去する。
-Close Buttonは設けない。
-
-Warning等、その他のSeverityは必要性が生じた場合に検討する。
-
-ToastのState管理、自動消去Timerおよび
-Error Messageの変換については、
-Section 3.4.4およびSection 3.5に定義する。
-
-#### Validation Error Message Priority
-
-1 Fieldに表示するValidation Error Messageは1件とする。
-
-Single Field ErrorとCorrelation Errorが同一Fieldに存在する場合は、
-Single Field Errorを優先して表示する。
-
-同一Fieldに複数のCorrelation Errorが存在する場合は、
-Rule Priorityが高いErrorを表示する。
-
-Validation RuleおよびRule Priorityは
-`validation-rules.md` に定義する。
-
----
-
-## 5. Task Data
-
-Prototype では、 Business
-Logicが扱うTaskとPersistence上のTask表現を分離する。
-
-### 5.1 Business Task
-
-Business Taskは以下を基本とする。
+Business Taskは、Task管理におけるBusiness Modelとする。
 
 ```text
 Task
@@ -1228,189 +1304,136 @@ Task
 └─ status
 ```
 
-各Propertyは以下とする。
+| Property | Definition |
+|---|---|
+| `id` | ULID。TaskのIdentity |
+| `title` | 必須。空文字・空白のみ不可。最大50文字 |
+| `description` | 任意。複数行可 |
+| `priority` | 必須。1〜5。値が大きいほどPriorityが高い |
+| `status` | 必須。`TODO / DOING / DONE` |
 
-| Property      | 内容                                     |
-| :------------ | :--------------------------------------- |
-| `id`          | ULID。TaskのIdentityとして利用する       |
-| `title`       | 必須。空文字・空白のみ不可。最大50文字   |
-| `description` | 任意。複数行可                           |
-| `priority`    | 必須。1〜5。値が大きいほどPriorityが高い |
-| `status`      | 必須。`TODO / DOING / DONE`              |
+Business Taskは`createdAt / updatedAt`を持たない。これらはPersistence Modelで管理する。
 
-Business Taskは `createdAt / updatedAt` を持たない。
+##### Task Identity
 
-`createdAt / updatedAt` はBusiness Logicで利用する情報ではなく、
-Persistence上で管理する情報とする。
+TaskのIdentityにはULIDを使用する。
 
-TaskはIDが未設定の状態でもBusiness Taskとして成立し得る。
+新規Taskの生成時にIDを設定し、Business Taskが成立した時点でIdentityが確定していることを保証する。
 
-Create時にはApplication ServiceがPropertiesから新しいTaskを成立させ、
-PersistenceへDepositする時点でFile Persistence AdapterがULIDを生成する。
+Persistence AdapterはIDを生成・変更しない。
 
-```text
-CreateTask(Properties)
-    ↓
-newTask
-    ↓
-Validate
-    ↓
-validatedTask
-    ↓
-Store(validatedTask, Deposit)
-    ↓
-storedTask
-```
+既存Taskの変更時は、Identityを維持する。
 
-Application ServiceはTaskのIdentityとしてIDを認識・利用するが、
-IDの生成方式は認識しない。
+##### Task Validation
 
-Taskの成立条件は `service` packageに一元化する。
+Taskの成立条件はBusiness Modelに一元化する。
 
-Taskを生成・復元する際は同一のTask Validationを利用し、 Validation
-Failure自体は「Taskとして成立しない」ことだけを表す。
+Taskの新規生成、変更、Persistence Modelからの復元では、共通の成立条件を適用する。
 
-Validation FailureをApplication上どのErrorとして扱うかは、
-そのTaskを成立させようとした呼び出し元が決定する。
+成立条件を満たさないTaskは、Business Modelとして成立させない。
 
-```text
-File Persistence Adapter
-    Persistence Model
-        ↓
-    Task Validation
-        ↓ Failure
-    Read Failureとしてwrap
+Validation Failureは、Taskが成立条件を満たしていないことを表す。Application Errorへの変換は、発生したContextに応じて行う。
 
-Application Service Create / Modify
-    Properties
-        ↓
-    Task Validation
-        ↓ Failure
-    呼び出し元のContextに応じてApplication Errorへ変換
-```
+##### Responsibility
 
-具体的なTask生成Function名や実装形式は、
-実装時にGoとして自然な形を選択する。
+Application Serviceは、Taskの生成・変更を指示し、成立したBusiness TaskをPersistence Portへ渡す。
 
-### 5.2 Public Task
+Business Modelは自身の成立条件を保証する。
 
-Public Taskは、Application ServiceがFrontendへ公開するTaskのData Modelとする。
+Persistence Adapterは、成立済みのBusiness Taskを永続化し、保存データからBusiness Taskを復元する。
 
-Business Modelとは独立して定義し、
-Frontendとの入出力契約として使用する。
+#### 4.4.2 Public Task Models
 
-Prototype では、以下のPublic Modelを扱う。
+##### Overview
 
-| Model             | 用途                |
-| :---------------- | :------------------ |
-| TaskSummary       | `ListTasks` の返却  |
-| Task              | `GetTask` の返却    |
-| Create Properties | `CreateTask` の入力 |
-| Modify Properties | `ModifyTask` の入力 |
+Public Task Modelは、Application ServiceがFrontendへ公開するTaskのData Modelとする。
 
-#### TaskSummary
+Business Modelとは独立して定義し、Frontendとの出力契約として使用する。
 
-TaskSummaryはTask List表示用のPublic Modelとする。
+Prototypeでは、以下のPublic Modelを定義する。
 
-| Property   | 内容                  |
-| :--------- | :-------------------- |
-| `id`       | TaskのIdentity        |
-| `title`    | TaskのTitle           |
-| `priority` | 1〜5                  |
-| `status`   | `TODO / DOING / DONE` |
+| Model | Purpose |
+|---|---|
+| `TaskSummary` | `ListTasks`の返却 |
+| `Task` | `GetTask`の返却 |
 
-`description / createdAt / updatedAt` は公開しない。
+##### TaskSummary
 
-#### Task
+Task List表示用のPublic Modelとする。
 
-TaskはTask詳細取得用のPublic Modelとする。
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `priority` | Number |
+| `status` | String |
 
-| Property      | 内容                  |
-| :------------ | :-------------------- |
-| `id`          | TaskのIdentity        |
-| `title`       | TaskのTitle           |
-| `description` | TaskのDescription     |
-| `priority`    | 1〜5                  |
-| `status`      | `TODO / DOING / DONE` |
+`description / createdAt / updatedAt`は公開しない。
 
-`createdAt / updatedAt` は公開しない。
+##### Task
 
-Business Modelで `description` が未設定（`nil`）の場合、
-Public Modelでは空文字列として公開する。
+Task詳細取得用のPublic Modelとする。
 
-#### Create Properties
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `description` | String |
+| `priority` | Number |
+| `status` | String |
 
-`CreateTask` には以下のPropertyを渡す。
+`createdAt / updatedAt`は公開しない。
 
-| Property      | 内容                  |
-| :------------ | :-------------------- |
-| `title`       | 必須                  |
-| `description` | 任意                  |
-| `priority`    | 1〜5                  |
-| `status`      | `TODO / DOING / DONE` |
+Business Modelで`description`が未設定の場合、Public Modelでは空文字列`""`として公開する。
 
-`id` は入力に含めない。
+##### Model Conversion
 
-TaskのIdentityはDeposit時にFile Persistence Adapterが生成する。
+Business ModelからPublic Modelへの変換はApplication Serviceが担当する。
 
-#### Modify Properties
+#### 4.4.3 Persistence Task
 
-`ModifyTask` には変更対象のTask IDと、
-変更するPropertyを渡す。
+##### Task Properties
 
-変更可能なPropertyは以下とする。
+Persistence Taskは、Business TaskのPropertyに加え、永続化に必要な記録管理情報を保持する。
 
-- `title`
-- `description`
-- `priority`
-- `status`
+| Property | Type |
+|---|---|
+| `id` | String |
+| `title` | String |
+| `description` | String |
+| `priority` | Number |
+| `status` | String |
+| `createdAt` | String |
+| `updatedAt` | String |
 
-変更対象外のPropertyは更新しない。
+すべてのPropertyを必須とし、YAML上に存在しない場合はFormat Errorとして検出する。Persistence Adapterは、このFormat Errorを原因情報として保持し、Read Failureを返す。
 
-Modify Propertiesでは、
-未指定・`null`・値ありを区別できる必要がある。
+`description`は空文字列`""`を許容する。ただし、Property自体の省略は許容しない。
 
-#### Model Conversion
+`createdAt / updatedAt`はPersistence Modelで保持し、Business Taskには含めない。
 
-Public ModelとBusiness Modelの相互変換は、
-Application Serviceが担当する。
+##### Model Conversion
 
-Application ServiceはPersistence Portを介して
-Business Modelを受け渡す。
+Business ModelとPersistence Modelの相互変換はPersistence Adapterが担当する。
 
-Persistence ModelはFile Persistence Adapter内部で扱い、
-Application ServiceおよびFrontendから参照しない。
+Persistence ModelからBusiness Modelへの変換では、Propertyの存在を検証した後、Business Modelの成立条件を検証する。
 
-### 5.3 Persistence Task
+`description`は、Model間で以下の変換を行う。
 
-`tasks.yaml` 上ではBusiness TaskのPropertyに加えて、 以下を保持する。
+| Direction | Conversion |
+|---|---|
+| Persistence → Business | 空文字列・空白のみの値を`nil`へ正規化する |
+| Business → Persistence | `nil`を空文字列`""`へ変換する |
 
-```text
-createdAt
-updatedAt
-```
+その他のPropertyは、それぞれのModelの定義に従って変換する。
 
-Deposit時には以下を行う。
+#### 4.4.4 Task YAML Format
 
-- ULIDを生成して `id` を設定する
-- `createdAt` を現在日時で設定する
-- `updatedAt` を `createdAt` と同一日時で設定する
-- TaskをYAML末尾へ追加する
+##### File Structure
 
-Replace時には以下を行う。
+Taskの永続化ファイルは`tasks.yaml`とする。
 
-- `id` により既存Taskを特定する
-- `createdAt` を維持する
-- `updatedAt` を現在日時へ更新する
-- YAML上のTask順序を維持する
-
-TimestampはTimezoneを含むRFC3339 / ISO 8601形式を使用する。
-
-Application ServiceはTimestampの取得・管理を行わない。
-
-### 5.4 tasks.yaml Format
-
-`tasks.yaml` のRootは以下とする。
+Rootは以下の構造を持つ。
 
 ```yaml
 format: ariadne-tasks
@@ -1419,1473 +1442,135 @@ version: "2.1"
 tasks: []
 ```
 
-`format` は `ariadne-tasks` 固定とする。
+| Property | Definition |
+|---|---|
+| `format` | `ariadne-tasks`固定 |
+| `version` | Prototypeでは`2.1` |
+| `tasks` | Persistence TaskのSequence |
 
-`version` はStringによる `Major.Minor` 形式とする。
+Versionの互換性と保存時の更新規則は4.3.3 Format / Version Compatibilityに従う。
 
-Prototype Applicationが対応するVersionを `2.1` とし、
-互換性は以下とする。
+##### Task Representation
 
-```text
-2.1 → OK
-2.0 → OK
-1.0 → NG(Majorが異なる)
-2.2 → NG(Minorが対応バージョンよりも大きい)
-3.0 → NG(Majorが異なる)
-```
+Taskが0件の場合は`tasks: []`とする。
 
-同一MajorかつFile
-MinorがApplication対応Minor以下の場合のみ読み込み可能とする。
-
-`format` が異なる場合はRead Failureとする。
-
-非対応Versionの場合は、 通常のRead Failureとは区別してUnsupported
-Versionとして扱う。
-
-読み込み時は、同一MajorかつFile MinorがApplication対応Minor以下のVersionを許容する。
-
-書き込み時は、読み込み元のVersionにかかわらず、
-Applicationが対応するVersionで保存する。
-
-Prototype では、書き込み後のVersionを `2.1` に統一する。
-
-Task 0件は以下で表現する。
-
-```yaml
-format: ariadne-tasks
-version: "2.1"
-
-tasks: []
-```
-
-`description` が空の場合は以下とする。
+`description`が空の場合は、以下の形式で保存する。
 
 ```yaml
 description: ""
 ```
 
-`description` に値がある場合は、 1行の場合を含めLiteral Block `|`
-を使用する。
+`description`に値がある場合は、1行の場合も含めてLiteral Block `|`を使用する。
 
-複数行のdescriptionはRead / Write後も内容を維持する。
+複数行の`description`は、Read / Write後も内容を維持する。
 
-TaskのYAML Sequence順を一覧表示順として扱う。
+##### Task Sequence
 
-PrototypeではSortを行わない。
+TaskはYAML Sequenceとして保持する。
 
-CreateではTaskを末尾へ追加し、 Modifyでは既存Taskの位置を維持する。
+CreateではTaskをSequence末尾へ追加し、Modifyでは既存Taskの位置を維持する。
 
-### 5.5 File存在条件
+#### 4.4.5 Task File Existence
 
-Prototypeでは `tasks.yaml` が事前に存在することを前提とする。
+Prototypeでは、`tasks.yaml`が事前に存在することを前提とする。
 
-Applicationによる自動生成および初期化処理は実装しない。
+Applicationによる`tasks.yaml`の自動生成および初期化処理は実装しない。
 
-`tasks.yaml` が存在しない場合は、 空のTask一覧として扱わずRead
-Errorとする。
+Taskが0件の場合は正常な空集合として扱う。一方、`tasks.yaml`が存在しない場合はRead Failureとし、空集合とは区別する。
 
-```text
-tasks.yamlあり
-  │
-  ├─ Taskあり
-  │    → 正常
-  │
-  └─ Task 0件
-       → 正常
+Project / Workspaceの初期化方式はPrototypeの対象外とし、Coreで必要に応じて検討する。
 
-tasks.yamlなし
-       → Read Error
-```
+### 4.5 Task Functional Specification
 
-Project / Workspaceの初期化方式については、 Coreで必要に応じて検討する。
+#### 4.5.1 Task List
 
-### 5.6 File Write
+##### Task Retrieval
 
-Task群は1つのYAML Fileで管理し、 全量Read / 全量Writeを基本とする。
+Task Listは`TaskListPage`で表示する。
 
-Write時はCanonical Fileへ直接書き込まず、 Temporary
-Fileへ全量Writeした後、 Canonical `tasks.yaml` を置き換える。
+`TaskListPage`では、`ListTasks`を使用してTaskの一覧を取得する。
 
-```text
-Task Data
-    ↓
-Temporary File
-    ↓ Write成功
-Canonical tasks.yamlをReplace
-```
+取得結果には`TaskSummary`を使用する。
 
-Temporary FileへのWriteに失敗した場合は、 既存のCanonical
-Fileを維持する。
+Taskは全件取得し、全件を一覧表示する。
 
-Canonical FileのReplaceに失敗した場合はWrite Errorとする。
+##### Task Order
 
-Safe Writeは、Write処理の失敗によって既存のCanonical Fileが
-不完全な内容に置き換わることを防ぐことを目的とする。
+Taskの一覧順序は、`tasks.yaml`のSequence順とする。
 
-Backup GenerationおよびCrash Recovery機構はPrototypeでは実装しない。
+Frontendでは取得したTaskの順序を変更しない。
 
----
+Prototypeでは以下を実装しない。
 
-## 6. Test Strategy
+- Sort
+- Filter
+- Search
+- Pagination
 
-PROJECT ARIADNE では、テストを技術要素ごとではなく、 保証する範囲によって B /
-C / Dに分類する。
+##### Task Display
 
-基本戦略は **Frontend / Backend Module Test** とする。
+Task Listには、`TaskSummary`のPropertyを表示する。
 
-D. Logic / Development Step Testは、 Module Testを適切な粒度に保つため、
-または実装を小さな段階に分けて確認するための
-補助的なテストと位置付ける。
+Task数が一覧表示領域を超える場合は、一覧領域内でスクロールできるようにする。
 
----
+##### Retrieval Failure
 
-### 6.1 B. Frontend Module Test
+`ListTasks`による取得に失敗した場合は、遷移を確定せず、現在の画面とNavigationの選択状態を維持してError Toastを表示する。
 
-対象BehaviorのFrontend側の振る舞いを、 Backendから切り離して保証する。
+ファイルの読み込み・解析・復元の失敗、および同一Majorで対応Minorを超えるVersionはRead Failureとする。対応Majorが異なる場合はUnsupported Versionとする。
 
-Test対象は、 対象Behaviorを開始できる 公開されたSvelte Componentとする。
+##### Task Selection
 
-Backendを利用するBehaviorでは、
-Frontendから呼び出すWails Public APIをMockし、
-ユーザー操作に対するBackend Responseを再現する。
+一覧からTaskを選択した場合、対象Taskの詳細画面へ遷移する。
 
-```text
-User Action
-   ↓
-Svelte Component
-   ↓
-Frontend Logic
-   ↓
-Go Mock
-   ↓
-Frontend Logic
-   ↓
-Screen / Toast / State
-```
+#### 4.5.2 Task Detail
 
-Frontend Module Testでは、 ユーザー操作と、
-それに対する表示・状態変化等の 振る舞いを確認する。
+##### Initial Display
 
-子Component単位で網羅的にTestすることは目的とせず、
-BehaviorのFrontend側を外部から確認できる 適切なComponent境界を選択する。
+Task ListでTaskを選択すると、`TaskDetailPage`へ遷移する。
 
-1 Behavior = 1 Component = 1 Test File とは規定しない。
+`TaskDetailPage`の初期Modeは`reference`とする。
 
-Frontend Testには Vitest + Svelte Testing Libraryを使用する。
+Task Listで保持している`TaskSummary`を詳細表示に流用せず、選択したTaskのIDを使って`GetTask`で再取得する。
 
-Test Fileは実装と同じ場所へ配置する。
+取得結果にはPublic Modelの`Task`を使用する。
 
-例：
+`GetTask`による取得に失敗した場合は、Task Detailへの遷移を確定せず、Task Listの画面とNavigationの選択状態を維持してError Toastを表示する。対象Taskが存在しない場合はNot Found、ファイルの読み込み・解析・復元の失敗はRead Failureとする。対応Majorが異なる場合はUnsupported Versionとする。
 
-```text
-TaskList.svelte
-TaskList.test.ts
-```
+##### Display Mode
 
-Frontend Module Testでは、 Visual
-Designそのものは原則として自動Test対象としない。
+`TaskDetailPage`には、`reference / edit`を切り替えるToggleを配置する。
 
-対象外の例：
+| Mode | Behavior |
+|---|---|
+| `reference` | Taskの内容を参照表示する |
+| `edit` | Taskの内容を編集する |
 
-- CSS
-- Layout
-- 色
-- 余白
-- サイズ
-- Rendering環境に依存する見た目
+ToggleによるMode切替は実装済みとする。Edit機能の実装はStep 6で行う。
 
-これらは実機で確認する。
+##### Mode Transition
 
-一方、 表示される / 表示されない、 Validation Messageが表示される、
-Toastが表示される、 画面状態が変化する等、
-Behaviorとして意味を持つUI状態はTest対象とする。
+| Transition | Task Data Handling | Implementation |
+|---|---|---|
+| List → Detail（reference） | IDを使って`GetTask`で再取得する | 実装済み |
+| reference → edit（Toggle） | Referenceで保持しているTaskをそのまま利用する | 未実装 |
+| edit → reference（Toggle） | IDを使って`GetTask`で再取得する | 未実装 |
+| edit → reference（更新成功） | 更新成功後、IDを使って`GetTask`で再取得する | 未実装 |
 
-Frontend Testの日常的な実行入口は `frontend-test.sh` とする。
+Referenceへ戻る際は、Edit中の入力値を参照表示に流用せず、永続化されたTaskを再取得する。
 
-Test結果は日常利用しやすいよう コンパクトに表示する。
+##### Unsaved Changes
 
-主な表示内容：
+Edit中に未保存の変更がある状態で別画面へ遷移しようとした場合、またはToggleでReferenceへ切り替えようとした場合は、Confirmation Modalを表示する。
 
-- TestごとのPASS / FAIL
-- Total
-- Error Rate
-- 実行時間
-- Failure時のみErrors
+ユーザーが遷移を承認した場合は、変更を破棄して遷移する。
 
-巨大なDOM、 冗長なStack Trace、 ANSI等のノイズは抑制する。
+ユーザーが遷移をキャンセルした場合は、Edit画面を維持する。
 
----
+未保存の変更がない場合は、Confirmation Modalを表示せずに遷移する。
 
-### 6.2 C. Backend Module Test
+この振る舞いはStep 6で実装する。
 
-対象BehaviorのBackend側の振る舞いを、 Serviceの公開APIから保証する。
+#### 4.5.3 Task Create
 
-```text
-Input
-  ↓
-Application Service Public API
-  ↓
-Persistence Port
-  ↓
-File Persistence Adapter
-  ↓
-Actual File I/O
-  ↓
-Expected Result
-```
-
-File I/Oの有無にかかわらず、 Backend Module Testは
-Serviceの公開APIをTest境界とする。
-
-Service内部の関数構成は原則として意識しない。
-
-Test Fileは実装と同じPackage Directoryへ `xxx_test.go` として配置する。
-
-Backend Module Testでは原則として external test packageを使用し、
-privateな実装へTestが入り込まないようにする。
-
-File I/Oを伴うBehaviorでは、 File SystemをMockすることを基本とはせず、
-`t.TempDir()` 等を利用して 実際のFile I/Oを行う。
-
-このためFile Persistence Adapterは、 対象となるWorkspace / Root
-Directoryを 内部で固定・探索するのではなく、
-外部から与えられる設計とする。
-
-ProductionとTestでは、 同じFile Adapterへ異なるDirectoryを与える。
-
-```text
-Production
-  → workspaceDir
-
-Test
-  → t.TempDir()
-```
-
-Read FailureはApplication上1つのResult Patternであっても、 Backend
-Module Testでは原因となる状態ごとに複数のTest Caseを設けてよい。
-
-例えば以下を対象とする。
-
-- `tasks.yaml` が存在しない
-- YAML Parseに失敗する
-- `format` が不正
-- Task DataがTaskの成立条件を満たさない
-
-非対応VersionはRead Failureとは別のApplication ErrorとしてTestする。
-
-これらは `t.TempDir()` 上にTest用のFile状態を構築し、 Service Public
-APIから期待するApplication Errorとなることを確認する。
-
-パターン数が過大になるLogicのみ、 必要に応じてD. Logic / Development
-Step Testへ切り出す。
-
-Writeの確認は、 先に成立しているRead機能を利用して読み戻し、
-Domain上の結果を確認することを基本とする。
-
-これはWrite実装がRead実装へ依存するという意味ではなく、
-Testの実施順序として Read機能 / Testが先に成立していることを前提とする。
-
-YAML文字列そのものの直接比較は、 Backend Module
-Testの基本方針とはしない。
-
-Backend Testの日常的な実行入口は `backend-test.sh` とする。
-
-通常実行ではBackend Module Testを実行する。
-
-Application Errorの検証では、
-Application Serviceの公開APIを通じて
-Errorの分類およびError Chainを確認する。
-
-Wails PublicErrorへの変換はBackend Module Testの対象外とする。
-
----
-
-### 6.3 D. Logic / Development Step Test
-
-Dは必要な場合のみ使用する。
-
-Dを利用する主な目的は以下の2つとする。
-
-#### 1. Logicの独立保証
-
-Frontend / Backend Module Testだけでは パターン数が過大になる場合、
-複雑な内部Logicを切り出して直接Testする。
-
-例えば、
-
-- 多数の境界値を持つLogic
-- 多数の組み合わせを持つLogic
-- パス解決
-- File判定
-- 複雑なTypeScript Logic
-- Wails BoundaryにおけるApplication ErrorからPublicErrorへの変換
-
-等を対象とする。
-
-Module Testで十分に保証できる場合は、 Logic Testを追加する必要はない。
-
-#### 2. 段階的な実装確認
-
-未知の技術要素を含むBehaviorについて、 最終的なModule
-Testまで一度に実装せず、 小さな技術単位で動作を確認しながら
-段階的に進めたい場合にも利用してよい。
-
-例えばTask YAML Loadでは、
-
-```text
-[D] Fileを読み込める
-       ↓
-[D] YAMLをParseできる
-       ↓
-[D] Task Modelへ変換できる
-       ↓
-[C] Service Public APIからTask一覧を取得できる
-```
-
-のように進めることができる。
-
-Development Stepとして作成したDは、 上位のModule Testが成立した後、
-継続して保持する価値がなければ削除してよい。
-
-内部Logicを直接保証する価値がある場合は 継続して保持する。
-
-Dを利用する場合でも、 実装内部を網羅的にTestすることを目的とはしない。
-
-Logic Test専用のDirectoryや 特別なFile命名規則は設けない。
-
-Goでは通常のTestと同様に 実装と同じPackage Directoryへ `xxx_test.go`
-として配置する。
-
-privateなLogicを直接Testする必要がある場合は、 internal test
-packageを使用してよい。
-
-Logic Testであることは 各Test自身のskipによって明示する。
-
-通常の `backend-test.sh` では実行せず、 必要な場合のみ
-
-```text
-backend-test.sh --logic
-```
-
-によって実行する。
-
-Logic / Development Step Testは `test.sh` およびBuild Gateには含めない。
-
----
-
-### 6.4 B / C / Dの関係
-
-```text
-B. Frontend Module Test
-────────────────────────
-       ★ TDDの主戦場 ★
-
-Svelte Component
-       │
-    Go Mock
-
-BehaviorのFrontend側を保証
-
-
-C. Backend Module Test
-────────────────────────
-       ★ TDDの主戦場 ★
-
-Service Public API
-       │
-Persistence / File
-
-BehaviorのBackend側を保証
-
-
-D. Logic / Development Step Test
-────────────────────────
-       必要な場合のみ
-
-① 複雑なLogicを独立して保証する
-
-② Module Testへ到達するまで
-   小さな段階で動作を確認する
-
-上位Module Test成立後、
-保証価値のない足場のDは削除してよい
-```
-
----
-
-## 7. TDD Development Cycle
-
-PROJECT ARIADNE では、 実装開始前にPhase全体の主要なUse Case / Behaviorを
-Behavior Mapとして整理する。
-
-Behavior MapはPhase
-5で実現する振る舞いの全体像を把握するためのものであり、 詳細なTest
-Caseを事前にすべて定義するものではない。
-
-Behavior Mapでは、 ユーザーによる1つのActionをBehaviorの基本単位とする。
-
-同一Actionに対して結果が分岐する場合は、 Behaviorを分割せずResult
-Patternとして整理する。
-
-基本形式は以下とする。
-
-```text
-Behavior
-├─ Start    : Action実行前の状態
-├─ Action   : ユーザーによる1つのAction
-├─ Result
-│   └─ Pattern : Resultの分岐
-└─ Scope    : Front / Back
-```
-
-各Behaviorでは、 Frontend / Backendの関与をScopeとして整理する。
-
-```text
-Front
-    → Frontend Module Test
-
-Front + Back
-    → Frontend Module Test
-    → Backend Module Test
-```
-
-各StepではBehavior Mapを基に、 実装対象となるBehaviorのTest
-Caseを実装直前に具体化する。
-
-基本的なDevelopment Cycleは以下とする。
-
-```text
-Behaviorを選択
-       ↓
-Front / Backの関与を確認
-       ↓
-Behavior Test SpecificationでTest Caseを具体化
-       ↓
-必要なModule Testを決定
-       ↓
-Module Test：RED
-       ↓
-実装
-       │
-       ├─ そのまま実装可能
-       │      ↓
-       │   Module Test：GREEN
-       │
-       └─ 小さな段階で確認したい
-              ↓
-           Logic / Development Step Test：RED
-              ↓
-           最小実装
-              ↓
-           Logic / Development Step Test：GREEN
-              ↓
-           次の段階
-              ↓
-           Module Testへ戻る
-              ↓
-           Module Test：GREEN
-       ↓
-必要ならRefactor
-       ↓
-test.sh
-```
-
-Logic / Development Step Testは、 複雑なLogicを切り出す場合だけでなく、
-未知の技術要素を一段ずつ確認しながら 実装するためにも利用できる。
-
-Prototype では、
-
-「ここまで動いた。じゃあ次。」
-
-と確認できる単位で実装を進めることを重視する。
-
----
-
-## 8. test.sh / build.sh
-
-prototype の機能実装開始前に、 Test / Buildの実行基盤を整備する。
-
-### 8.1 test.sh
-
-Backend / Frontendの 通常のModule Testをまとめて実行する
-日常Testの統一入口とする。
-
-基本イメージを以下とする。
-
-```text
-test.sh
-├─ backend-test.sh
-│    └─ Backend Module Test
-│
-└─ frontend-test.sh
-     └─ Frontend Module Test
-```
-
-Backend / Frontendの両方がPASSした場合のみ、 `test.sh` をPASSとする。
-
-いずれかがFAILした場合は、 `test.sh` をFAILとする。
-
-各Testの詳細な実行方法および結果表示は、 `backend-test.sh` /
-`frontend-test.sh` の責務とする。
-
-`test.sh` 自身では、 Test分類やReporterを再構築しない。
-
-Logic / Development Step Testは 通常の `test.sh` には含めない。
-
-TDD中に頻繁に実行するため、 高速に完了することを重視する。
-
----
-
-### 8.2 build.sh
-
-`build.sh` は、 Frontend / Backend Module Testを Build
-Gateとして実行した上で、 Wails ApplicationをBuildする。
-
-基本イメージを以下とする。
-
-```text
-build.sh
-   ↓
-既存Build成果物を削除
-   ↓
-test.sh
-   ↓
-PASS ?
-   ├─ YES → Wails Application Build
-   │            ↓
-   │      ariadne-prototype.exe
-   │
-   └─ NO  → Buildせず終了
-             ↓
-          成果物なし
-```
-
-Build開始前に、 既存のBuild成果物を削除する。
-
-`test.sh` がPASSした場合のみ Wails ApplicationをBuildする。
-
-`test.sh` がFAILした場合は、 Wails ApplicationをBuildしない。
-
-この場合、 以前のBuildで生成された成果物も残さない。
-
-したがって、**`build.sh` 実行時にTestがPASSしなかった場合は、
-以前のBuild成果物も含めて残さない**ことをBuild Gateの原則とする。
-
-Build Gateには、
-
-- Backend Module Test
-- Frontend Module Test
-
-を含める。
-
-Logic / Development Step Testは Build Gateには含めない。
-
-Build Gateの技術検証では、 意図的にModule TestをREDにした状態で
-`build.sh` を実行し、
-
-- Wails Buildが実行されないこと
-- 既存Build成果物も残らないこと
-
-を確認する。
-
----
-
-## 9. Implementation Steps
-
-prototype Phase 5は以下のStepで進める。
-
-各Stepでは、 事前に詳細設計を完成させることよりも、
-必要な設計判断を行いながら小さく実装・検証することを優先する。
-
----
-
-### Step 1：Application Architecture / Task Data
-
-Svelte / Wails / Go / Fileの責務境界と、 Applicationが扱うTask
-Dataの基本仕様を整理する。
-
-Step 1では以下を確定した。
-
-- Go Service FirstによるApplication Architecture
-- Svelte / Wails / Application Service / Persistence Port / File
-  Persistence Adapterの責務境界
-- Application ServiceのPublic Operation
-  - `ListTasks`
-  - `GetTask`
-  - `CreateTask`
-  - `ModifyTask`
-- Persistence Operation
-  - `Retrieve`
-  - `Pick`
-  - `Store`
-  - `Deposit / Replace`
-- Business Task Model
-- Persistence Task Model
-- ULIDおよびTimestampの責務
-- `tasks.yaml` Format / Version
-- File存在条件
-- Empty状態
-- Safe Write方針
-- Frontend / Backend間で受け渡すData
-- Create / Modifyで共通するProperties概念
-- Frontend ValidationとApplication Errorの境界
-- Error Chain / Wails Application Boundary / Loggingの基本方針
-- Public Task Model
-  - TaskSummary
-  - Task
-  - Create / Modify Properties
-- Business Task Model
-- Persistence Task Model
-- Model間の変換責務と参照境界
-
-以下は実装時の技術検証課題とする。
-
-- Modify Propertiesの `未指定 / null / value` をSvelte / Wails /
-  Go間で表現する方式
-- Wails v3におけるApplication Error Boundaryの具体的な実現方式
-- Windows上でのSafe File Replace方式
-
----
-
-### Step 2：Test / Build Foundation
-
-Prototype 全体で使用するTest / Build基盤を構築する。
-
-機能実装を開始する前に、 Behavior Mapによって保証対象を整理した上で、 Go
-/ FrontendそれぞれのTest Foundationを 最小のDummy
-Testを実際に動かしながら構築する。
-
-その後、 日常的なTest実行およびBuild Gateを成立させる。
-
-主な実施順序：
-
-```text
-2-1 Behavior Map
-    ↓
-2-2 Go Test Foundation
-    ↓
-2-3 Frontend Test Foundation
-    ↓
-2-4 test.sh
-    ↓
-2-5 build.sh / Build Gate
-    ↓
-2-6 Behavior / Logic Test 最小技術検証
-```
-
-#### 2-1 Behavior Map
-
-Step 3以降で実現する主要なBehaviorを整理する。
-
-Behaviorはユーザーによる1つのActionを基本単位とし、
-同一Actionに対する結果の分岐はResult Patternとして整理する。
-
-各Behaviorについて、 Front / Backの関与を明確にする。
-
-詳細は `behavior-map.md` に定義する。
-
-#### 2-2 Go Test Foundation
-
-Go Testを実行できるBackend Test基盤を構築した。
-
-Backend Testの日常的な実行入口として `backend-test.sh` を作成した。
-
-通常実行では Backend Module Testを実行する。
-
-`--logic` 指定時は、 Logic / Development Step Testも
-実行できる構成とした。
-
-Test結果は、 日常利用しやすいコンパクトな形式で表示する。
-
-Test FileはGo標準に従い、 実装と同じPackage Directoryへ `xxx_test.go`
-として配置する。
-
-Backend Module Testは原則として external test packageから
-Service公開APIをTestする。
-
-File I/Oについては、 `t.TempDir()` を利用して 実File
-I/Oを行う方針とする。
-
-実際のFile I/O Testは、 File Adapter実装時にBehavior実装と合わせて行う。
-
-#### 2-3 Frontend Test Foundation
-
-Frontend Test基盤として Vitest + Svelte Testing Libraryを正式採用した。
-
-Frontend Testの日常的な実行入口として `frontend-test.sh` を作成した。
-
-Svelte Componentに対する Frontend Module
-Testを実行できる基盤を構築した。
-
-Test Fileは実装と同じ場所へ `Xxx.test.ts` として配置する。
-
-Wails Public APIをMockし、 Frontend側の振る舞いをTestできることを確認した。
-
-Test結果は日常利用向けに コンパクトに表示する。
-
-主な表示内容：
-
-- TestごとのPASS / FAIL
-- Total
-- Error Rate
-- 実行時間
-- Failure時のみErrors
-
-巨大なDOM、 冗長なStack Trace、 ANSI等のノイズは抑制する。
-
-#### 2-4 test.sh
-
-Backend / Frontendの 通常のModule Testを一括実行する `test.sh`
-を構築する。
-
-```text
-test.sh
-├─ backend-test.sh
-└─ frontend-test.sh
-```
-
-両方がPASSした場合のみ `test.sh` をPASSとする。
-
-Logic / Development Step Testは含めない。
-
-#### 2-5 build.sh / Build Gate
-
-`build.sh` から `test.sh` を実行し、 Test成功時のみ Wails
-ApplicationをBuildする。
-
-Build開始前に既存Build成果物を削除する。
-
-意図的にTestを失敗させ、
-
-- TestがREDの場合にWails Buildが実行されないこと
-- 既存Build成果物も残らないこと
-
-を確認する。
-
-Logic / Development Step Testは Build
-Gateには含めない。
-
----
-
-### Step 3：Application Shell
-
-Applicationの基本的な画面構造を構築する。
-
-主な実施事項：
-
-- Header
-- Primary Navigation
-  - Task
-  - Config
-- Config Dummy Page
-- Side Navigation
-  - List
-  - Create
-- Main Area
-- Confirmation Modalの基本構造
-- Notification Toastの基本構造
-- Field Validation表示の基本構造
-- Prototype用の暫定Visual Design
-
-このStepでは各業務機能を完成させることを目的とせず、
-後続Stepで機能を追加できるApplication Shellを成立させる。
-
-Primary Navigationについては、 Task /
-Configの選択によるPage切替をBehavior Testで確認する。
-
----
-
-### Step 4：Task List / Read
-
-**Status：COMPLETE**（L01 / L02）
-
-Task YAMLの読み込みから、Task List表示、Task選択によるTask Reference表示までのVertical Sliceを実装・検証した。
-
-Step開始時にTask List画面の簡易画面設計を行う。
-
-主に以下を確認する。
-
-- 表示項目
-- 一覧領域
-- Task選択方法
-- 参照モードへの遷移
-- スクロール方法
-- Error表示
-
-詳細な画面設計書は作成せず、 実装に必要なUI構造を決定する。
-
-Task YAMLを読み込み、 Task一覧として画面へ表示するVertical
-Sliceを構築する。
-
-```text
-tasks.yaml
-    ↓
-File Persistence Adapter
-    │ Persistence Model → Business Model
-    ↓
-Persistence Port：Retrieve()
-    ↓
-Application Service：ListTasks()
-    │ Business Model → Public TaskSummary
-    ↓
-Wails Boundary
-    ↓
-Svelte
-    ↓
-Task List
-```
-
-また、Task一覧からTaskを選択した場合は、
-一覧表示時に取得したTaskをそのまま編集対象として使用せず、 `GetTask(ID)`
-により対象Taskを改めて取得する。
-
-```text
-Task選択
-    ↓
-Wails Boundary
-    ↓
-Application Service：GetTask(ID)
-    ↓
-Persistence Port：Pick(ID)
-    ↓
-File Persistence Adapter
-    ↓
-tasks.yaml
-    ↓
-Persistence Model → Business Model
-    ↓
-Application Service
-    │ Business Model → Public Task
-    ↓
-Wails Boundary
-    ↓
-Svelte
-    ↓
-Task Detail（参照モード）
-```
-
-主な実施事項：
-
-- Task YAML Read
-- Go Backend Service
-- Wails経由でのFrontend呼び出し
-- Task List表示
-- Task選択
-- Task参照画面への遷移
-- Task 0件時の正常動作
-- `tasks.yaml` 不存在時のRead Error
-- Backend ErrorのFrontendへの伝達
-- Error Toast
-- 一覧領域内のスクロール
-
-PrototypeではSort / Filter / Search / Paginationは実装しない。
-
-`tasks.yaml` が存在しない場合は自動生成せず、 Read Errorとして扱う。
-
-このError Caseにより、 File → Go → Wails → Svelte → Notificationまでの
-Error伝達経路も検証する。
-
-Task YAML Loadについては、必要に応じてD. Logic / Development Step Testを足場として利用し、
-File Read → YAML Parse → Persistence Modelへの変換 → Business Modelへの変換等を
-小さな単位で確認しながら実装する。
-
-最終的にはC. Backend Module Testにより、
-Service Public APIからのTask取得を保証する。
-
-#### Implementation Result
-
-Step 4では、以下の2つのBehaviorを実装した。
-
-| Behavior | Description                              | Status   |
-| -------- | ---------------------------------------- | -------- |
-| L01      | Task Listの取得・表示                    | COMPLETE |
-| L02      | Task選択によるTask Referenceの取得・表示 | COMPLETE |
-
-Frontendでは、TaskManagement / TaskContext / Store / Page / Viewの責務分離を具体化した。
-
-Task ListとTask Referenceの画面遷移では、遷移先データの取得をPrepareとして扱い、成功した場合のみCommitする。
-
-Task ListからTask Referenceへの遷移では、一覧のTaskSummaryを流用せず、`GetTask(ID)` によりTask詳細を取得する。
-
-Task Referenceでは、Page / View / Field Componentの分離を実装し、Reference表示に必要な共通Componentを整備した。
-
-また、Wails Generated BindingのNullableな戻り値はStoreで検証し、正常に取得されたデータをPage / Viewへ提供する構造とした。
-
-#### Verification Result
-
-L01 / L02のBehavior TestおよびBackend Testを実施し、Wails Buildと実画面の動作を確認した。
-
-Frontend Behavior Testは10件すべて成功した。
-
-| Category           | Result     |
-| ------------------ | ---------- |
-| Application Shell  | 3 / 3 PASS |
-| L01 Task List      | 4 / 4 PASS |
-| L02 Task Reference | 3 / 3 PASS |
-| Backend Test       | PASS       |
-| Wails Build        | PASS       |
-| UI Verification    | PASS       |
-
-L02では、Task詳細取得のSuccess / Not Found / Read Failureを確認した。
-
-取得に失敗した場合はTask List画面とNavigation選択状態を維持し、Error Toastを表示する。
-
-これにより、Step 4の実装・検証を完了とする。
-
-Task Create / Editに関する入力、Validation、Confirmation、保存処理は後続Stepで扱う。
-
----
-
-### Step 5：Task Create
-
-Taskの新規登録を、画面入力からYAML Fileへの永続化まで、一つのUse Caseとして実装する。
-
-Step 4で成立したTask Read機能を利用し、Create後に保存内容を再取得できる状態まで構築する。
-
-#### 5-1. UI Design
-
-Step開始時にTask Create画面の簡易画面設計を行う。
-
-主に以下を確認する。
-
-- Field配置および入力Component
-- Create Buttonの配置と有効・無効状態
-- Field Validation Errorの表示
-- Confirmation Modalの表示と操作
-- Notification Toast
-- 保存成功後の画面状態
-
-詳細な画面設計書は作成せず、実装に必要なUI構造とState管理方式を決定する。
-
-Task Create画面の基本構造は、Section 3.4.1に定義するTaskEntryとAriadneFormを用いて実装した。Fieldの配置、入力操作、Form内のスクロール、操作ボタンの配置とSubmit受付はA04で確認済みとする。
-
-Validationに伴うボタン活性制御、エラー表示、Confirmation Modal、保存処理は後続Behaviorで具体化する。
-
-#### 5-2. Create Use Case
-
-基本的な処理経路は以下とする。
-
-```text
-Task Create
-    ↓
-入力 / Frontend Validation
-    ↓
-Confirmation Modal
-    ↓ Confirm
-Svelte
-    ↓
-Wails Boundary
-    ↓
-Application Service：CreateTask(Properties)
-    │ Public Properties → Business Task
-    │ Task Validation
-    ↓
-Persistence Port：Store(Task, Deposit)
-    ↓
-File Persistence Adapter
-    │ ULID生成
-    │ createdAt / updatedAt設定
-    │ Business Model → Persistence Model
-    ↓
-tasks.yaml 全量Write
-    ↓
-Application Service / Wails Boundary
-    ↓
-Svelte
-    ↓
-Info Toast / Form Reset
-```
-
-Application ServiceはPropertiesからBusiness Taskを生成し、Taskの成立条件を検証する。
-
-File Persistence AdapterはDeposit時にULIDおよびTimestampを設定し、Persistence Modelへ変換して永続化する。
-
-Application ServiceはPersistence ModelおよびTimestampを参照・管理しない。
-
-#### 5-3. Form State
-
-Create画面の初期状態は以下とする。
-
-| State                       | Initial Value |
-| --------------------------- | ------------- |
-| `title`                     | `""`          |
-| `description`               | `""`          |
-| `priority`                  | `3`           |
-| `status`                    | `TODO`        |
-| Correlation Validation Mode | `INITIAL`     |
-| Create Button               | `Disabled`    |
-
-入力値およびValidation StateはFrontendで管理する。
-
-保存成功後はForm Resetを行い、以下の状態へ戻す。
-
-- 各Fieldを初期値へ戻す
-- Validation ErrorをClear
-- Correlation Validation Modeを`INITIAL`へ戻す
-- Create ButtonをDisabledにする
-
-保存失敗時はForm Resetを行わず、入力内容を維持する。
-
-#### 5-4. Validation / Confirmation
-
-Frontend Validationは、`behavior-map.md` に定義した実行タイミングおよび状態遷移に従う。
-
-主な対象は以下とする。
-
-- Focus Out時のSingle Field Validation
-- Correlation Validation Modeが`ACTIVE`の場合の関連Correlation Validation再実行
-- Create操作時の全Single Field Validation
-- 全Single Field Validation成功後の全Correlation Validation
-- Validation結果に応じたCreate Buttonの状態
-- Validation ErrorのField表示
-
-Validation Messageの表示優先順位はSection 4.6に従う。
-
-- Single Field ErrorをCorrelation Errorより優先する
-- 1 Fieldに表示するError Messageは1件とする
-
-Validationに成功した場合のみConfirmation Modalを表示する。
-
-Confirmation ModalでCancelした場合は、登録処理を実行せず、入力内容を維持する。
-
-Confirmした場合に`CreateTask(Properties)`を呼び出す。
-
-#### 5-5. Persistence / Error Handling
-
-主なBackend処理は以下とする。
-
-- Public PropertiesからBusiness Taskを生成
-- Application ServiceでTask Validationを実行
-- `Store(Task, Deposit)`による永続化
-- File Persistence AdapterでULIDを生成
-- `createdAt / updatedAt`を設定
-- Business ModelからPersistence Modelへ変換
-- TaskをYAML Sequence末尾へ追加
-- Task YAMLの全量Write
-- Safe Write方針に従ったCanonical Fileの置換
-
-Task ValidationおよびPersistenceのError分類はSection 3.5に従う。
-
-BackendからのApplication ErrorはWails Boundaryで公開用Errorへ変換し、FrontendではError Toastを表示する。
-
-- 保存成功：Info Toastを表示し、Form Resetする
-- 保存失敗：Error Toastを表示し、入力内容を維持する
-
-Error ToastおよびInfo Toastの表示・消去方式はSection 3.4に従う。
-
-#### 5-6. Test / Verification
-
-Behavior Mapから対象Result Patternを選択し、実装直前にBehavior Test SpecificationでTest Caseを具体化する。
-
-Frontend Module Testでは、Wails Public APIをMockし、主に以下を保証する。
-
-- 初期状態
-- 入力とButton状態
-- Validationの実行タイミングと結果表示
-- Confirmation Modalの表示、Cancel、Confirm
-- Backend Responseに応じたToast表示
-- 保存成功後のForm Reset
-- 保存失敗時の入力内容維持
-
-Backend Module Testでは、Service Public APIを境界として、実File I/Oを用いて主に以下を保証する。
-
-- `CreateTask(Properties)`によるTask生成
-- Task Validation
-- DepositによるID / Timestamp設定
-- YAML末尾への追加
-- 保存後のTask再取得
-- Read / Write Failure等のApplication Error
-
-必要に応じてD. Logic / Development Step Testを使用し、未検証の技術要素を小さな段階で確認する。
-
-正常系と、Create Use Case内で発生する異常系を同じStepで実装・検証する。
-
----
-
-### Step 6：Task Edit
-
-既存Taskの編集を、Task選択からYAML Fileへの更新まで、一つのUse Caseとして実装する。
-
-Step 4で成立したTask取得機能と、Step 5で成立したValidation、Confirmation、Write等の仕組みを利用する。
-
-Edit固有の要件として、Original Values / Current Values / Changed Fieldsの管理と、変更Fieldのみを対象とするModify処理を成立させる。
-
-#### 6-1. UI Design
-
-Step開始時にTask Edit画面の簡易画面設計を行う。
-
-主に以下を確認する。
-
-- Field配置および入力Component
-- Original Values / Current ValuesのState管理
-- Changed Fieldsの管理
-- Modify Buttonの配置と有効・無効状態
-- Field Validation Errorの表示
-- Confirmation Modalの表示と操作
-- Notification Toast
-- 保存成功後のTask再取得と参照モードへの遷移
-- 更新成功後の再取得失敗時の画面状態と通知
-
-Task Edit画面は、Task Createで導入したTaskEntryとAriadneFormを共通利用する方針とする。Task ReferenceのTaskViewは参照表示専用とし、入力Componentとして再利用しない。
-
-Edit固有の初期値、変更検出、Validation、保存処理、および共通Componentの成立性はStep 6で検証する。
-
-#### 6-2. Edit Use Case
-
-基本的な処理経路は以下とする。
-
-```text
-Task List
-    ↓
-Task選択
-    ↓
-Wails Boundary
-    ↓
-Application Service：GetTask(ID)
-    ↓
-Persistence Port：Pick(ID)
-    ↓
-File Persistence Adapter
-    │ Persistence Model → Business Model
-    ↓
-Application Service
-    │ Business Model → Public Task
-    ↓
-Svelte / Task Reference
-    ↓
-    │ Editへ切替
-    ↓
-Svelte / Task Edit
-    ↓
-Original Values / Current Values
-    ↓
-変更 / Frontend Validation
-    ↓
-Confirmation Modal
-    ↓ Confirm
-Svelte
-    ↓
-Wails Boundary
-    ↓
-Application Service：ModifyTask(ID, Properties)
-    │ 既存Business Task取得
-    │ Changes適用 / Task Validation
-    ↓
-Persistence Port：Store(Task, Replace)
-    ↓
-File Persistence Adapter
-    │ createdAt維持
-    │ updatedAt更新
-    │ Business Model → Persistence Model
-    ↓
-tasks.yaml 全量Write
-    ↓
-Application Service / Wails Boundary
-    ↓
-Svelte
-    ↓
-更新成功
-    ↓
-GetTask(ID)によるTask再取得
-    ↓
-Task Reference表示 / 保持データ更新
-    ↓
-Edit状態終了 / Info Toast
-```
-
-一覧表示時のTaskSummaryを編集用Dataとして流用せず、`GetTask(ID)`によりPublic Taskを取得する。
-
-Application Serviceは既存Business Taskへ変更を適用し、Task Validation後にReplaceする。
-
-File Persistence AdapterはPersistence上のTimestampおよびYAML Sequence順を管理する。
-
-#### 6-3. Form State / Changed Fields
-
-Edit画面では以下を管理する。
-
-- Original Values：参照モードからEditモードへ切り替えた時点の基準値
-- Current Values：現在の入力値
-- Changed Fields：Original ValuesとCurrent Valuesの差分
-
-Changed Fieldsは、編集操作の履歴ではなく、現在の値と基準値の比較結果として判定する。
-
-したがって、一度変更したFieldでもOriginal Valuesへ戻した場合はNot Changedとする。
-
-Changed Fieldsが存在しない場合、Modify ButtonはDisabledとする。
-
-変更の有無とValidation結果を踏まえたModify Buttonの状態は、`behavior-map.md`に従う。
-
-#### 6-4. Modify Properties
-
-Modify操作では、Changed FieldsのみをModify Propertiesとして`ModifyTask(ID, Properties)`へ渡す。
-
-Modify Propertiesでは、以下の状態を区別する。
-
-- 未指定：変更対象外
-- null：明示的なClearを表現するための状態
-- value：変更後の値
-
-ただし、nullと空文字の具体的な対応関係、およびSvelte / Wails / Go間での表現方式は実装時の技術検証で確定する。
-
-変更対象外のFieldを意図せず上書きしないことを保証する。
-
-Application Serviceは`Pick(ID)`で既存Business Taskを取得し、指定された変更のみを適用した上で、Task全体の成立条件を検証する。
-
-#### 6-5. Validation / Confirmation
-
-Frontend ValidationはCreateと同じ基本方針を使用する。
-
-主な対象は以下とする。
-
-- Focus Out時のSingle Field Validation
-- Correlation Validation Modeが`ACTIVE`の場合の関連Correlation Validation再実行
-- Modify操作時の全Single Field Validation
-- 全Single Field Validation成功後の全Correlation Validation
-- Validation結果に応じたModify Buttonの状態
-- Validation ErrorのField表示
-
-Validationの実行タイミングおよび状態遷移は`behavior-map.md`に従う。
-
-Validation Messageの表示優先順位はSection 4.6に従う
-
-- Single Field ErrorをCorrelation Errorより優先する
-- 1 Fieldに表示するError Messageは1件とする
-
-Validationに成功した場合のみConfirmation Modalを表示する。
-
-Cancelした場合は更新処理を実行せず、Current Values / Original Values / Changed Fieldsを維持する。
-
-Confirmした場合に`ModifyTask(ID, Properties)`を呼び出す。
-
-#### 6-6. Persistence / Error Handling
-
-主なBackend処理は以下とする。
-
-- `Pick(ID)`による既存Task取得
-- 指定されたChangesの適用
-- Application ServiceでのTask Validation
-- `Store(Task, Replace)`による永続化
-- `createdAt`の維持
-- `updatedAt`の更新
-- YAML Sequence上のTask位置の維持
-- Task YAMLの全量Write
-- Safe Write方針に従ったCanonical Fileの置換
-
-主なApplication Errorとして以下を扱う。
-
-- Not Found
-- Read Failure
-- Write Failure
-- その他Section 3.5で定義するApplication Error
-
-ErrorはWails Boundaryで公開用Errorへ変換し、FrontendではError Toastを表示する。
-
-保存成功時はInfo Toastを表示し、更新したTaskを`GetTask(ID)`で再取得する。
-
-再取得に成功した場合は、取得したTaskを参照モードの保持データに反映し、
-Task Reference画面へ遷移してEdit状態を終了する。
-
-更新・保存には成功したが再取得に失敗した場合は、
-更新成功と再取得失敗を区別してError Toastで通知する。
-更新処理は再実行しない。
-
-保存失敗時はEdit状態を終了せず、
-Current Values / Original Values / Changed Fieldsを維持する。
-
-#### 6-7. Test / Verification
-
-Behavior Mapから対象Result Patternを選択し、実装直前にBehavior Test SpecificationでTest Caseを具体化する。
-
-Frontend Module Testでは、Wails Public APIをMockし、主に以下を保証する。
-
-- `GetTask(ID)`のResponseによるEdit初期表示
-- Original Values / Current Valuesの管理
-- Changed Fieldsの検出
-- Original Valuesへ戻した場合のNot Changed判定
-- Modify Buttonの状態
-- Validationの実行タイミングと結果表示
-- Confirmation Modalの表示、Cancel、Confirm
-- Changed FieldsのみをModify Propertiesとして送信すること
-- Backend Responseに応じたToast表示
-- 保存成功後のTask再取得と参照モードへの遷移
-- 更新成功後の再取得失敗時の通知と画面状態
-- 保存失敗時のState維持
-
-Backend Module Testでは、Service Public APIを境界として、実File I/Oを用いて主に以下を保証する。
-
-- `ModifyTask(ID, Properties)`によるTask更新
-- 指定されたFieldのみの変更
-- 変更対象外Fieldの維持
-- Task Validation
-- `createdAt`の維持
-- `updatedAt`の更新
-- YAML Sequence順の維持
-- 保存後のTask再取得
-- Not Found / Read Failure / Write Failure等のApplication Error
-
-必要に応じてD. Logic / Development Step Testを使用する。
-
-正常系と、Edit Use Case内で発生する異常系を同じStepで実装・検証する。
-
----
-
-### Step 7：Windows Application Verification
-
-PROJECT ARIADNE で構築したApplicationをWindows実行ファイルとしてBuildし、
-Prototypeとしての成立性を最終確認する。
-
-Release Build前には、Backend / Frontend Module Testを実施し、
-すべて成功していることを確認する。
-
-D. Logic / Development Step Testは補助的なTestであり、
-Release Buildの必須条件には含めない。
-
-最終的なVertical Sliceは以下とする。
-
-```text
-Task YAML
-    ↓ Read
-Go
-    ↓
-Wails
-    ↓
-Svelte
-    ↓
-表示
-    ↓
-Create / Edit
-    ↓
-Validation
-    ↓
-Confirmation
-    ↓
-Svelte
-    ↓
-Wails
-    ↓
-Go
-    ↓ Write
-Task YAML
-    ↓
-Application再起動
-    ↓
-Read
-    ↓
-保存内容復元
-```
-
-主な確認事項：
-
-- Backend Module Test成功
-- Frontend Module Test成功
-- Release Build成功
-- `ariadne-prototype.exe` 単体起動
-- Task List表示
-- Task Create
-- Task Edit
-- Task保存
-- Application再起動
-- 保存内容の復元
-- 主要Error Caseの実機確認
-
----
-
-## 10. Visual Design
-
-Visual DesignそのものはPrototype の主目的としない。
-
-PrototypeではApplicationとして操作可能であり、
-各UI要素の役割を識別できる程度のデザインを行う。
-
-基本的な方向性として以下を想定する。
-
-- 白〜薄いグレーを基調とする
-- Blue / Purple系をAccent Colorとする
-- 装飾を抑えたシンプルなUIとする
-- 情報そのものを主役とし、UIの視覚的主張を強くしすぎない
-- Validation Errorは対象項目を識別できる程度に強調する
-- Application Error等、意味を持つColorは必要に応じて使い分ける
-
-Application全体の暫定Visual DesignはStep 3で適用する。
-
-Task List / Create / Editの具体的な画面構成は、 Step
-4〜6の各Step開始時に簡易設計する。
-
-色、余白、Typography、Component Design等の 詳細なDesign
-SystemはCoreで必要に応じて検討する。
-
----
-
-## 11. Future Consideration
-
-将来的に、ApplicationからAIを利用した登録・編集支援を行う可能性がある。
-
-Application Shellとしては、 Task / Config等の機能Navigationとは別に、 AI
-Modeを起動する入口を配置できる構造を妨げないものとする。
-
-AIは「何を扱うか」を表すApplication機能ではなく、
-既存機能を別の操作方法から利用する支援機能として位置付けることを想定する。
-
-ただし、AI Mode、Prompt UI、AI API連携等は Prototype Phase
-5では一切実装しない。
-
----
-
-## 12. Prototype 対象外
-
-prototype では以下を対象外とする。
-
-- Elements編集UI
-- API編集UI
-- DDL編集UI
-- Validator / Resolver / Generator実装
-- OAS / DDL生成機能
-- 内部Database
-- Project / Workspace初期化機能
-- `tasks.yaml` の自動生成
-- DB Access Test
-- git等の外部Command実行に関するTest
-- Configの実機能
-- Task ListのSort / Filter / Search / Pagination
-- Task削除機能
-- AI Mode
-- AI API連携
-- 詳細なDesign System
-- GitHub ActionsによるCI/CD
-
-Phase 5では、 Svelte + Wails + Go + FileによるWindows
-Applicationとしての成立性確認に集中する。
-
----
-
-## 13. Phase 5 Completion Criteria
-
-以下をすべて満たした時点で、 Prototype Phase 5をCOMPLETEとする。
-
-- Svelte / Wails / Go / Fileの責務境界を説明できる
-- Task Modelおよび `tasks.yaml` Formatが確定している
-- `tasks.yaml` が存在しない場合をRead Errorとして扱える
-- Task YAMLを読み込める
-- Task一覧を表示できる
-- Task 0件を正常状態として扱える
-- Taskを新規作成できる
-- 既存Taskを編集できる
-- TaskをYAMLへ保存できる
-- Application再起動後に保存内容を復元できる
-- Primary NavigationによりTask / Config Dummy Pageを切り替えられる
-- Focus Out時にSingle Field Validationを実行できる
-- Correlation Validation Mode = INITIAL /
-  ACTIVEに応じて相関Validationを適切なタイミングで実行できる
-- Create / Modify Button押下時に全Single Field
-  Validationおよび必要なCorrelation Validationを実行できる
-- Validation Errorを対象Form Field付近へ適切な優先順位で表示できる
-- Application ErrorをError Toastとして通知できる
-- Info Toastが動作する
-- Confirmation Modalが動作する
-- Phase 5の主要BehaviorがBehavior Mapとして整理されている
-- Use CaseごとにFront / Backの関与を整理できる
-- Behavior Testを中心とした自動テストが成立する
-- 必要に応じてDをLogic保証または段階的な実装確認に利用できる
-- `test.sh` により日常的なTestを実行できる
-- Test成功後に `build.sh` からWindows ApplicationをBuildできる
-- `ariadne-prototype.exe` を単体起動し、一連のTask操作を実行できる
+#### 4.5.4 Task Edit
