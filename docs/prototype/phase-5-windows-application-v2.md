@@ -1039,3 +1039,40 @@ Validation失敗時、Confirmation Modalは表示せず、入力画面を維持�
 Confirmation ModalのConfirm / Cancelに対する動作は4.1.2 Common Layout Componentsおよび4.1.4 Confirmation Modalに従う。
 
 ModalのConfirm時にはValidationを再実行せず、利用側へ業務処理の実行を通知する。
+
+#### 4.2.5 Validation Error Presentation
+
+##### Error Display Activation
+
+Fieldは、Validation結果と独立してError表示の有効状態（`errorActivated`）を管理する。
+
+初期状態ではError表示を抑止する。
+
+Focus OutまたはForm SubmitによってError表示を有効化し、以降の値変更では有効状態を維持する。
+
+Error表示が有効であっても、表示対象となるError Messageが存在しない場合は何も表示しない。
+
+##### Error Message Selection
+
+1つのFieldに表示するError Messageは最大1件とする。
+
+複数のError Messageが存在する場合、以下の優先順位で選択する。
+
+1. 対象Field自身のSingle Field Error
+2. 対象Fieldに関連するCorrelation Error
+
+複数のCorrelation Errorが存在する場合は、業務Componentが定めた優先順位に従って1件を選択する。
+
+業務Componentは選択したCorrelation ErrorをFieldへ渡し、Fieldが最終的な表示対象を決定する。
+
+##### Error Display
+
+Fieldは、選択されたError Messageを対象Field付近に表示する。
+
+Error Messageを表示する場合は、対象Fieldの枠線を赤色にして視覚的に強調する。
+
+Error Messageが表示されない場合は、通常の枠線に戻す。
+
+Validation ErrorはField上で表示し、Notification Toastは使用しない。
+
+Backendで検出されたValidation ErrorはApplication Errorとして扱い、Notification Toastで通知する。
