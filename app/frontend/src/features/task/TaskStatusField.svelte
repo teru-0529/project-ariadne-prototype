@@ -14,6 +14,11 @@
   const initialValue = () => value;
   let currentValue = $state(initialValue());
 
+  // FUNCTION: 値変更イベント
+  function handleValueChange(nextValue: string) {
+    currentValue = nextValue;
+  }
+
   const label = "ステータス";
 </script>
 
@@ -27,7 +32,7 @@
             name="task-status"
             value={status}
             checked={currentValue === status}
-            onchange={() => (currentValue = status)}
+            onchange={() => handleValueChange(status)}
           />
           <span class="status-badge" class:unselected={currentValue !== status} data-status={status}>
             {status}
@@ -40,6 +45,11 @@
       {currentValue}
     </span>
   {/if}
+  <!-- TODO: ダミー -->
+  {#if variant === "edit"}
+    <div>変更検知：{currentValue}</div>
+  {/if}
+  <!-- TODO: ダミー -->
 </AriadneField>
 
 <style>

@@ -15,6 +15,14 @@
   let { variant, label = "", required = false, value, maxLength, lines = 1 }: Props = $props();
 
   let composing = false;
+
+  const initialValue = () => value;
+  let currentValue = $state(initialValue());
+
+  // FUNCTION: 値変更イベント
+  function handleValueChange(nextValue: string) {
+    currentValue = nextValue;
+  }
 </script>
 
 <AriadneField {variant} {label} {required}>
@@ -39,16 +47,23 @@
       oncompositionend={(event) => {
         composing = false;
         event.currentTarget.value = event.currentTarget.value.replace(/[\r\n]/g, "");
+        handleValueChange(event.currentTarget.value);
       }}
       oninput={(event) => {
         if (composing) return;
 
         const element = event.currentTarget;
         element.value = element.value.replace(/[\r\n]/g, "");
+        handleValueChange(element.value);
       }}></textarea>
   {:else if variant === "cell"}
     <Tooltip text={value} />
   {/if}
+  <!-- TODO: ダミー -->
+  {#if variant === "edit"}
+    <div>変更検知：{currentValue}</div>
+  {/if}
+  <!-- TODO: ダミー -->
 </AriadneField>
 
 <style>

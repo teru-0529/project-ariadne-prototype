@@ -11,6 +11,14 @@
   };
 
   let { variant, label = "", required = false, value, lines = 3 }: Props = $props();
+
+  const initialValue = () => value;
+  let currentValue = $state(initialValue());
+
+  // FUNCTION: 値変更イベント
+  function handleValueChange(nextValue: string) {
+    currentValue = nextValue;
+  }
 </script>
 
 <AriadneField {variant} {label} {required}>
@@ -19,10 +27,21 @@
       {value}
     </div>
   {:else if variant === "edit"}
-    <textarea aria-label={label} {value} style:--lines={lines}></textarea>
+    <textarea
+      aria-label={label}
+      {value}
+      style:--lines={lines}
+      oninput={(event) => {
+        handleValueChange(event.currentTarget.value);
+      }}></textarea>
   {:else}
     <span>{value}</span>
   {/if}
+  <!-- TODO: ダミー -->
+  {#if variant === "edit"}
+    <div>変更検知：{currentValue}</div>
+  {/if}
+  <!-- TODO: ダミー -->
 </AriadneField>
 
 <style>

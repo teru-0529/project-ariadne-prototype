@@ -13,6 +13,11 @@
   const initialValue = () => value;
   let currentValue = $state(initialValue());
 
+  // FUNCTION: 値変更イベント
+  function handleValueChange(nextValue: number) {
+    currentValue = nextValue;
+  }
+
   const label = "優先度";
 </script>
 
@@ -29,10 +34,10 @@
       onkeydown={(event) => {
         if (event.key === "ArrowRight" || event.key === "ArrowUp") {
           event.preventDefault();
-          currentValue = Math.min(5, currentValue + 1);
+          handleValueChange(Math.min(5, currentValue + 1));
         } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
           event.preventDefault();
-          currentValue = Math.max(1, currentValue - 1);
+          handleValueChange(Math.max(1, currentValue - 1));
         }
       }}
     >
@@ -41,7 +46,7 @@
           class="priority-star"
           class:priority-filled={star <= currentValue}
           class:priority-empty={star > currentValue}
-          onclick={() => (currentValue = star)}
+          onclick={() => handleValueChange(star)}
           aria-hidden="true"
         >
           {star <= currentValue ? "★" : "☆"}
@@ -49,12 +54,17 @@
       {/each}
     </div>
   {:else}
-    <span class="priority" role="img" aria-label={`優先度 ${currentValue}`}>
-      <span class="priority-filled">{"★".repeat(currentValue)}</span><span class="priority-empty"
-        >{"☆".repeat(5 - currentValue)}</span
+    <span class="priority" role="img" aria-label={`優先度 ${value}`}>
+      <span class="priority-filled">{"★".repeat(value)}</span><span class="priority-empty">{"☆".repeat(5 - value)}</span
       >
     </span>
   {/if}
+
+  <!-- TODO: ダミー -->
+  {#if variant === "edit"}
+    <div>変更検知：{currentValue}</div>
+  {/if}
+  <!-- TODO: ダミー -->
 </AriadneField>
 
 <style>
