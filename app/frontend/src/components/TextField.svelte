@@ -23,6 +23,14 @@
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
   }
+
+  // TODO: ダミー
+  let focusOutCount = $state(0);
+
+  // FUNCTION: フォーカスアウトイベント
+  function handleFocusOut() {
+    focusOutCount += 1;
+  }
 </script>
 
 <AriadneField {variant} {label} {required}>
@@ -55,13 +63,15 @@
         const element = event.currentTarget;
         element.value = element.value.replace(/[\r\n]/g, "");
         handleValueChange(element.value);
-      }}></textarea>
+      }}
+      onfocusout={handleFocusOut}></textarea>
   {:else if variant === "cell"}
     <Tooltip text={value} />
   {/if}
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
     <div>変更検知：{currentValue}</div>
+    <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->
 </AriadneField>

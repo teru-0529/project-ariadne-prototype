@@ -19,6 +19,14 @@
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
   }
+
+  // TODO: ダミー
+  let focusOutCount = $state(0);
+
+  // FUNCTION: フォーカスアウトイベント
+  function handleFocusOut() {
+    focusOutCount += 1;
+  }
 </script>
 
 <AriadneField {variant} {label} {required}>
@@ -33,13 +41,15 @@
       style:--lines={lines}
       oninput={(event) => {
         handleValueChange(event.currentTarget.value);
-      }}></textarea>
+      }}
+      onfocusout={handleFocusOut}></textarea>
   {:else}
     <span>{value}</span>
   {/if}
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
     <div>変更検知：{currentValue}</div>
+    <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->
 </AriadneField>

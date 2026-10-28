@@ -19,12 +19,26 @@
     currentValue = nextValue;
   }
 
+  // TODO: ダミー
+  let focusOutCount = $state(0);
+
+  // FUNCTION: フォーカスアウトイベント(グループ内のボタンクリックでもフォーカスアウトと判断される)
+  function handleFocusOut(event: FocusEvent) {
+    const group = event.currentTarget;
+
+    if (group instanceof HTMLElement && event.relatedTarget instanceof Node && group.contains(event.relatedTarget)) {
+      return;
+    }
+
+    focusOutCount += 1;
+  }
+
   const label = "ステータス";
 </script>
 
 <AriadneField {variant} {label} {required}>
   {#if variant === "edit"}
-    <div class="status-group" role="radiogroup" aria-label="ステータス">
+    <div class="status-group" role="radiogroup" aria-label="ステータス" onfocusout={handleFocusOut}>
       {#each TASK_STATUSES as status}
         <label class="status-option">
           <input
@@ -34,7 +48,13 @@
             checked={currentValue === status}
             onchange={() => handleValueChange(status)}
           />
-          <span class="status-badge" class:unselected={currentValue !== status} data-status={status}>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <span
+            class="status-badge"
+            class:unselected={currentValue !== status}
+            data-status={status}
+            onmousedown={(event) => event.preventDefault()}
+          >
             {status}
           </span>
         </label>
@@ -48,6 +68,7 @@
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
     <div>変更検知：{currentValue}</div>
+    <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->
 </AriadneField>

@@ -18,6 +18,14 @@
     currentValue = nextValue;
   }
 
+  // TODO: ダミー
+  let focusOutCount = $state(0);
+
+  // FUNCTION: フォーカスアウトイベント
+  function handleFocusOut() {
+    focusOutCount += 1;
+  }
+
   const label = "優先度";
 </script>
 
@@ -40,6 +48,7 @@
           handleValueChange(Math.max(1, currentValue - 1));
         }
       }}
+      onfocusout={handleFocusOut}
     >
       {#each [1, 2, 3, 4, 5] as star}
         <span
@@ -63,6 +72,7 @@
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
     <div>変更検知：{currentValue}</div>
+    <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->
 </AriadneField>
