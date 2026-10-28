@@ -897,7 +897,7 @@ FieldとCorrelationValidatorは、それぞれ自身のStateを正本として�
 | 保存失敗 | ACTIVEを維持 |
 | Form Reset | INITIAL |
 
-ACTIVEでは、関連Fieldの値が変更された場合に、該当するCorrelation Validationを再評価する。
+ACTIVEでは、関連Fieldの値が変更された場合、該当するCorrelation ValidationのValidityをUNKNOWNに戻し、エラーをクリアする。Focus Out時に関連FieldがすべてVALIDであれば、Correlation Validationを再評価する。
 
 Correlation Validationの実行条件、評価順序、およびErrorの扱いは4.2.3 Correlation Validation Behaviorで定義する。
 
