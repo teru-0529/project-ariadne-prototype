@@ -1,8 +1,7 @@
 <script lang="ts">
   import AriadneField from "../../components/AriadneField.svelte";
   import type { FieldVariant } from "../../components/AriadneField.svelte";
-
-  const statuses = ["TODO", "DOING", "DONE"] as const;
+  import { TASK_STATUSES } from "./TaskValues";
 
   type Props = {
     variant: FieldVariant;
@@ -21,7 +20,7 @@
 <AriadneField {variant} {label} {required}>
   {#if variant === "edit"}
     <div class="status-group" role="radiogroup" aria-label="ステータス">
-      {#each statuses as status}
+      {#each TASK_STATUSES as status}
         <label class="status-option">
           <input
             type="radio"

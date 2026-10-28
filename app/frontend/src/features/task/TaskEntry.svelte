@@ -4,21 +4,23 @@
   import TextareaField from "../../components/TextareaField.svelte";
   import TaskPriorityField from "./TaskPriorityField.svelte";
   import TaskStatusField from "./TaskStatusField.svelte";
+  import type { TaskValues } from "./TaskValues";
 
   type Props = {
     submitLabel: string;
+    initialValues: TaskValues;
   };
 
-  let { submitLabel }: Props = $props();
+  let { submitLabel, initialValues }: Props = $props();
 </script>
 
 <div class="entry-layout">
   <AriadneForm {submitLabel}>
     <div class="entry-fields">
-      <TextField variant="edit" label="タイトル" required={true} value="" lines={2} maxLength={80} />
-      <TextareaField variant="edit" label="説明" value="" lines={3} />
-      <TaskPriorityField variant="edit" required={true} value={3} />
-      <TaskStatusField variant="edit" required={true} value="TODO" />
+      <TextField variant="edit" label="タイトル" required={true} value={initialValues.title} lines={2} maxLength={80} />
+      <TextareaField variant="edit" label="説明" value={initialValues.description} lines={3} />
+      <TaskPriorityField variant="edit" required={true} value={initialValues.priority} />
+      <TaskStatusField variant="edit" required={true} value={initialValues.status} />
     </div>
   </AriadneForm>
 </div>
