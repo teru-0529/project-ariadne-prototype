@@ -455,7 +455,7 @@ Storeは、Application Serviceの正常応答として想定しない`null`を�
 
 Fieldは個々の値の表示・入力と表現変換を担当する。業務データ全体の構造は認識しない。
 
-入力値の変更有無はFieldが自身の保持する状態から判定し、上位Componentはその判定結果を利用する。上位Componentで変更有無を重複して判定しない。
+Fieldは現在の入力値を管理し、変更有無の判定は行わない。業務Componentは画面初期値と現在値を比較し、未保存変更の有無を判定する。Backendへ渡す更新対象の判定は業務Pageが担当する。
 
 業務Componentによる統合はFieldの値をまとめるところまでとし、Backendへ渡すPublic Modelの構築は業務Pageが担当する。
 
@@ -909,9 +909,9 @@ Submit時のValidation実行手順は4.2.4 Form Submission Validationで定義�
 
 Fieldは、自身の入力値とSingle Field Validationの結果を管理する。
 
-Fieldの値は、変更前の値`originalValue: T | null`と現在の入力値`currentValue: T`で管理する。`originalValue`の`null`は変更前の値が存在しないことを表し、`currentValue`は`null`を取らない。
+Fieldは現在の入力値`currentValue: T`を保持する。`currentValue`は`null`を取らない。
 
-変更有無は`isChanged()`で両者を比較して導出し、独立した変更フラグを保持しない。Createでは`originalValue`を`null`とし、Editでは取得した変更前の値を設定する。具体的な初期値はTask Create / Editの仕様で定義する。
+Fieldは変更前の値を保持せず、変更有無の判定も行わない。入力値の初期値は業務Pageから業務Componentを介してFieldへ渡す。
 
 Validation結果は`UNKNOWN`、`VALID`、`INVALID`のValidityとError Messageで表し、両者を整合する組として更新する。
 
