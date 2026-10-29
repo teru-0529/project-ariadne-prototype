@@ -2,6 +2,7 @@
   import AriadneField from "./AriadneField.svelte";
   import type { FieldVariant } from "./AriadneField.svelte";
   import Tooltip from "./AriadneTooltip.svelte";
+  import type { Validity } from "../lib/validity";
 
   type Props = {
     variant: FieldVariant;
@@ -14,14 +15,26 @@
 
   let { variant, label = "", required = false, value, maxLength, lines = 1 }: Props = $props();
 
+  // INFO: IME変更中
   let composing = false;
 
+  // INFO: 値
   const initialValue = () => value;
   let currentValue = $state(initialValue());
+
+  // INFO: Validity
+  const initialValidity = checkRequired(initialValue());
+  let validity = $state<Validity>(initialValidity);
+
+  // FUNCTION: 必須チェック
+  function checkRequired(value: string): Validity {
+    return required && value.trim() === "" ? "INVALID" : "UNKNOWN";
+  }
 
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
+    validity = checkRequired(currentValue);
   }
 
   // TODO: ダミー
@@ -70,7 +83,7 @@
   {/if}
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
-    <div>変更検知：{currentValue}</div>
+    <div>validity：{validity}</div>
     <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->

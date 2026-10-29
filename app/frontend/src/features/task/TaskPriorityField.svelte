@@ -1,6 +1,7 @@
 <script lang="ts">
   import AriadneField from "../../components/AriadneField.svelte";
   import type { FieldVariant } from "../../components/AriadneField.svelte";
+  import type { Validity } from "../../lib/validity";
 
   type Props = {
     variant: FieldVariant;
@@ -10,12 +11,17 @@
 
   let { variant, required = false, value }: Props = $props();
 
+  // INFO: 値
   const initialValue = () => value;
   let currentValue = $state(initialValue());
+
+  // INFO: Validity
+  let validity = $state<Validity>("UNKNOWN");
 
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: number) {
     currentValue = nextValue;
+    validity = "UNKNOWN";
   }
 
   // TODO: ダミー
@@ -71,7 +77,7 @@
 
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
-    <div>変更検知：{currentValue}</div>
+    <div>validity：{validity}</div>
     <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->
