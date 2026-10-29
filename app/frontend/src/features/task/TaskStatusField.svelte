@@ -19,6 +19,9 @@
   // INFO: Validity
   let validity = $state<Validity>("UNKNOWN");
 
+  // INFO: エラー表示の活性状態
+  let errorActivated = $state(false);
+
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
@@ -36,6 +39,7 @@
       return;
     }
 
+    errorActivated = true;
     focusOutCount += 1;
   }
 
@@ -72,10 +76,11 @@
     </span>
   {/if}
   <!-- TODO: ダミー -->
-  {#if variant === "edit"}
+  <!-- {#if variant === "edit"}
     <div>validity：{validity}</div>
+    <div>errorActivated：{errorActivated}</div>
     <div>Focus Out検知：{focusOutCount}</div>
-  {/if}
+  {/if} -->
   <!-- TODO: ダミー -->
 </AriadneField>
 

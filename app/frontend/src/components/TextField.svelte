@@ -26,6 +26,9 @@
   const initialValidity = checkRequired(initialValue());
   let validity = $state<Validity>(initialValidity);
 
+  // INFO: エラー表示の活性状態
+  let errorActivated = $state(false);
+
   // FUNCTION: 必須チェック
   function checkRequired(value: string): Validity {
     return required && value.trim() === "" ? "INVALID" : "UNKNOWN";
@@ -42,6 +45,7 @@
 
   // FUNCTION: フォーカスアウトイベント
   function handleFocusOut() {
+    errorActivated = true;
     focusOutCount += 1;
   }
 </script>
@@ -84,6 +88,7 @@
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
     <div>validity：{validity}</div>
+    <div>errorActivated：{errorActivated}</div>
     <div>Focus Out検知：{focusOutCount}</div>
   {/if}
   <!-- TODO: ダミー -->
