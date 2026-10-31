@@ -21,9 +21,13 @@
   // INFO: エラー表示の活性状態
   let errorActivated = $state(false);
 
-  // INFO:TODO: 表示用エラーメッセージ
-  // let displayError = "テスト用ダミーメッセージ";
+  // INFO: 表示用エラーメッセージ
   let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+
+  // FUNCTION: Validation評価
+  function validate() {
+    validation = { validity: "VALID" };
+  }
 
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
@@ -43,6 +47,7 @@
     }
 
     errorActivated = true;
+    validate();
     focusOutCount += 1;
   }
 
@@ -85,6 +90,7 @@
     </span>
   {/if}
 </AriadneField>
+
 <!-- TODO: ダミー -->
 {#if variant === "edit"}
   <div>

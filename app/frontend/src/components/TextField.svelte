@@ -3,8 +3,8 @@
   import type { FieldVariant } from "./AriadneField.svelte";
   import Tooltip from "./AriadneTooltip.svelte";
 
-  import type { Validation } from "../lib/validity";
-  import { requiredValidator } from "../lib/validator";
+  import type { Validation, Validator } from "../lib/validity";
+  import { requiredValidator, runValidators } from "../lib/validator";
 
   type Props = {
     variant: FieldVariant;
@@ -13,9 +13,10 @@
     value: string;
     maxLength: number;
     lines?: number;
+    validators?: Validator<string>[];
   };
 
-  let { variant, label = "", required = false, value, maxLength, lines = 1 }: Props = $props();
+  let { variant, label = "", required = false, value, maxLength, lines = 1, validators = [] }: Props = $props();
 
   // INFO: IME変更中
   let composing = false;
@@ -42,6 +43,11 @@
     return result;
   }
 
+  // FUNCTION: Validation評価
+  function validate() {
+    validation = runValidators(currentValue, [...(required ? [requiredValidator] : []), ...validators]);
+  }
+
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
@@ -54,6 +60,7 @@
   // FUNCTION: フォーカスアウトイベント
   function handleFocusOut() {
     errorActivated = true;
+    validate();
     focusOutCount += 1;
   }
 </script>

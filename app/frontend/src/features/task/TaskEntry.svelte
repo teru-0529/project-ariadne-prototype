@@ -6,6 +6,8 @@
   import TaskStatusField from "./TaskStatusField.svelte";
   import type { TaskValues } from "./TaskValues";
 
+  import { maxLengthValidator } from "../../lib/validator";
+
   type Props = {
     submitLabel: string;
     initialValues: TaskValues;
@@ -17,7 +19,15 @@
 <div class="entry-layout">
   <AriadneForm {submitLabel}>
     <div class="entry-fields">
-      <TextField variant="edit" label="タイトル" required={true} value={initialValues.title} lines={2} maxLength={80} />
+      <TextField
+        variant="edit"
+        label="タイトル"
+        required={true}
+        value={initialValues.title}
+        lines={2}
+        maxLength={80}
+        validators={[maxLengthValidator(50)]}
+      />
       <TextareaField variant="edit" label="説明" value={initialValues.description} lines={3} />
       <TaskPriorityField variant="edit" required={true} value={initialValues.priority} />
       <TaskStatusField variant="edit" required={true} value={initialValues.status} />

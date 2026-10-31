@@ -2,8 +2,8 @@
   import AriadneField from "./AriadneField.svelte";
   import type { FieldVariant } from "./AriadneField.svelte";
 
-  import type { Validation } from "../lib/validity";
-  import { requiredValidator } from "../lib/validator";
+  import type { Validation, Validator } from "../lib/validity";
+  import { requiredValidator, runValidators } from "../lib/validator";
 
   type Props = {
     variant: FieldVariant;
@@ -11,9 +11,10 @@
     required?: boolean;
     value: string;
     lines?: number;
+    validators?: Validator<string>[];
   };
 
-  let { variant, label = "", required = false, value, lines = 3 }: Props = $props();
+  let { variant, label = "", required = false, value, lines = 3, validators = [] }: Props = $props();
 
   // INFO: 値
   const initialValue = () => value;
@@ -37,6 +38,11 @@
     return result;
   }
 
+  // FUNCTION: Validation評価
+  function validate() {
+    validation = runValidators(currentValue, [...(required ? [requiredValidator] : []), ...validators]);
+  }
+
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
@@ -49,6 +55,7 @@
   // FUNCTION: フォーカスアウトイベント
   function handleFocusOut() {
     errorActivated = true;
+    validate();
     focusOutCount += 1;
   }
 </script>
@@ -72,8 +79,9 @@
     <span>{value}</span>
   {/if}
 </AriadneField>
+
 <!-- TODO: ダミー -->
-{#if variant === "edit"}
+<!-- {#if variant === "edit"}
   <div>
     validity：{validation.validity}
     {#if validation.validity === "INVALID"}
@@ -82,7 +90,7 @@
   </div>
   <div>errorActivated：{errorActivated}</div>
   <div>Focus Out検知：{focusOutCount}</div>
-{/if}
+{/if} -->
 
 <!-- TODO: ダミー -->
 

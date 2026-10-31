@@ -33,11 +33,11 @@ test("C02 フォーカスアウトする - Single Field Error", async () => {
   // INFO: ACTION
   // title
   await fireEvent.focus(title);
-  await fireEvent.blur(title);
+  await fireEvent.focusOut(title);
 
   // INFO: VERIFY
   // title
-  expect(screen.getByText("タイトルは必須です。")).toBeTruthy();
+  expect(screen.getByText("必須項目です")).toBeTruthy();
 
   // Create Button
   const createButton = screen.getByRole("button", { name: "Create Task" });
@@ -64,7 +64,7 @@ test("C02 フォーカスアウトする - Correlation Errorなし（INITIAL）"
   // INFO: ACTION
   // description
   await fireEvent.focus(description);
-  await fireEvent.blur(description);
+  await fireEvent.focusOut(description);
 
   // INFO: VERIFY
   // description / priority
@@ -102,7 +102,7 @@ test("C02 フォーカスアウトする - Correlation Errorなし（ACTIVE）",
   // INFO: ACTION
   // description
   await fireEvent.focus(description);
-  await fireEvent.blur(description);
+  await fireEvent.focusOut(description);
 
   // INFO: VERIFY
   // description / priority
@@ -142,7 +142,7 @@ test("C02 フォーカスアウトする - Correlation Errorあり（ACTIVE）",
   // INFO: ACTION
   // description
   await fireEvent.focus(description);
-  await fireEvent.blur(description);
+  await fireEvent.focusOut(description);
 
   // INFO: VERIFY
   // description / priority
