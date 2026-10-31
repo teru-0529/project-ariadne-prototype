@@ -31,27 +31,21 @@
     };
   }
 
-  // TODO: A07-12 動作確認用
-  let debugValues = $state<TaskValues | null>(null);
+  // FUNCTION: 未保存変更の有無
+  export function hasUnsavedChanges(): boolean {
+    const currentValues = getValues();
 
-  // TODO: A07-12 動作確認用
-  function handleDebugGetValues() {
-    debugValues = getValues();
+    return (
+      currentValues.title !== initialValues.title ||
+      currentValues.description !== initialValues.description ||
+      currentValues.priority !== initialValues.priority ||
+      currentValues.status !== initialValues.status
+    );
   }
 </script>
 
 <div class="entry-layout">
   <AriadneForm {submitLabel}>
-    <!-- TODO: A07-12 動作確認用 -->
-    <div class="callback-debug">
-      <button type="button" onclick={handleDebugGetValues}> getValues確認 </button>
-
-      {#if debugValues}
-        <pre>{JSON.stringify(debugValues, null, 2)}</pre>
-      {/if}
-    </div>
-    <!-- TODO: A07-12 動作確認用 -->
-
     <div class="entry-fields">
       <TextField
         bind:this={titleField}
@@ -87,12 +81,5 @@
   .entry-fields {
     width: 500px;
     padding: 8px 6px;
-  }
-
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>
