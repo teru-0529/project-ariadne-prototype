@@ -48,12 +48,7 @@
     margin-bottom: 8px;
   }
 
-  .field-label {
-    font-size: 9px;
-  }
-
   .field-value {
-    min-height: 28px;
     padding: 5px 8px;
     border-radius: 4px;
     background: #f3f4f6;
@@ -61,13 +56,16 @@
   }
 
   .field-value.editable {
+    margin-top: 1px;
+    padding: 1px 8px;
     background: transparent;
   }
 
   .field-error {
-    min-height: 12px;
-    padding-left: 5px;
+    height: 14px;
+    padding-left: 7px;
     font-size: 10px;
+    line-height: 14px;
     color: #c62828;
   }
 

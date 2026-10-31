@@ -20,6 +20,10 @@
   // INFO: エラー表示の活性状態
   let errorActivated = $state(false);
 
+  // INFO:TODO: 表示用エラーメッセージ
+  // let displayError = "テスト用ダミーメッセージ";
+  let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: number) {
     currentValue = nextValue;
@@ -38,10 +42,11 @@
   const label = "優先度";
 </script>
 
-<AriadneField {variant} {label} {required}>
+<AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
     <div
       class="priority priority-edit"
+      class:invalid={!!displayError}
       role="spinbutton"
       tabindex="0"
       aria-label="優先度"
@@ -77,18 +82,20 @@
       >
     </span>
   {/if}
-
-  <!-- TODO: ダミー -->
-  {#if variant === "edit"}
-    <div>validity：{validation.validity}</div>
-    {#if validation.validity === "INVALID"}
-      <div>errorMessage：{validation.errorMessage}</div>
-    {/if}
-    <div>errorActivated：{errorActivated}</div>
-    <div>Focus Out検知：{focusOutCount}</div>
-  {/if}
-  <!-- TODO: ダミー -->
 </AriadneField>
+<!-- TODO: ダミー -->
+{#if variant === "edit"}
+  <div>
+    validity：{validation.validity}
+    {#if validation.validity === "INVALID"}
+      / errorMessage：{validation.errorMessage}
+    {/if}
+  </div>
+  <div>errorActivated：{errorActivated}</div>
+  <div>Focus Out検知：{focusOutCount}</div>
+{/if}
+
+<!-- TODO: ダミー -->
 
 <style>
   .priority {
@@ -99,21 +106,22 @@
     white-space: nowrap;
   }
 
+  .priority-edit {
+    display: inline-flex;
+    align-items: center;
+    transform: none;
+    gap: 1px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    outline: none;
+  }
+
   .priority-filled {
     color: #dc8a18;
   }
 
   .priority-empty {
     color: #aeb8c5;
-  }
-
-  .priority-edit {
-    display: inline-flex;
-    align-items: center;
-    gap: 1px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    outline: none;
   }
 
   .priority-star {
@@ -126,6 +134,13 @@
 
   .priority-edit:focus-visible {
     outline: 2px solid rgba(59, 111, 189, 0.65);
-    outline-offset: -2px;
+    outline-offset: 0px;
+  }
+
+  /* INFO: エラー時：Focusの有無にかかわらず赤枠 */
+  .priority-edit.invalid,
+  .priority-edit.invalid:focus-visible {
+    outline: 2px solid #c62828;
+    outline-offset: 0px;
   }
 </style>

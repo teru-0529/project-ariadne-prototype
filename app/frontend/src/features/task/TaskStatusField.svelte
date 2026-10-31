@@ -21,6 +21,10 @@
   // INFO: エラー表示の活性状態
   let errorActivated = $state(false);
 
+  // INFO:TODO: 表示用エラーメッセージ
+  // let displayError = "テスト用ダミーメッセージ";
+  let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
@@ -45,9 +49,15 @@
   const label = "ステータス";
 </script>
 
-<AriadneField {variant} {label} {required}>
+<AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
-    <div class="status-group" role="radiogroup" aria-label="ステータス" onfocusout={handleFocusOut}>
+    <div
+      class="status-group"
+      class:invalid={!!displayError}
+      role="radiogroup"
+      aria-label="ステータス"
+      onfocusout={handleFocusOut}
+    >
       {#each TASK_STATUSES as status}
         <label class="status-option">
           <input
@@ -74,23 +84,30 @@
       {currentValue}
     </span>
   {/if}
-  <!-- TODO: ダミー -->
-  {#if variant === "edit"}
-    <div>validity：{validation.validity}</div>
-    {#if validation.validity === "INVALID"}
-      <div>errorMessage：{validation.errorMessage}</div>
-    {/if}
-    <div>errorActivated：{errorActivated}</div>
-    <div>Focus Out検知：{focusOutCount}</div>
-  {/if}
-  <!-- TODO: ダミー -->
 </AriadneField>
+<!-- TODO: ダミー -->
+{#if variant === "edit"}
+  <div>
+    validity：{validation.validity}
+    {#if validation.validity === "INVALID"}
+      / errorMessage：{validation.errorMessage}
+    {/if}
+  </div>
+  <div>errorActivated：{errorActivated}</div>
+  <div>Focus Out検知：{focusOutCount}</div>
+{/if}
+
+<!-- TODO: ダミー -->
 
 <style>
   .status-group {
     display: inline-flex;
     align-items: center;
+    margin-top: 5px;
+    margin-bottom: 3px;
+    margin-left: 4px;
     gap: 6px;
+    transform: translateY(-1px);
   }
 
   .status-option {
@@ -110,15 +127,21 @@
   /* radioにFocusがあるとき、対応するバッジを強調 */
   .status-option input:focus-visible + .status-badge {
     outline: 2px solid rgba(59, 111, 189, 0.65);
-    outline-offset: 1px;
+    outline-offset: 2px;
+  }
+
+  .status-group.invalid {
+    outline: 2px solid #c62828;
+    outline-offset: 4px;
+    border-radius: 1px;
   }
 
   .status-badge {
     display: block;
     width: fit-content;
     min-width: 52px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 1px 6px;
+    border-radius: 3px;
     font-size: 11px;
     font-weight: 600;
     line-height: 16px;

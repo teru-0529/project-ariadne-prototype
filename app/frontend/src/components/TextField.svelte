@@ -28,6 +28,9 @@
   // INFO: エラー表示の活性状態
   let errorActivated = $state(false);
 
+  // INFO: 表示用エラーメッセージ
+  let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+
   // FUNCTION: 入力中のValidation評価
   function evaluateOnInput(value: string): Validation {
     let result: Validation = { validity: "UNKNOWN" };
@@ -55,13 +58,14 @@
   }
 </script>
 
-<AriadneField {variant} {label} {required}>
+<AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "reference"}
     <div class="text-value" style:--lines={lines}>
       {value}
     </div>
   {:else if variant === "edit"}
     <textarea
+      class:invalid={!!displayError}
       aria-label={label}
       {value}
       rows={lines}
@@ -90,17 +94,20 @@
   {:else if variant === "cell"}
     <Tooltip text={value} />
   {/if}
-  <!-- TODO: ダミー -->
-  {#if variant === "edit"}
-    <div>validity：{validation.validity}</div>
-    {#if validation.validity === "INVALID"}
-      <div>errorMessage：{validation.errorMessage}</div>
-    {/if}
-    <div>errorActivated：{errorActivated}</div>
-    <div>Focus Out検知：{focusOutCount}</div>
-  {/if}
-  <!-- TODO: ダミー -->
 </AriadneField>
+<!-- TODO: ダミー -->
+{#if variant === "edit"}
+  <div>
+    validity：{validation.validity}
+    {#if validation.validity === "INVALID"}
+      / errorMessage：{validation.errorMessage}
+    {/if}
+  </div>
+  <div>errorActivated：{errorActivated}</div>
+  <div>Focus Out検知：{focusOutCount}</div>
+{/if}
+
+<!-- TODO: ダミー -->
 
 <style>
   .text-value {
@@ -137,6 +144,13 @@
 
   textarea:focus {
     outline: 2px solid rgba(59, 111, 189, 0.65);
+    outline-offset: 0;
+  }
+
+  /* INFO: エラー時：Focusの有無にかかわらず赤枠 */
+  textarea.invalid,
+  textarea.invalid:focus {
+    outline: 2px solid #c62828;
     outline-offset: 0;
   }
 </style>
