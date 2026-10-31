@@ -47,6 +47,19 @@
   const label = "優先度";
 </script>
 
+<!-- TODO: ダミー -->
+{#if variant === "edit"}
+  <div class="callback-debug">
+    validity：{validation.validity}
+    {#if validation.validity === "INVALID"}
+      / errorMessage：{validation.errorMessage}
+    {/if}
+    | errorActivated：{errorActivated}
+    | Focus Out検知：{focusOutCount}
+  </div>
+{/if}
+
+<!-- TODO: ダミー -->
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
     <div
@@ -88,20 +101,6 @@
     </span>
   {/if}
 </AriadneField>
-
-<!-- TODO: ダミー -->
-{#if variant === "edit"}
-  <div>
-    validity：{validation.validity}
-    {#if validation.validity === "INVALID"}
-      / errorMessage：{validation.errorMessage}
-    {/if}
-  </div>
-  <div>errorActivated：{errorActivated}</div>
-  <div>Focus Out検知：{focusOutCount}</div>
-{/if}
-
-<!-- TODO: ダミー -->
 
 <style>
   .priority {
@@ -148,5 +147,12 @@
   .priority-edit.invalid:focus-visible {
     outline: 2px solid #c62828;
     outline-offset: 0px;
+  }
+
+  /* TODO: debug */
+  .callback-debug {
+    padding: 8px 6px;
+    font-size: 10px;
+    line-height: 1.8;
   }
 </style>

@@ -65,6 +65,19 @@
   }
 </script>
 
+<!-- TODO: ダミー -->
+{#if variant === "edit"}
+  <div class="callback-debug">
+    validity：{validation.validity}
+    {#if validation.validity === "INVALID"}
+      / errorMessage：{validation.errorMessage}
+    {/if}
+    | errorActivated：{errorActivated}
+    | Focus Out検知：{focusOutCount}
+  </div>
+{/if}
+
+<!-- TODO: ダミー -->
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "reference"}
     <div class="text-value" style:--lines={lines}>
@@ -102,19 +115,6 @@
     <Tooltip text={value} />
   {/if}
 </AriadneField>
-<!-- TODO: ダミー -->
-{#if variant === "edit"}
-  <div>
-    validity：{validation.validity}
-    {#if validation.validity === "INVALID"}
-      / errorMessage：{validation.errorMessage}
-    {/if}
-  </div>
-  <div>errorActivated：{errorActivated}</div>
-  <div>Focus Out検知：{focusOutCount}</div>
-{/if}
-
-<!-- TODO: ダミー -->
 
 <style>
   .text-value {
@@ -159,5 +159,12 @@
   textarea.invalid:focus {
     outline: 2px solid #c62828;
     outline-offset: 0;
+  }
+
+  /* TODO: debug */
+  .callback-debug {
+    padding: 8px 6px;
+    font-size: 10px;
+    line-height: 1.8;
   }
 </style>
