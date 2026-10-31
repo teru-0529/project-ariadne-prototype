@@ -1,7 +1,8 @@
 <script lang="ts">
   import AriadneField from "../../components/AriadneField.svelte";
   import type { FieldVariant } from "../../components/AriadneField.svelte";
-  import type { Validity } from "../../lib/validity";
+
+  import type { Validation } from "../../lib/validity";
 
   type Props = {
     variant: FieldVariant;
@@ -14,9 +15,7 @@
   // INFO: 値
   const initialValue = () => value;
   let currentValue = $state(initialValue());
-
-  // INFO: Validity
-  let validity = $state<Validity>("UNKNOWN");
+  let validation = $state<Validation>({ validity: "UNKNOWN" });
 
   // INFO: エラー表示の活性状態
   let errorActivated = $state(false);
@@ -24,7 +23,7 @@
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: number) {
     currentValue = nextValue;
-    validity = "UNKNOWN";
+    validation = { validity: "UNKNOWN" };
   }
 
   // TODO: ダミー
@@ -80,11 +79,14 @@
   {/if}
 
   <!-- TODO: ダミー -->
-  <!-- {#if variant === "edit"}
-    <div>validity：{validity}</div>
+  {#if variant === "edit"}
+    <div>validity：{validation.validity}</div>
+    {#if validation.validity === "INVALID"}
+      <div>errorMessage：{validation.errorMessage}</div>
+    {/if}
     <div>errorActivated：{errorActivated}</div>
     <div>Focus Out検知：{focusOutCount}</div>
-  {/if} -->
+  {/if}
   <!-- TODO: ダミー -->
 </AriadneField>
 

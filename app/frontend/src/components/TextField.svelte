@@ -2,7 +2,9 @@
   import AriadneField from "./AriadneField.svelte";
   import type { FieldVariant } from "./AriadneField.svelte";
   import Tooltip from "./AriadneTooltip.svelte";
-  import type { Validity } from "../lib/validity";
+
+  import type { Validation } from "../lib/validity";
+  import { requiredValidator } from "../lib/validator";
 
   type Props = {
     variant: FieldVariant;
@@ -21,23 +23,26 @@
   // INFO: 値
   const initialValue = () => value;
   let currentValue = $state(initialValue());
-
-  // INFO: Validity
-  const initialValidity = checkRequired(initialValue());
-  let validity = $state<Validity>(initialValidity);
+  let validation = $state<Validation>(evaluateOnInput(initialValue()));
 
   // INFO: エラー表示の活性状態
   let errorActivated = $state(false);
 
-  // FUNCTION: 必須チェック
-  function checkRequired(value: string): Validity {
-    return required && value.trim() === "" ? "INVALID" : "UNKNOWN";
+  // FUNCTION: 入力中のValidation評価
+  function evaluateOnInput(value: string): Validation {
+    let result: Validation = { validity: "UNKNOWN" };
+
+    if (required) {
+      result = requiredValidator(value);
+    }
+
+    return result;
   }
 
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
-    validity = checkRequired(currentValue);
+    validation = evaluateOnInput(currentValue);
   }
 
   // TODO: ダミー
@@ -87,7 +92,10 @@
   {/if}
   <!-- TODO: ダミー -->
   {#if variant === "edit"}
-    <div>validity：{validity}</div>
+    <div>validity：{validation.validity}</div>
+    {#if validation.validity === "INVALID"}
+      <div>errorMessage：{validation.errorMessage}</div>
+    {/if}
     <div>errorActivated：{errorActivated}</div>
     <div>Focus Out検知：{focusOutCount}</div>
   {/if}
