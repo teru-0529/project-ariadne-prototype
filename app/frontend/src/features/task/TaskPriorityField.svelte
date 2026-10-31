@@ -28,6 +28,11 @@
     validation = { validity: "VALID" };
   }
 
+  // FUNCTION: 現在値の取得
+  export function getValue(): number {
+    return currentValue;
+  }
+
   // FUNCTION: 値変更イベント
   function handleValueChange(nextValue: number) {
     currentValue = nextValue;
