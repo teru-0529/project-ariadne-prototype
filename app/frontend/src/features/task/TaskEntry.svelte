@@ -9,6 +9,7 @@
   import type { TaskValues } from "./TaskValues";
 
   import { maxLengthValidator } from "../../lib/validator";
+  import { PriorityDescriptionValidator } from "./PriorityDescriptionValidator.svelte";
 
   type Props = {
     submitLabel: string;
@@ -17,6 +18,11 @@
   };
 
   let { submitLabel, initialValues, submitCondition }: Props = $props();
+
+  // INFO: 相関Validotor
+  const initialPriority = () => initialValues.priority;
+  const initialDescription = () => initialValues.description;
+  const priorityDescriptionValidator = new PriorityDescriptionValidator(initialPriority(), initialDescription());
 
   // INFO: Field参照
   let titleField!: TextField;
@@ -101,6 +107,8 @@
     <!-- TODO: ダミー -->
     <div class="callback-debug">
       <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
+      <pre>correlationPhase: {priorityDescriptionValidator.getPhase()}</pre>
+      <pre>correlationValidity: {priorityDescriptionValidator.getValidation().validity}</pre>
     </div>
     <!-- TODO: ダミー -->
 
