@@ -93,12 +93,18 @@
     priorityField.validate();
     statusField.validate();
 
-    return [
+    const allFieldsValid = [
       titleField.getValidity(),
       descriptionField.getValidity(),
       priorityField.getValidity(),
       statusField.getValidity(),
     ].every((validity) => validity === "VALID");
+
+    if (!allFieldsValid) return false;
+
+    priorityDescriptionValidator.activate();
+
+    return true;
   }
 </script>
 
@@ -107,8 +113,8 @@
     <!-- TODO: ダミー -->
     <div class="callback-debug">
       <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
-      <pre>correlationPhase: {priorityDescriptionValidator.getPhase()}</pre>
-      <pre>correlationValidity: {priorityDescriptionValidator.getValidation().validity}</pre>
+      <pre>correlationPhase: {priorityDescriptionValidator.getPhase()} | correlationValidity: {priorityDescriptionValidator.getValidation()
+          .validity}</pre>
     </div>
     <!-- TODO: ダミー -->
 

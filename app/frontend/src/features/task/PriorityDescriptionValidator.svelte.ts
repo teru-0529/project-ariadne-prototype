@@ -3,7 +3,9 @@ import type { CorrelationValidator, CorrelationPhase } from "../../lib/Correlati
 
 export class PriorityDescriptionValidator implements CorrelationValidator {
   // INFO: 相関Validationの活性状態
-  private phase: CorrelationPhase = "INITIAL";
+  // private phase: CorrelationPhase = "INITIAL";
+  // TODO:一時的にリアクティブ
+  private phase: CorrelationPhase = $state("INITIAL");
 
   // INFO: 相関Validationの判定結果
   private validation = $state<Validation>({
@@ -43,7 +45,7 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
 
   // FUNCTION: 相関Validationの活性化
   activate(): void {
-    // TODO: A07-19
+    this.phase = "ACTIVE";
   }
 
   // FUNCTION: 相関Validationの評価

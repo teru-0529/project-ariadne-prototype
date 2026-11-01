@@ -70,7 +70,7 @@
 </script>
 
 <!-- TODO: ダミー -->
-<!-- {#if variant === "edit"}
+{#if variant === "edit"}
   <div class="callback-debug">
     validity：{validation.validity}
     {#if validation.validity === "INVALID"}
@@ -79,7 +79,7 @@
     | errorActivated：{errorActivated}
     | Focus Out検知：{focusOutCount}
   </div>
-{/if} -->
+{/if}
 
 <!-- TODO: ダミー -->
 <AriadneField {variant} {label} {required} error={displayError}>
