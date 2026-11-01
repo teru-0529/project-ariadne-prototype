@@ -50,9 +50,6 @@
     validation = { validity: "UNKNOWN" };
   }
 
-  // TODO: ダミー
-  let focusOutCount = $state(0);
-
   // FUNCTION: フォーカスアウトイベント(グループ内のボタンクリックでもフォーカスアウトと判断される)
   function handleFocusOut(event: FocusEvent) {
     const group = event.currentTarget;
@@ -63,20 +60,11 @@
 
     activateError();
     validate();
-    focusOutCount += 1;
   }
 
   const label = "ステータス";
 </script>
 
-<!-- TODO: ダミー -->
-{#if variant === "edit"}
-  <div class="callback-debug">
-    Focus Out検知：{focusOutCount}
-  </div>
-{/if}
-
-<!-- TODO: ダミー -->
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
     <div
@@ -187,12 +175,5 @@
     background: #ffffff;
     color: #aeb8c5;
     box-shadow: inset 0 0 0 1px #d1d5db;
-  }
-
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>

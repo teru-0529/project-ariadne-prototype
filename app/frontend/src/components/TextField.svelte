@@ -82,25 +82,14 @@
     callbacks?.onChange?.(currentValue);
   }
 
-  // TODO: ダミー
-  let focusOutCount = $state(0);
-
   // FUNCTION: フォーカスアウトイベント
   function handleFocusOut() {
     activateError();
     validate();
-    focusOutCount += 1;
+    callbacks?.onFocusOut?.();
   }
 </script>
 
-<!-- TODO: ダミー -->
-{#if variant === "edit"}
-  <div class="callback-debug">
-    Focus Out検知：{focusOutCount}
-  </div>
-{/if}
-
-<!-- TODO: ダミー -->
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "reference"}
     <div class="text-value" style:--lines={lines}>
@@ -182,12 +171,5 @@
   textarea.invalid:focus {
     outline: 2px solid #c62828;
     outline-offset: 0;
-  }
-
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>

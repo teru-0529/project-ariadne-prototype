@@ -53,8 +53,23 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
   }
 
   // FUNCTION: 相関Validationの評価
+
+  // FUNCTION: 相関Validationの評価
   validate(): void {
-    // TODO: A07-11
+    if (this.phase === "INITIAL" || this.priorityValidity !== "VALID" || this.descriptionValidity !== "VALID") {
+      this.validation = { validity: "UNKNOWN" };
+      return;
+    }
+
+    if (this.priority === 5 && this.description.trim() === "") {
+      this.validation = {
+        validity: "INVALID",
+        errorMessage: "優先度が5の場合、説明は必須です",
+      };
+      return;
+    }
+
+    this.validation = { validity: "VALID" };
   }
 
   // FUNCTION: 相関Validationの判定結果取得

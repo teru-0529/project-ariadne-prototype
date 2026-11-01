@@ -47,6 +47,11 @@
     priorityDescriptionValidator.setDescriptionValidity(validity);
   }
 
+  // FUNCTION: onFocusOutイベントハンドラー
+  function handleCorrelationFocusOut(): void {
+    priorityDescriptionValidator.validate();
+  }
+
   // TODO: A07-09 動作確認用
   let correlationDebugVersion = $state(0);
 
@@ -170,14 +175,22 @@
         label="説明"
         value={initialValues.description}
         lines={3}
-        callbacks={{ onChange: handleDescriptionChange, onValidated: handleDescriptionValidated }}
+        callbacks={{
+          onChange: handleDescriptionChange,
+          onValidated: handleDescriptionValidated,
+          onFocusOut: handleCorrelationFocusOut,
+        }}
       />
       <TaskPriorityField
         bind:this={priorityField}
         variant="edit"
         required={true}
         value={initialValues.priority}
-        callbacks={{ onChange: handlePriorityChange, onValidated: handlePriorityValidated }}
+        callbacks={{
+          onChange: handlePriorityChange,
+          onValidated: handlePriorityValidated,
+          onFocusOut: handleCorrelationFocusOut,
+        }}
       />
       <TaskStatusField bind:this={statusField} variant="edit" required={true} value={initialValues.status} />
     </div>

@@ -53,27 +53,16 @@
     callbacks?.onChange?.(currentValue);
   }
 
-  // TODO: ダミー
-  let focusOutCount = $state(0);
-
   // FUNCTION: フォーカスアウトイベント
   function handleFocusOut() {
     activateError();
     validate();
-    focusOutCount += 1;
+    callbacks?.onFocusOut?.();
   }
 
   const label = "優先度";
 </script>
 
-<!-- TODO: ダミー -->
-{#if variant === "edit"}
-  <div class="callback-debug">
-    Focus Out検知：{focusOutCount}
-  </div>
-{/if}
-
-<!-- TODO: ダミー -->
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
     <div
@@ -161,12 +150,5 @@
   .priority-edit.invalid:focus-visible {
     outline: 2px solid #c62828;
     outline-offset: 0px;
-  }
-
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>
