@@ -76,7 +76,7 @@
   }
 
   // FUNCTION: 全FieldのValidation実行
-  function handleSubmit() {
+  function handleSubmit(): boolean {
     titleField.activateError();
     descriptionField.activateError();
     priorityField.activateError();
@@ -86,6 +86,13 @@
     descriptionField.validate();
     priorityField.validate();
     statusField.validate();
+
+    return [
+      titleField.getValidity(),
+      descriptionField.getValidity(),
+      priorityField.getValidity(),
+      statusField.getValidity(),
+    ].every((validity) => validity === "VALID");
   }
 </script>
 

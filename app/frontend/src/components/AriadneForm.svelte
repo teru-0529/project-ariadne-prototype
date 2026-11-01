@@ -6,7 +6,7 @@
     children: Snippet;
     submitLabel: string;
     canSubmit: boolean;
-    onSubmit?: () => void;
+    onSubmit?: () => boolean;
   };
 
   let { children, submitLabel, canSubmit, onSubmit }: Props = $props();
@@ -14,8 +14,9 @@
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    // TODO: 戻りのBoolによって判断
-    onSubmit?.();
+    if (onSubmit?.() !== true) {
+      return;
+    }
 
     // TODO:(A07/A08): ValidationとConfirmation Modalの実装時に置き換える
     window.alert("Task登録処理は未実装です。");
