@@ -14,9 +14,19 @@
     lines?: number;
     validators?: Validator<string>[];
     callbacks?: FieldCallbacks<string>;
+    correlationError?: string | null;
   };
 
-  let { variant, label = "", required = false, value, lines = 3, validators = [], callbacks }: Props = $props();
+  let {
+    variant,
+    label = "",
+    required = false,
+    value,
+    lines = 3,
+    validators = [],
+    callbacks,
+    correlationError,
+  }: Props = $props();
 
   // INFO: 値
   const initialValue = () => value;
@@ -75,6 +85,12 @@
     callbacks?.onFocusOut?.();
   }
 </script>
+
+{#if variant === "edit"}
+  <div class="callback-debug">
+    correlationError: {correlationError ?? "null"}
+  </div>
+{/if}
 
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "reference"}
@@ -142,5 +158,11 @@
     outline: 2px solid rgba(59, 111, 189, 0.65);
     outline-offset: -2px;
     border-radius: 3px;
+  }
+  /* TODO: debug */
+  .callback-debug {
+    padding: 8px 6px;
+    font-size: 10px;
+    line-height: 1.8;
   }
 </style>

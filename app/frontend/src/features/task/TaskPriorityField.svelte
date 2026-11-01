@@ -10,9 +10,10 @@
     required?: boolean;
     value: number;
     callbacks?: FieldCallbacks<number>;
+    correlationError?: string | null;
   };
 
-  let { variant, required = false, value, callbacks }: Props = $props();
+  let { variant, required = false, value, callbacks, correlationError }: Props = $props();
 
   // INFO: 値
   const initialValue = () => value;
@@ -62,6 +63,12 @@
 
   const label = "優先度";
 </script>
+
+{#if variant === "edit"}
+  <div class="callback-debug">
+    correlationError: {correlationError ?? "null"}
+  </div>
+{/if}
 
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
@@ -150,5 +157,11 @@
   .priority-edit.invalid:focus-visible {
     outline: 2px solid #c62828;
     outline-offset: 0px;
+  }
+  /* TODO: debug */
+  .callback-debug {
+    padding: 8px 6px;
+    font-size: 10px;
+    line-height: 1.8;
   }
 </style>

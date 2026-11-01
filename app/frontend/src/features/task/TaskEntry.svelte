@@ -25,6 +25,12 @@
   const initialDescription = () => initialValues.description;
   const priorityDescriptionValidator = new PriorityDescriptionValidator(initialPriority(), initialDescription());
 
+  // INFO: 相関エラーをリアクティブに参照
+  let correlationError = $derived.by(() => {
+    const validation = priorityDescriptionValidator.getValidation();
+    return validation.validity === "INVALID" ? (validation.errorMessage ?? null) : null;
+  });
+
   // FUNCTION: onChangeイベントハンドラー
   function handlePriorityChange(value: number): void {
     correlationDebugVersion += 1;
@@ -180,6 +186,7 @@
           onValidated: handleDescriptionValidated,
           onFocusOut: handleCorrelationFocusOut,
         }}
+        {correlationError}
       />
       <TaskPriorityField
         bind:this={priorityField}
@@ -191,6 +198,7 @@
           onValidated: handlePriorityValidated,
           onFocusOut: handleCorrelationFocusOut,
         }}
+        {correlationError}
       />
       <TaskStatusField bind:this={statusField} variant="edit" required={true} value={initialValues.status} />
     </div>

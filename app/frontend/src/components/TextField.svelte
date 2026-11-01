@@ -16,6 +16,7 @@
     lines?: number;
     validators?: Validator<string>[];
     callbacks?: FieldCallbacks<string>;
+    correlationError?: string | null;
   };
 
   let {
@@ -27,6 +28,7 @@
     lines = 1,
     validators = [],
     callbacks,
+    correlationError,
   }: Props = $props();
 
   // INFO: IME変更中
