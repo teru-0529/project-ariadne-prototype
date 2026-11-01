@@ -3,7 +3,7 @@
   import type { FieldVariant } from "../../components/AriadneField.svelte";
   import { TASK_STATUSES } from "./TaskValues";
 
-  import type { Validation } from "../../lib/validity";
+  import type { Validity, Validation } from "../../lib/validity";
 
   type Props = {
     variant: FieldVariant;
@@ -32,6 +32,11 @@
   // FUNCTION: 現在値の取得
   export function getValue(): string {
     return currentValue;
+  }
+
+  // FUNCTION: 現在のValidityの取得
+  export function getValidity(): Validity {
+    return validation.validity;
   }
 
   // FUNCTION: 値変更イベント

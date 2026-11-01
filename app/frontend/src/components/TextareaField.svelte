@@ -2,7 +2,7 @@
   import AriadneField from "./AriadneField.svelte";
   import type { FieldVariant } from "./AriadneField.svelte";
 
-  import type { Validation, Validator } from "../lib/validity";
+  import type { Validity, Validation, Validator } from "../lib/validity";
   import { requiredValidator, runValidators } from "../lib/validator";
 
   type Props = {
@@ -46,6 +46,11 @@
   // FUNCTION: 現在値の取得
   export function getValue(): string {
     return currentValue;
+  }
+
+  // FUNCTION: 現在のValidityの取得
+  export function getValidity(): Validity {
+    return validation.validity;
   }
 
   // FUNCTION: 値変更イベント

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   import AriadneForm from "../../components/AriadneForm.svelte";
   import TextField from "../../components/TextField.svelte";
   import TextareaField from "../../components/TextareaField.svelte";
@@ -16,10 +18,29 @@
   let { submitLabel, initialValues }: Props = $props();
 
   // INFO: Field参照
-  let titleField: TextField;
-  let descriptionField: TextareaField;
-  let priorityField: TaskPriorityField;
-  let statusField: TaskStatusField;
+  let titleField!: TextField;
+  let descriptionField!: TextareaField;
+  let priorityField!: TaskPriorityField;
+  let statusField!: TaskStatusField;
+
+  // INFO: リアクティブ参照の開始
+  let mounted = $state(false);
+
+  onMount(() => {
+    mounted = true;
+  });
+
+  // INFO: FieldのValidityをリアクティブに参照
+  let fieldValidities = $derived(
+    mounted
+      ? [
+          titleField.getValidity(),
+          descriptionField.getValidity(),
+          priorityField.getValidity(),
+          statusField.getValidity(),
+        ]
+      : [],
+  );
 
   // FUNCTION: 現在のTask入力値を集約
   function getValues(): TaskValues {
@@ -46,6 +67,10 @@
 
 <div class="entry-layout">
   <AriadneForm {submitLabel}>
+    <!-- TODO: ダミー -->
+    <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
+    <!-- TODO: ダミー -->
+
     <div class="entry-fields">
       <TextField
         bind:this={titleField}
