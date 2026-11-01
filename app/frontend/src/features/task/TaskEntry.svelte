@@ -31,6 +31,9 @@
     return validation.validity === "INVALID" ? (validation.errorMessage ?? null) : null;
   });
 
+  // INFO: 相関Validityをリアクティブに参照
+  let correlationValidity = $derived(priorityDescriptionValidator.getValidation().validity);
+
   // FUNCTION: onChangeイベントハンドラー
   function handlePriorityChange(value: number): void {
     correlationDebugVersion += 1;
@@ -98,10 +101,11 @@
       : [],
   );
 
-  // INFO: Submit可否をリアクティブに判定 TODO: 相関ValidatorのValidityを追加
+  // INFO: Submit可否をリアクティブに判定
   let canSubmit = $derived(
     mounted &&
       fieldValidities.every((validity) => validity !== "INVALID") &&
+      correlationValidity !== "INVALID" &&
       (currentValues !== undefined ? (submitCondition?.(currentValues) ?? true) : false),
   );
 
@@ -159,7 +163,7 @@
     <!-- TODO: ダミー -->
     <div class="callback-debug">
       <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
-      <pre>correlationValidity: {priorityDescriptionValidator.getValidation().validity}</pre>
+      <pre>correlationValidity: {correlationValidity}</pre>
       <pre>correlationDebug: {JSON.stringify(correlationDebugState)}</pre>
     </div>
     <!-- TODO: ダミー -->
