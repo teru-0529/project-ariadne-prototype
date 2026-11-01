@@ -146,7 +146,7 @@ test("C02 フォーカスアウトする - Correlation Errorあり（ACTIVE）",
 
   // INFO: VERIFY
   // description / priority
-  expect(screen.getByText("優先度が5の場合、説明は必須です")).toBeTruthy();
+  expect(screen.getAllByText("優先度が5の場合、説明は必須です")).toHaveLength(2);
 
   // Create Button
   expect(createButton).toBeTruthy();

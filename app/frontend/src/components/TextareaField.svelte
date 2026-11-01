@@ -37,7 +37,9 @@
   let errorActivated = $state(false);
 
   // INFO: 表示用エラーメッセージ
-  let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+  let displayError = $derived(
+    errorActivated ? (validation.validity === "INVALID" ? validation.errorMessage : correlationError) : null,
+  );
 
   // FUNCTION: 入力中のValidation評価
   function evaluateOnInput(value: string): Validation {
@@ -85,12 +87,6 @@
     callbacks?.onFocusOut?.();
   }
 </script>
-
-{#if variant === "edit"}
-  <div class="callback-debug">
-    correlationError: {correlationError ?? "null"}
-  </div>
-{/if}
 
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "reference"}
@@ -158,11 +154,5 @@
     outline: 2px solid rgba(59, 111, 189, 0.65);
     outline-offset: -2px;
     border-radius: 3px;
-  }
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>

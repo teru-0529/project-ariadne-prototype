@@ -43,7 +43,9 @@
   let errorActivated = $state(false);
 
   // INFO: 表示用エラーメッセージ
-  let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+  let displayError = $derived(
+    errorActivated ? (validation.validity === "INVALID" ? validation.errorMessage : correlationError) : null,
+  );
 
   // FUNCTION: 入力中のValidation評価
   function evaluateOnInput(value: string): Validation {

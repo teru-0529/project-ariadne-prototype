@@ -66,7 +66,7 @@ test("C03 Createボタンを押す - Invalid Correlation", async () => {
   await fireEvent.click(createButton);
 
   // INFO: VERIFY
-  expect(screen.getByText("優先度が5の場合、説明は必須です")).toBeTruthy();
+  expect(screen.getAllByText("優先度が5の場合、説明は必須です")).toHaveLength(2);
 
   // Create Button
   expect((createButton as HTMLButtonElement).disabled).toBe(true);

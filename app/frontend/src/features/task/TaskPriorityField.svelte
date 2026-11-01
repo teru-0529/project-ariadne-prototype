@@ -24,7 +24,9 @@
   let errorActivated = $state(false);
 
   // INFO: 表示用エラーメッセージ
-  let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
+  let displayError = $derived(
+    errorActivated ? (validation.validity === "INVALID" ? validation.errorMessage : correlationError) : null,
+  );
 
   // FUNCTION: エラー表示の活性化
   export function activateError() {
@@ -63,12 +65,6 @@
 
   const label = "優先度";
 </script>
-
-{#if variant === "edit"}
-  <div class="callback-debug">
-    correlationError: {correlationError ?? "null"}
-  </div>
-{/if}
 
 <AriadneField {variant} {label} {required} error={displayError}>
   {#if variant === "edit"}
@@ -157,11 +153,5 @@
   .priority-edit.invalid:focus-visible {
     outline: 2px solid #c62828;
     outline-offset: 0px;
-  }
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>
