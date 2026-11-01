@@ -36,23 +36,19 @@
 
   // FUNCTION: onChangeイベントハンドラー
   function handlePriorityChange(value: number): void {
-    correlationDebugVersion += 1;
     priorityDescriptionValidator.setPriorityValue(value);
   }
 
   function handleDescriptionChange(value: string): void {
-    correlationDebugVersion += 1;
     priorityDescriptionValidator.setDescriptionValue(value);
   }
 
   // FUNCTION: onValidatedイベントハンドラー
   function handlePriorityValidated(validity: Validity): void {
-    correlationDebugVersion += 1;
     priorityDescriptionValidator.setPriorityValidity(validity);
   }
 
   function handleDescriptionValidated(validity: Validity): void {
-    correlationDebugVersion += 1;
     priorityDescriptionValidator.setDescriptionValidity(validity);
   }
 
@@ -60,18 +56,6 @@
   function handleCorrelationFocusOut(): void {
     priorityDescriptionValidator.validate();
   }
-
-  // TODO: A07-09 動作確認用
-  let correlationDebugVersion = $state(0);
-
-  // TODO: A07-09 動作確認用
-  let correlationDebugState = $derived.by(() => {
-    const version = correlationDebugVersion;
-    return {
-      version,
-      ...priorityDescriptionValidator.getDebugState(),
-    };
-  });
 
   // INFO: Field参照
   let titleField!: TextField;
@@ -161,14 +145,6 @@
 
 <div class="entry-layout">
   <AriadneForm {submitLabel} {canSubmit} onSubmit={handleSubmit}>
-    <!-- TODO: ダミー -->
-    <div class="callback-debug">
-      <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
-      <pre>correlationValidity: {correlationValidity}</pre>
-      <pre>correlationDebug: {JSON.stringify(correlationDebugState)}</pre>
-    </div>
-    <!-- TODO: ダミー -->
-
     <div class="entry-fields">
       <TextField
         bind:this={titleField}
@@ -221,12 +197,5 @@
   .entry-fields {
     width: 500px;
     padding: 8px 6px;
-  }
-
-  /* TODO: debug */
-  .callback-debug {
-    padding: 8px 6px;
-    font-size: 10px;
-    line-height: 1.8;
   }
 </style>

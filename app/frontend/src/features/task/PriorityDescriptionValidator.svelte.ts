@@ -53,8 +53,6 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
   }
 
   // FUNCTION: 相関Validationの評価
-
-  // FUNCTION: 相関Validationの評価
   validate(): void {
     if (this.phase === "INITIAL" || this.priorityValidity !== "VALID" || this.descriptionValidity !== "VALID") {
       this.validation = { validity: "UNKNOWN" };
@@ -75,16 +73,5 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
   // FUNCTION: 相関Validationの判定結果取得
   getValidation(): Validation {
     return this.validation;
-  }
-
-  // TODO: A07-09 動作確認用
-  getDebugState() {
-    return {
-      phase: this.phase,
-      priority: this.priority,
-      priorityValidity: this.priorityValidity,
-      description: this.description,
-      descriptionValidity: this.descriptionValidity,
-    };
   }
 }
