@@ -9,6 +9,7 @@
   import type { TaskValues } from "./TaskValues";
 
   import { maxLengthValidator } from "../../lib/validator";
+  import type { Validity } from "../../lib/validity";
   import { PriorityDescriptionValidator } from "./PriorityDescriptionValidator.svelte";
 
   type Props = {
@@ -33,6 +34,17 @@
   function handleDescriptionChange(value: string): void {
     correlationDebugVersion += 1;
     priorityDescriptionValidator.setDescriptionValue(value);
+  }
+
+  // FUNCTION: onValidatedイベントハンドラー
+  function handlePriorityValidated(validity: Validity): void {
+    correlationDebugVersion += 1;
+    priorityDescriptionValidator.setPriorityValidity(validity);
+  }
+
+  function handleDescriptionValidated(validity: Validity): void {
+    correlationDebugVersion += 1;
+    priorityDescriptionValidator.setDescriptionValidity(validity);
   }
 
   // TODO: A07-09 動作確認用
@@ -158,14 +170,14 @@
         label="説明"
         value={initialValues.description}
         lines={3}
-        callbacks={{ onChange: handleDescriptionChange }}
+        callbacks={{ onChange: handleDescriptionChange, onValidated: handleDescriptionValidated }}
       />
       <TaskPriorityField
         bind:this={priorityField}
         variant="edit"
         required={true}
         value={initialValues.priority}
-        callbacks={{ onChange: handlePriorityChange }}
+        callbacks={{ onChange: handlePriorityChange, onValidated: handlePriorityValidated }}
       />
       <TaskStatusField bind:this={statusField} variant="edit" required={true} value={initialValues.status} />
     </div>

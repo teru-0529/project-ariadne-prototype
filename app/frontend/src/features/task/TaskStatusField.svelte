@@ -72,8 +72,7 @@
 <!-- TODO: ダミー -->
 {#if variant === "edit"}
   <div class="callback-debug">
-    validity：{validation.validity}
-    | Focus Out検知：{focusOutCount}
+    Focus Out検知：{focusOutCount}
   </div>
 {/if}
 

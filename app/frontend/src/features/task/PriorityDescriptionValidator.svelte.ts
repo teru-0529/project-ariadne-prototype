@@ -32,6 +32,7 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
 
   setPriorityValidity(validity: Validity): void {
     this.priorityValidity = validity;
+    this.validation = { validity: "UNKNOWN" };
   }
 
   // FUNCTION: Descriptionの値・Validity更新
@@ -43,6 +44,7 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
 
   setDescriptionValidity(validity: Validity): void {
     this.descriptionValidity = validity;
+    this.validation = { validity: "UNKNOWN" };
   }
 
   // FUNCTION: 相関Validationの活性化

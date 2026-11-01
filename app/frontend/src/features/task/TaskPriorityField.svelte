@@ -33,6 +33,7 @@
   // FUNCTION: Validation評価
   export function validate() {
     validation = { validity: "VALID" };
+    callbacks?.onValidated?.(validation.validity);
   }
 
   // FUNCTION: 現在値の取得
@@ -68,8 +69,7 @@
 <!-- TODO: ダミー -->
 {#if variant === "edit"}
   <div class="callback-debug">
-    validity：{validation.validity}
-    | Focus Out検知：{focusOutCount}
+    Focus Out検知：{focusOutCount}
   </div>
 {/if}
 
