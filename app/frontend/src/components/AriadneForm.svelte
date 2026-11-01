@@ -5,10 +5,11 @@
   type Props = {
     children: Snippet;
     submitLabel: string;
+    canSubmit: boolean;
     onSubmit?: () => void;
   };
 
-  let { children, submitLabel }: Props = $props();
+  let { children, submitLabel, canSubmit }: Props = $props();
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -24,7 +25,7 @@
   </div>
 
   <div class="form-actions">
-    <AriadneButton label={submitLabel} variant="primary" type="submit" />
+    <AriadneButton label={submitLabel} variant="primary" type="submit" disabled={!canSubmit} />
   </div>
 </form>
 

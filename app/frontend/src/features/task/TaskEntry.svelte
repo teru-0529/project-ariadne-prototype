@@ -13,9 +13,10 @@
   type Props = {
     submitLabel: string;
     initialValues: TaskValues;
+    submitCondition?: (currentValues: TaskValues) => boolean;
   };
 
-  let { submitLabel, initialValues }: Props = $props();
+  let { submitLabel, initialValues, submitCondition }: Props = $props();
 
   // INFO: Field参照
   let titleField!: TextField;
@@ -30,6 +31,9 @@
     mounted = true;
   });
 
+  // INFO: Fieldの現在値をリアクティブに参照
+  let currentValues = $derived(mounted ? getValues() : undefined);
+
   // INFO: FieldのValidityをリアクティブに参照
   let fieldValidities = $derived(
     mounted
@@ -40,6 +44,13 @@
           statusField.getValidity(),
         ]
       : [],
+  );
+
+  // INFO: Submit可否をリアクティブに判定 TODO: 相関ValidatorのValidityを追加
+  let canSubmit = $derived(
+    mounted &&
+      fieldValidities.every((validity) => validity !== "INVALID") &&
+      (currentValues !== undefined ? (submitCondition?.(currentValues) ?? true) : false),
   );
 
   // FUNCTION: 現在のTask入力値を集約
@@ -66,9 +77,11 @@
 </script>
 
 <div class="entry-layout">
-  <AriadneForm {submitLabel}>
+  <AriadneForm {submitLabel} {canSubmit}>
     <!-- TODO: ダミー -->
-    <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
+    <div class="callback-debug">
+      <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
+    </div>
     <!-- TODO: ダミー -->
 
     <div class="entry-fields">
@@ -106,5 +119,12 @@
   .entry-fields {
     width: 500px;
     padding: 8px 6px;
+  }
+
+  /* TODO: debug */
+  .callback-debug {
+    padding: 8px 6px;
+    font-size: 10px;
+    line-height: 1.8;
   }
 </style>
