@@ -1012,13 +1012,17 @@ Correlation Errorの表示先と優先順位は、4.2.5 Validation Error Present
 
 FormのSubmitボタンは、以下の条件をすべて満たす場合に有効とする。
 
-- いずれかのFieldに変更がある。
 - すべてのFieldのValidityがINVALIDではない。
 - すべてのCorrelationValidatorのValidityがINVALIDではない。
+- 業務Pageから指定された追加条件を満たす。
+
+追加条件は省略可能とし、省略された場合は常に満たすものとして扱う。
+
+Createでは追加条件を指定せず、Editでは初期値と現在値の差分によって変更有無を判定する。
 
 ValidityがUNKNOWNの場合は、Submitボタンの有効化を妨げない。
 
-業務Componentは各FieldおよびCorrelationValidatorの状態からSubmit可否を導出し、AriadneFormへ渡す。
+業務Componentは各FieldおよびCorrelationValidatorの状態と追加条件の結果からSubmit可否を導出し、AriadneFormへ渡す。
 
 Submitボタンの有効状態と、Submit時のValidation成功条件は区別する。
 
@@ -1572,5 +1576,36 @@ Edit中に未保存の変更がある状態で別画面へ遷移しようとし�
 この振る舞いはStep 6で実装する。
 
 #### 4.5.3 Task Create
+
+##### Initial Display
+
+Task Createは`TaskCreatePage`で表示する。
+
+Task Createの初期値は以下とする。
+
+| Property | Initial Value |
+|---|---|
+| Title | 空文字 |
+| Description | 空文字 |
+| Priority | 3 |
+| Status | TODO |
+
+初期状態ではSubmitボタンを無効とする。
+
+##### Task Input
+
+Taskの各Propertyは`TaskEntry`で入力する。
+
+入力値に対するValidationは4.2 Validation Specificationに従う。
+
+Priorityが5の場合はDescriptionを必須とする。
+
+相関ValidationのError Messageは、PriorityとDescriptionの両方に表示する。
+
+##### Task Submission
+
+Task Createでは、Submitボタンの有効化に変更有無の条件を設けない。
+
+Submitボタンの有効化およびSubmit時のValidationは4.2.4 Form Submission Validationに従う。
 
 #### 4.5.4 Task Edit
