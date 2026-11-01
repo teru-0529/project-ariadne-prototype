@@ -459,6 +459,12 @@ Fieldは現在の入力値を管理し、変更有無の判定は行わない。
 
 業務Componentによる統合はFieldの値をまとめるところまでとし、Backendへ渡すPublic Modelの構築は業務Pageが担当する。
 
+業務ComponentがFieldの状態を参照する場合、Fieldが状態の正本を保持し、業務Component側に同じ状態を複製しない。
+
+Svelte 5では、`bind:this`によるComponent参照は初期描画時点では確立していない。このため、Fieldの公開関数を`$derived`から参照する場合は、`onMount`で参照確立後の状態をリアクティブに更新し、それを契機に公開関数から現在の状態を取得する。
+
+これにより、Fieldの状態管理と業務Componentによる状態集約を分離しながら、リアクティブな画面更新を実現する。
+
 ##### Validation
 
 Frontend Validationは、個々のFieldを対象とするSingle Field Validationと、複数Fieldの関係を対象とするCorrelation Validationに分ける。
