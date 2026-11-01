@@ -38,10 +38,10 @@ test("C03 Createボタンを押す - Invalid Single Field", async () => {
 
   // INFO: VERIFY
   // title
-  expect(screen.getByText("タイトルは50文字以内で入力してください。")).toBeTruthy();
+  expect(screen.getByText("50文字以内で入力してください")).toBeTruthy();
 
   // description / priority
-  expect(screen.queryByText("優先度が5の場合、説明は必須です。")).toBeNull();
+  expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
   // Create Button
   expect((createButton as HTMLButtonElement).disabled).toBe(true);
@@ -66,7 +66,7 @@ test("C03 Createボタンを押す - Invalid Correlation", async () => {
   await fireEvent.click(createButton);
 
   // INFO: VERIFY
-  expect(screen.getByText("優先度が5の場合、説明は必須です。")).toBeTruthy();
+  expect(screen.getByText("優先度が5の場合、説明は必須です")).toBeTruthy();
 
   // Create Button
   expect((createButton as HTMLButtonElement).disabled).toBe(true);
@@ -88,10 +88,10 @@ test("C03 Createボタンを押す - Valid Descriptionなし", async () => {
 
   // INFO: VERIFY
   // title
-  expect(screen.queryByText("タイトルは必須です。")).toBeNull();
+  expect(screen.queryByText("必須項目です")).toBeNull();
 
   // description / priority
-  expect(screen.queryByText("優先度が5の場合、説明は必須です。")).toBeNull();
+  expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
   // TODO: A09 Confirmation Modal実装後、Modal表示の検証を追加
 });
@@ -120,10 +120,10 @@ test("C03 Createボタンを押す - Valid Descriptionあり", async () => {
 
   // INFO: VERIFY
   // title
-  expect(screen.queryByText("タイトルは必須です。")).toBeNull();
+  expect(screen.queryByText("必須項目です")).toBeNull();
 
   // description / priority
-  expect(screen.queryByText("優先度が5の場合、説明は必須です。")).toBeNull();
+  expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
   // TODO: A09 Confirmation Modal実装後、Modal表示の検証を追加
 });

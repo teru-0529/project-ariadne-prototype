@@ -68,7 +68,7 @@ test("C02 フォーカスアウトする - Correlation Errorなし（INITIAL）"
 
   // INFO: VERIFY
   // description / priority
-  expect(screen.queryByText("優先度が5の場合、説明は必須です。")).toBeNull();
+  expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
   // Create Button
   const createButton = screen.getByRole("button", { name: "Create Task" });
@@ -106,7 +106,7 @@ test("C02 フォーカスアウトする - Correlation Errorなし（ACTIVE）",
 
   // INFO: VERIFY
   // description / priority
-  expect(screen.queryByText("優先度が5の場合、説明は必須です。")).toBeNull();
+  expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
   // Create Button
   expect(createButton).toBeTruthy();
@@ -146,7 +146,7 @@ test("C02 フォーカスアウトする - Correlation Errorあり（ACTIVE）",
 
   // INFO: VERIFY
   // description / priority
-  expect(screen.getByText("優先度が5の場合、説明は必須です。")).toBeTruthy();
+  expect(screen.getByText("優先度が5の場合、説明は必須です")).toBeTruthy();
 
   // Create Button
   expect(createButton).toBeTruthy();

@@ -23,8 +23,13 @@
   // INFO: 表示用エラーメッセージ
   let displayError = $derived(errorActivated && validation.validity === "INVALID" ? validation.errorMessage : null);
 
+  // FUNCTION: エラー表示の活性化
+  export function activateError() {
+    errorActivated = true;
+  }
+
   // FUNCTION: Validation評価
-  function validate() {
+  export function validate() {
     validation = { validity: "VALID" };
   }
 
@@ -49,7 +54,7 @@
 
   // FUNCTION: フォーカスアウトイベント
   function handleFocusOut() {
-    errorActivated = true;
+    activateError();
     validate();
     focusOutCount += 1;
   }

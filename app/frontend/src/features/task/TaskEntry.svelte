@@ -74,10 +74,23 @@
       currentValues.status !== initialValues.status
     );
   }
+
+  // FUNCTION: 全FieldのValidation実行
+  function handleSubmit() {
+    titleField.activateError();
+    descriptionField.activateError();
+    priorityField.activateError();
+    statusField.activateError();
+
+    titleField.validate();
+    descriptionField.validate();
+    priorityField.validate();
+    statusField.validate();
+  }
 </script>
 
 <div class="entry-layout">
-  <AriadneForm {submitLabel} {canSubmit}>
+  <AriadneForm {submitLabel} {canSubmit} onSubmit={handleSubmit}>
     <!-- TODO: ダミー -->
     <div class="callback-debug">
       <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
