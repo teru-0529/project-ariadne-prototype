@@ -153,8 +153,9 @@
     if (!allFieldsValid) return false;
 
     priorityDescriptionValidator.activate();
+    priorityDescriptionValidator.validate();
 
-    return true;
+    return priorityDescriptionValidator.getValidation().validity === "VALID";
   }
 </script>
 
