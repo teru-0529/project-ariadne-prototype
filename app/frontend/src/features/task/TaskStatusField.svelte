@@ -73,10 +73,6 @@
 {#if variant === "edit"}
   <div class="callback-debug">
     validity：{validation.validity}
-    {#if validation.validity === "INVALID"}
-      / errorMessage：{validation.errorMessage}
-    {/if}
-    | errorActivated：{errorActivated}
     | Focus Out検知：{focusOutCount}
   </div>
 {/if}

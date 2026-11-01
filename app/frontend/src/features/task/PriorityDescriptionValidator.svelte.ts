@@ -3,9 +3,7 @@ import type { CorrelationValidator, CorrelationPhase } from "../../lib/Correlati
 
 export class PriorityDescriptionValidator implements CorrelationValidator {
   // INFO: 相関Validationの活性状態
-  // private phase: CorrelationPhase = "INITIAL";
-  // TODO:一時的にリアクティブ
-  private phase: CorrelationPhase = $state("INITIAL");
+  private phase: CorrelationPhase = "INITIAL";
 
   // INFO: 相関Validationの判定結果
   private validation = $state<Validation>({
@@ -28,6 +26,8 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
   // FUNCTION: Priorityの値・Validity更新
   setPriorityValue(value: number): void {
     this.priority = value;
+    this.priorityValidity = "UNKNOWN";
+    this.validation = { validity: "UNKNOWN" };
   }
 
   setPriorityValidity(validity: Validity): void {
@@ -37,6 +37,8 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
   // FUNCTION: Descriptionの値・Validity更新
   setDescriptionValue(value: string): void {
     this.description = value;
+    this.descriptionValidity = "UNKNOWN";
+    this.validation = { validity: "UNKNOWN" };
   }
 
   setDescriptionValidity(validity: Validity): void {
@@ -58,8 +60,14 @@ export class PriorityDescriptionValidator implements CorrelationValidator {
     return this.validation;
   }
 
-  // TODO: A07-18 初期状態確認用
-  getPhase(): CorrelationPhase {
-    return this.phase;
+  // TODO: A07-09 動作確認用
+  getDebugState() {
+    return {
+      phase: this.phase,
+      priority: this.priority,
+      priorityValidity: this.priorityValidity,
+      description: this.description,
+      descriptionValidity: this.descriptionValidity,
+    };
   }
 }

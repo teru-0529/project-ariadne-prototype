@@ -24,6 +24,29 @@
   const initialDescription = () => initialValues.description;
   const priorityDescriptionValidator = new PriorityDescriptionValidator(initialPriority(), initialDescription());
 
+  // FUNCTION: onChangeイベントハンドラー
+  function handlePriorityChange(value: number): void {
+    correlationDebugVersion += 1;
+    priorityDescriptionValidator.setPriorityValue(value);
+  }
+
+  function handleDescriptionChange(value: string): void {
+    correlationDebugVersion += 1;
+    priorityDescriptionValidator.setDescriptionValue(value);
+  }
+
+  // TODO: A07-09 動作確認用
+  let correlationDebugVersion = $state(0);
+
+  // TODO: A07-09 動作確認用
+  let correlationDebugState = $derived.by(() => {
+    const version = correlationDebugVersion;
+    return {
+      version,
+      ...priorityDescriptionValidator.getDebugState(),
+    };
+  });
+
   // INFO: Field参照
   let titleField!: TextField;
   let descriptionField!: TextareaField;
@@ -113,8 +136,8 @@
     <!-- TODO: ダミー -->
     <div class="callback-debug">
       <pre>fieldValidities: {fieldValidities.join(", ")}</pre>
-      <pre>correlationPhase: {priorityDescriptionValidator.getPhase()} | correlationValidity: {priorityDescriptionValidator.getValidation()
-          .validity}</pre>
+      <pre>correlationValidity: {priorityDescriptionValidator.getValidation().validity}</pre>
+      <pre>correlationDebug: {JSON.stringify(correlationDebugState)}</pre>
     </div>
     <!-- TODO: ダミー -->
 
@@ -135,8 +158,15 @@
         label="説明"
         value={initialValues.description}
         lines={3}
+        callbacks={{ onChange: handleDescriptionChange }}
       />
-      <TaskPriorityField bind:this={priorityField} variant="edit" required={true} value={initialValues.priority} />
+      <TaskPriorityField
+        bind:this={priorityField}
+        variant="edit"
+        required={true}
+        value={initialValues.priority}
+        callbacks={{ onChange: handlePriorityChange }}
+      />
       <TaskStatusField bind:this={statusField} variant="edit" required={true} value={initialValues.status} />
     </div>
   </AriadneForm>

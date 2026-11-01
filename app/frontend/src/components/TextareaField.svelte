@@ -4,6 +4,7 @@
 
   import type { Validity, Validation, Validator } from "../lib/validity";
   import { requiredValidator, runValidators } from "../lib/validator";
+  import type { FieldCallbacks } from "../lib/fieldCallbacks";
 
   type Props = {
     variant: FieldVariant;
@@ -12,9 +13,10 @@
     value: string;
     lines?: number;
     validators?: Validator<string>[];
+    callbacks?: FieldCallbacks<string>;
   };
 
-  let { variant, label = "", required = false, value, lines = 3, validators = [] }: Props = $props();
+  let { variant, label = "", required = false, value, lines = 3, validators = [], callbacks }: Props = $props();
 
   // INFO: 値
   const initialValue = () => value;
@@ -62,6 +64,7 @@
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
     validation = evaluateOnInput(currentValue);
+    callbacks?.onChange?.(currentValue);
   }
 
   // TODO: ダミー
@@ -79,10 +82,6 @@
 {#if variant === "edit"}
   <div class="callback-debug">
     validity：{validation.validity}
-    {#if validation.validity === "INVALID"}
-      / errorMessage：{validation.errorMessage}
-    {/if}
-    | errorActivated：{errorActivated}
     | Focus Out検知：{focusOutCount}
   </div>
 {/if}

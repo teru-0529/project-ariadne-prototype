@@ -5,6 +5,7 @@
 
   import type { Validity, Validation, Validator } from "../lib/validity";
   import { requiredValidator, runValidators } from "../lib/validator";
+  import type { FieldCallbacks } from "../lib/fieldCallbacks";
 
   type Props = {
     variant: FieldVariant;
@@ -14,9 +15,19 @@
     maxLength: number;
     lines?: number;
     validators?: Validator<string>[];
+    callbacks?: FieldCallbacks<string>;
   };
 
-  let { variant, label = "", required = false, value, maxLength, lines = 1, validators = [] }: Props = $props();
+  let {
+    variant,
+    label = "",
+    required = false,
+    value,
+    maxLength,
+    lines = 1,
+    validators = [],
+    callbacks,
+  }: Props = $props();
 
   // INFO: IME変更中
   let composing = false;
@@ -67,6 +78,7 @@
   function handleValueChange(nextValue: string) {
     currentValue = nextValue;
     validation = evaluateOnInput(currentValue);
+    callbacks?.onChange?.(currentValue);
   }
 
   // TODO: ダミー
@@ -84,10 +96,6 @@
 {#if variant === "edit"}
   <div class="callback-debug">
     validity：{validation.validity}
-    {#if validation.validity === "INVALID"}
-      / errorMessage：{validation.errorMessage}
-    {/if}
-    | errorActivated：{errorActivated}
     | Focus Out検知：{focusOutCount}
   </div>
 {/if}

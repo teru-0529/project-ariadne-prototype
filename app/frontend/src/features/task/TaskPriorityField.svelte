@@ -3,14 +3,16 @@
   import type { FieldVariant } from "../../components/AriadneField.svelte";
 
   import type { Validity, Validation } from "../../lib/validity";
+  import type { FieldCallbacks } from "../../lib/fieldCallbacks";
 
   type Props = {
     variant: FieldVariant;
     required?: boolean;
     value: number;
+    callbacks?: FieldCallbacks<number>;
   };
 
-  let { variant, required = false, value }: Props = $props();
+  let { variant, required = false, value, callbacks }: Props = $props();
 
   // INFO: 値
   const initialValue = () => value;
@@ -47,6 +49,7 @@
   function handleValueChange(nextValue: number) {
     currentValue = nextValue;
     validation = { validity: "UNKNOWN" };
+    callbacks?.onChange?.(currentValue);
   }
 
   // TODO: ダミー
@@ -66,10 +69,6 @@
 {#if variant === "edit"}
   <div class="callback-debug">
     validity：{validation.validity}
-    {#if validation.validity === "INVALID"}
-      / errorMessage：{validation.errorMessage}
-    {/if}
-    | errorActivated：{errorActivated}
     | Focus Out検知：{focusOutCount}
   </div>
 {/if}
