@@ -34,6 +34,13 @@
   function handleCancel(): void {
     showConfirmation = false;
   }
+
+  // FUNCTION: Confirmation ModalのConfirm処理
+  function handleConfirm(): void {
+    showConfirmation = false;
+    // TODO: 暫定処理
+    window.alert("Task登録は未実装です。");
+  }
 </script>
 
 <form class="ariadne-form" onsubmit={handleSubmit}>
@@ -53,6 +60,7 @@
     confirmLabel="Confirm"
     cancelLabel="Cancel"
     onCancel={handleCancel}
+    onConfirm={handleConfirm}
   />
 {/if}
 
