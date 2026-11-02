@@ -8,6 +8,12 @@
     dialog.showModal();
   });
 
+  // FUNCTION: EscキーによるCancel処理
+  function handleDialogCancel(event: Event): void {
+    event.preventDefault();
+    onCancel?.();
+  }
+
   type Props = {
     title: string;
     message: string;
@@ -20,7 +26,13 @@
   let { title, message, confirmLabel, cancelLabel, onConfirm, onCancel }: Props = $props();
 </script>
 
-<dialog bind:this={dialog} class="modal-dialog" aria-labelledby="modal-title" aria-describedby="modal-message">
+<dialog
+  bind:this={dialog}
+  class="modal-dialog"
+  aria-labelledby="modal-title"
+  aria-describedby="modal-message"
+  oncancel={handleDialogCancel}
+>
   <div class="modal-title" id="modal-title">
     {title}
   </div>

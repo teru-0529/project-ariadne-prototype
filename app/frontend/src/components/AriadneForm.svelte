@@ -29,6 +29,11 @@
 
     showConfirmation = true;
   }
+
+  // FUNCTION: Confirmation ModalのCancel処理
+  function handleCancel(): void {
+    showConfirmation = false;
+  }
 </script>
 
 <form class="ariadne-form" onsubmit={handleSubmit}>
@@ -42,7 +47,13 @@
 </form>
 
 {#if showConfirmation}
-  <AriadneModal title="Task登録確認" message="Taskを登録しますか？" confirmLabel="Confirm" cancelLabel="Cancel" />
+  <AriadneModal
+    title="Task登録確認"
+    message="Taskを登録しますか？"
+    confirmLabel="Confirm"
+    cancelLabel="Cancel"
+    onCancel={handleCancel}
+  />
 {/if}
 
 <style>
