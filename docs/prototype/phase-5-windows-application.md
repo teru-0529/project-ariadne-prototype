@@ -701,6 +701,8 @@ Contents自体はスクロールを管理せず、必要なスクロールは内
 
 Submit時には利用側の業務ComponentへValidationを要求する。Validationが成功した場合のみConfirmation Modalを表示し、Confirm / Cancelの判断を受け付ける。
 
+Confirmation Modalの表示状態はAriadneFormが管理する。Modal表示中は重複するSubmitを受け付けない。
+
 Confirmされた場合は、利用側へ業務処理の実行を通知する。
 
 Confirmation ModalでCancelされた場合は、Modalを閉じてSubmitを中止する。業務処理の実行や画面遷移は要求しない。
@@ -793,6 +795,18 @@ Confirmation Modalは、確認対象の操作内容を表示し、ConfirmとCanc
 - **Cancel**：Modalを閉じ、呼び出し元へ取消の判断結果を返す。
 
 Modal自体は、業務処理の実行、入力Stateの変更、および画面遷移を行わない。
+
+ModalはTitle、Message、ConfirmおよびCancelのボタン文言を呼び出し元から受け取る。
+
+Modal表示中は背後の画面を操作できない。
+
+Modal表示時の初期フォーカスはCancelボタンとする。TabおよびShift+Tabによるフォーカス移動はModal内に制限し、EnterおよびSpaceではフォーカス中のボタンを実行する。
+
+EscキーはCancelと同じ扱いとする。背景クリックではModalを閉じない。
+
+Modalを閉じた後は入力画面の操作を再開できる状態とし、特定の要素へのフォーカス復帰は要求しない。
+
+ConfirmまたはCancelの判断結果は、呼び出し元へ重複して通知しない。
 
 ##### Usage
 
