@@ -1,4 +1,4 @@
-import { test, expect, vi } from "vitest";
+import { test, expect } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/svelte";
 import App from "../../App.svelte";
 
@@ -14,9 +14,6 @@ async function givenC03CreateSubmitted() {
 
   await fireEvent.click(screen.getByRole("button", { name: "Create Task" }));
 }
-
-// TODO: A09 Confirmation Modal実装後、暫定alertの無効化を削除
-vi.spyOn(window, "alert").mockImplementation(() => {});
 
 // TEST:
 test("C04 登録をCancelする - Cancel", async () => {

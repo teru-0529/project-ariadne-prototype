@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import AriadneButton from "./AriadneButton.svelte";
+  import AriadneModal from "./AriadneModal.svelte";
 
   type Props = {
     children: Snippet;
@@ -11,15 +12,22 @@
 
   let { children, submitLabel, canSubmit, onSubmit }: Props = $props();
 
+  // INFO: Confirmation Modal表示状態
+  let showConfirmation = $state(false);
+
+  // FUNCTION: ボタン押下イベント
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
+
+    if (showConfirmation) {
+      return;
+    }
 
     if (onSubmit?.() !== true) {
       return;
     }
 
-    // TODO:(A07/A08): ValidationとConfirmation Modalの実装時に置き換える
-    window.alert("Task登録処理は未実装です。");
+    showConfirmation = true;
   }
 </script>
 
@@ -32,6 +40,10 @@
     <AriadneButton label={submitLabel} variant="primary" type="submit" disabled={!canSubmit} />
   </div>
 </form>
+
+{#if showConfirmation}
+  <AriadneModal title="Task登録確認" message="Taskを登録しますか？" confirmLabel="Confirm" cancelLabel="Cancel" />
+{/if}
 
 <style>
   .ariadne-form {

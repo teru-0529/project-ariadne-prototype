@@ -1,4 +1,4 @@
-import { test, expect, vi, afterEach } from "vitest";
+import { test, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
 import App from "../../App.svelte";
 
@@ -14,13 +14,6 @@ async function setPriorityFive() {
   await fireEvent.keyDown(priority, { key: "ArrowUp" });
   await fireEvent.keyDown(priority, { key: "ArrowUp" });
 }
-
-// TODO: A09 Confirmation Modal実装後、暫定alertの無効化を削除
-vi.spyOn(window, "alert").mockImplementation(() => {});
-
-afterEach(() => {
-  vi.clearAllMocks();
-});
 
 // TEST:
 test("C02 フォーカスアウトする - Single Field Error", async () => {
@@ -97,8 +90,6 @@ test("C02 フォーカスアウトする - Correlation Errorなし（ACTIVE）",
   const createButton = screen.getByRole("button", { name: "Create Task" });
   await fireEvent.click(createButton);
 
-  // TODO: A09 Confirmation Modal実装後、Cancel操作を追加
-
   // INFO: ACTION
   // description
   await fireEvent.focus(description);
@@ -133,8 +124,6 @@ test("C02 フォーカスアウトする - Correlation Errorあり（ACTIVE）",
   // Create Button
   const createButton = screen.getByRole("button", { name: "Create Task" });
   await fireEvent.click(createButton);
-
-  // TODO: A09 Confirmation Modal実装後、Cancel操作を追加
 
   // description
   await fireEvent.input(description, { target: { value: "" } });

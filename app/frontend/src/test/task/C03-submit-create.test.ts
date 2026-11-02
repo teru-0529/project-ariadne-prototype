@@ -1,4 +1,4 @@
-import { test, expect, vi } from "vitest";
+import { test, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
 import App from "../../App.svelte";
 
@@ -14,9 +14,6 @@ async function setPriorityFive() {
   await fireEvent.keyDown(priority, { key: "ArrowUp" });
   await fireEvent.keyDown(priority, { key: "ArrowUp" });
 }
-
-// TODO: A09 Confirmation Modal実装後、暫定alertの無効化を削除
-vi.spyOn(window, "alert").mockImplementation(() => {});
 
 // TEST:
 test("C03 Createボタンを押す - Invalid Single Field", async () => {
