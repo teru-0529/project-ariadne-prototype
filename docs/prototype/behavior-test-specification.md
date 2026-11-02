@@ -662,7 +662,37 @@ N/A
 
 ---
 
-## 10. Note
+## 10. C04 登録をCancelする
+
+### Result Pattern: Cancel
+
+#### Frontend Module Test
+
+##### Dependency
+
+- C03 `Create Buttonを押す`（Valid）
+
+##### Given
+
+- Confirmation Modalが表示されている
+
+##### When
+
+- Confirmation ModalでCancelを選択する
+
+##### Expected
+
+- Confirmation Modalが閉じる
+- Create入力画面が表示されている
+- 入力値が維持される
+
+### Backend Module Test
+
+N/A
+
+---
+
+## 11. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
