@@ -45,6 +45,9 @@ test("C03 Createボタンを押す - Invalid Single Field", async () => {
 
   // Create Button
   expect((createButton as HTMLButtonElement).disabled).toBe(true);
+
+  // Confirmation Modal
+  expect(screen.queryByRole("dialog")).toBeNull();
 });
 
 // TEST:
@@ -66,10 +69,14 @@ test("C03 Createボタンを押す - Invalid Correlation", async () => {
   await fireEvent.click(createButton);
 
   // INFO: VERIFY
+  // description / priority
   expect(screen.getAllByText("優先度が5の場合、説明は必須です")).toHaveLength(2);
 
   // Create Button
   expect((createButton as HTMLButtonElement).disabled).toBe(true);
+
+  // Confirmation Modal
+  expect(screen.queryByRole("dialog")).toBeNull();
 });
 
 // TEST:
@@ -93,7 +100,8 @@ test("C03 Createボタンを押す - Valid Descriptionなし", async () => {
   // description / priority
   expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
-  // TODO: A09 Confirmation Modal実装後、Modal表示の検証を追加
+  // Confirmation Modal
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });
 
 // TEST:
@@ -125,5 +133,6 @@ test("C03 Createボタンを押す - Valid Descriptionあり", async () => {
   // description / priority
   expect(screen.queryByText("優先度が5の場合、説明は必須です")).toBeNull();
 
-  // TODO: A09 Confirmation Modal実装後、Modal表示の検証を追加
+  // Confirmation Modal
+  expect(screen.getByRole("dialog")).toBeTruthy();
 });
