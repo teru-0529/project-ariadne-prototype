@@ -8,6 +8,15 @@
   // INFO: 選択中のPrimary Feature
   let currentFeature: PrimaryFeature = $state("task");
 
+  // FUNCTION: Primary Feature間の画面遷移
+  function navigate(feature: PrimaryFeature): void {
+    if (currentFeature === feature) {
+      return;
+    }
+
+    currentFeature = feature;
+  }
+
   // INFO: Toast
   type ToastState = {
     type: "error" | "success";
@@ -83,14 +92,14 @@
       <button
         type="button"
         aria-current={currentFeature === "task" ? "page" : undefined}
-        onclick={() => (currentFeature = "task")}
+        onclick={() => navigate("task")}
       >
         Task
       </button>
       <button
         type="button"
         aria-current={currentFeature === "config" ? "page" : undefined}
-        onclick={() => (currentFeature = "config")}
+        onclick={() => navigate("config")}
       >
         Config
       </button>
