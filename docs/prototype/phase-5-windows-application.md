@@ -455,7 +455,7 @@ Storeは、Application Serviceの正常応答として想定しない`null`を�
 
 Fieldは個々の値の表示・入力と表現変換を担当する。業務データ全体の構造は認識しない。
 
-Fieldは現在の入力値を管理し、変更有無の判定は行わない。業務Componentは画面初期値と現在値を比較し、未保存変更の有無を判定する。Backendへ渡す更新対象の判定は業務Pageが担当する。
+Fieldは現在の入力値を管理し、変更有無の判定は行わない。業務ComponentはFieldの現在値を統合し、業務Pageへ提供する。業務Pageは画面初期値と現在値を比較し、未保存変更の有無を判定する。Backendへ渡す更新対象の判定も業務Pageが担当する。
 
 業務Componentによる統合はFieldの値をまとめるところまでとし、Backendへ渡すPublic Modelの構築は業務Pageが担当する。
 
@@ -493,7 +493,7 @@ FrontendのNavigationは、Application全体のFeatureを切り替えるPrimary 
 
 ##### Primary Navigation
 
-Primary Navigationは、Application全体のFeature切替を担当する。
+Primary Navigationは、Application Shellが制御し、Application全体のFeature切替を担当する。
 
 Featureを切り替える際は、切替前のFeature ComponentとそのStateを破棄する。再度同じFeatureを選択した場合は、新しいStateで開始する。
 
@@ -526,9 +526,17 @@ Prototypeでは、Task ListからTask Referenceへ遷移する際、一覧で保
 
 ##### Unsaved Changes
 
-未保存の変更がある画面から離脱する場合は、Confirmation Modalを利用して利用者の判断を確認する。
+画面離脱の可否は、遷移元の業務Pageが判断する。
 
-Confirmation Modalは判断結果を返すのみとし、画面遷移の制御はFeature Managementが担当する。
+業務Pageは、遷移元として離脱可否を判断するための共通の離脱確認契約を提供する。この契約では、離脱が許可された場合に実行する処理をCallbackとして受け取る。
+
+未保存の変更がない場合はCallbackを直ちに実行する。未保存の変更がある場合はConfirmation Modalを表示し、Confirmされた場合のみCallbackを実行する。Cancelされた場合はCallbackを実行せず、現在の画面と入力内容を維持する。
+
+遷移元の業務Pageは、Callbackの実行内容や遷移先の詳細を認識しない。
+
+Application ShellはFeature切替を、Feature ManagementはFeature内の画面遷移を担当する。両者は遷移元への離脱要求を経て、それぞれのNavigation処理を実行する。
+
+Confirmation Modalは利用者の判断を受け付けるのみとし、画面遷移を実行しない。
 
 ### 3.4 Wails Boundary
 
