@@ -58,6 +58,11 @@ func (r *TaskRepository) Pick(id string) (*services.Task, error) {
 	return nil, &services.NotFoundError{Key: id}
 }
 
+// FUNCTION: Taskを永続化する関数 TODO:（A15-05以降で本実装）
+func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent) error {
+	return fmt.Errorf("Store not implemented")
+}
+
 // FUNCTION: ディレクトリからYAML形式のタスクデータを読み込む関数
 func (r *TaskRepository) readYAML() (*taskDataset, error) {
 	data, err := os.ReadFile(filepath.Join(r.dir, "tasks.yaml"))
@@ -130,7 +135,7 @@ func parseYAML(data []byte) (*taskDataset, error) {
 	var dataset taskDataset
 
 	if err := yaml.Unmarshal(data, &dataset); err != nil {
-		return nil, err //TODO: エラー処理wrap候補
+		return nil, err
 	}
 	return &dataset, nil
 }

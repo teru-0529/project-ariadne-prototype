@@ -8,6 +8,22 @@ import (
 // INFO: YAMLフォーマット読み込みに失敗した場合に返されるエラー
 var ErrReadFailure = errors.New("read failure")
 
+// INFO: YAMLフォーマットの書き込みに失敗した場合に返されるエラー
+var ErrWriteFailure = errors.New("write failure")
+
+// INFO: 想定外のエラーが発生した場合に返されるエラー
+var ErrUnexpectedError = errors.New("unexpected error")
+
+// INFO: キーに該当するデータがYAMLに既に存在する場合に返されるエラー
+type KeyDuplicateError struct {
+	Key string
+}
+
+// FUNCTION: KeyDuplicateErrorのエラーメッセージを返す関数
+func (e *KeyDuplicateError) Error() string {
+	return fmt.Sprintf("key duplicate: key=%s", e.Key)
+}
+
 // INFO: キーに該当するデータがYAMLに存在しない場合に返されるエラー
 type NotFoundError struct {
 	Key string
@@ -63,6 +79,3 @@ type ModelValidationError struct {
 func (e *ModelValidationError) Error() string {
 	return fmt.Sprintf("invalid model: %s", e.Detail)
 }
-
-// INFO: 想定外のエラーが発生した場合に返されるエラー
-var ErrUnexpectedError = errors.New("unexpected error")
