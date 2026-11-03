@@ -1,6 +1,6 @@
 package public
 
-// INFO:タスクの概要を表す構造体
+// INFO: Task一覧取得用のPublic Model
 type TaskSummary struct {
 	ID       string
 	Title    string

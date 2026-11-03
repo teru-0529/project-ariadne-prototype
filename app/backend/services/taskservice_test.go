@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"ariadne/backend/tests/createtask"
 	"ariadne/backend/tests/gettask"
 	"ariadne/backend/tests/listtasks"
 	"testing"
@@ -64,4 +65,19 @@ func Test_GetTask_NotFound(t *testing.T) {
 // TEST:
 func Test_GetTask_ReadFailure(t *testing.T) {
 	gettask.ReadFailure(t)
+}
+
+// TEST:
+func Test_CreateTask_Success(t *testing.T) {
+	createtask.Success(t)
+}
+
+// TEST:
+func Test_CreateTask_ReadFailure(t *testing.T) {
+	createtask.ReadFailure(t)
+}
+
+// TEST:
+func Test_CreateTask_UnexpectedError(t *testing.T) {
+	createtask.UnexpectedError(t)
 }

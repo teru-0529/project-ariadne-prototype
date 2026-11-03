@@ -63,3 +63,6 @@ type ModelValidationError struct {
 func (e *ModelValidationError) Error() string {
 	return fmt.Sprintf("invalid model: %s", e.Detail)
 }
+
+// INFO: 想定外のエラーが発生した場合に返されるエラー
+var ErrUnexpectedError = errors.New("unexpected error")

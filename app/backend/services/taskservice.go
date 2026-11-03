@@ -54,3 +54,8 @@ func (s *TaskService) GetTask(id string) (*public.Task, error) {
 		Status:      task.Status,
 	}, nil
 }
+
+// FUNCTION: 新しいTaskを登録する関数 TODO: TBD
+func (s *TaskService) CreateTask(request public.CreateTaskRequest) (string, error) {
+	return "DUMMY_ID", nil
+}

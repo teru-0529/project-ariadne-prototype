@@ -13,7 +13,7 @@ export interface Task {
 }
 
 /**
- * INFO:タスクの概要を表す構造体
+ * INFO: Task一覧取得用のPublic Model
  */
 export interface TaskSummary {
     "ID": string;
