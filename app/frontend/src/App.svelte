@@ -2,13 +2,11 @@
   import TaskManagement from "./features/task/TaskManagement.svelte";
   import Toast from "./components/AriadneToast.svelte";
 
-  import AriadneField from "./components/AriadneField.svelte";
-
   // INFO: Primary Navigation のリスト
-  type PrimaryPage = "task" | "config";
+  type PrimaryFeature = "task" | "config";
 
-  // INFO: 選択中のPrimaryページ
-  let currentPage: PrimaryPage = $state("task");
+  // INFO: 選択中のPrimary Feature
+  let currentFeature: PrimaryFeature = $state("task");
 
   // INFO: Toast
   type ToastState = {
@@ -84,15 +82,15 @@
     <nav class="primary-navigation" aria-label="Primary">
       <button
         type="button"
-        aria-current={currentPage === "task" ? "page" : undefined}
-        onclick={() => (currentPage = "task")}
+        aria-current={currentFeature === "task" ? "page" : undefined}
+        onclick={() => (currentFeature = "task")}
       >
         Task
       </button>
       <button
         type="button"
-        aria-current={currentPage === "config" ? "page" : undefined}
-        onclick={() => (currentPage = "config")}
+        aria-current={currentFeature === "config" ? "page" : undefined}
+        onclick={() => (currentFeature = "config")}
       >
         Config
       </button>
@@ -100,7 +98,7 @@
   </header>
 
   <div class="workspace">
-    {#if currentPage === "task"}
+    {#if currentFeature === "task"}
       <TaskManagement onError={notifyError} />
     {:else}
       <main class="main-area">

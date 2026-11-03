@@ -27,7 +27,7 @@
   let isNavigating = false;
 
   // INFO: 選択中の画面
-  let currentTaskOperation = $state<TaskScreen | null>(null);
+  let currentPage = $state<TaskScreen | null>(null);
 
   // INFO: タスクコンテキスト
   let context = new TaskContext();
@@ -64,7 +64,7 @@
     try {
       await context.prepare(request);
       context.commit(request.screen);
-      currentTaskOperation = request.screen;
+      currentPage = request.screen;
       navigationKey += 1;
     } catch (error) {
       handleError(error);
@@ -80,15 +80,15 @@
 </script>
 
 <div class="feature-area with-side-navigation">
-  <SideNavigation label="Task" items={navigationItems} current={currentTaskOperation} onSelect={handleSideNavSelect} />
+  <SideNavigation label="Task" items={navigationItems} current={currentPage} onSelect={handleSideNavSelect} />
 
   <main class="main-area">
     {#key navigationKey}
-      {#if currentTaskOperation === TaskScreen.List}
+      {#if currentPage === TaskScreen.List}
         <TaskListPage {context} onTaskSelect={handleTaskSelect} />
-      {:else if currentTaskOperation === TaskScreen.Reference}
+      {:else if currentPage === TaskScreen.Reference}
         <TaskDetailPage {context} />
-      {:else if currentTaskOperation === TaskScreen.Create}
+      {:else if currentPage === TaskScreen.Create}
         <TaskCreatePage />
       {:else}
         <p>Select an operation.</p>
