@@ -1139,14 +1139,14 @@ Operationは、永続化技術ではなくApplication Serviceの操作意図に�
 
 ##### Store Intent
 
-`Store`は、格納操作の意図を`StoreIntent`で明示する。
+Application Serviceは、格納操作の意図を`StoreIntent`として明示し、`Store`を呼び出す。
 
 | StoreIntent | Responsibility |
 |---|---|
 | `Deposit` | 新しいBusiness Modelを初めて格納する |
 | `Replace` | 既存のBusiness Modelを置き換える |
 
-Persistence Adapterは、Business Modelの状態からStoreIntentを推測しない。
+Persistence Adapterは、指定された`StoreIntent`に従って格納処理を実行する。
 
 部分UpdateはPersistence Portの基本操作としない。
 
