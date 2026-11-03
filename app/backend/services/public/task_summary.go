@@ -1,4 +1,4 @@
-package publish
+package public
 
 // INFO:タスクの概要を表す構造体
 type TaskSummary struct {

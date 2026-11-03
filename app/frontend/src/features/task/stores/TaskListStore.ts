@@ -1,5 +1,5 @@
 import { TaskBoundary } from "../../../../bindings/ariadne/backend/adapters/wails";
-import type { TaskSummary } from "../../../../bindings/ariadne/backend/services/publish/models";
+import type { TaskSummary } from "../../../../bindings/ariadne/backend/services/public/models";
 import { createProcessedError } from "../../../lib/errors/ProcessedError";
 
 // INFO: タスクリスト

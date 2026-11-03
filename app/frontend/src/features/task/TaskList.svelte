@@ -5,7 +5,7 @@
   import TaskPriorityField from "./TaskPriorityField.svelte";
   import TaskStatusField from "./TaskStatusField.svelte";
 
-  import type { TaskSummary } from "../../../bindings/ariadne/backend/services/publish";
+  import type { TaskSummary } from "../../../bindings/ariadne/backend/services/public";
 
   type Props = {
     tasks: TaskSummary[];

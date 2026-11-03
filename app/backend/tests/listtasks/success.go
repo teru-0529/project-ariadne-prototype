@@ -3,7 +3,7 @@ package listtasks
 import (
 	"ariadne/backend/adapters/file"
 	"ariadne/backend/services"
-	"ariadne/backend/services/publish"
+	"ariadne/backend/services/public"
 	"ariadne/backend/tests/testutil"
 	"testing"
 )
@@ -60,7 +60,7 @@ tasks:
 		t.Fatalf("ListTasks() returned %d tasks, want 3", len(got))
 	}
 
-	want := []publish.TaskSummary{
+	want := []public.TaskSummary{
 		{
 			ID:       "01M465B5JK59B98Q8AXTJ6HSDR",
 			Title:    "Task C",

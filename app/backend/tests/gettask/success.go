@@ -3,7 +3,7 @@ package gettask
 import (
 	"ariadne/backend/adapters/file"
 	"ariadne/backend/services"
-	"ariadne/backend/services/publish"
+	"ariadne/backend/services/public"
 	"ariadne/backend/tests/testutil"
 	"testing"
 )
@@ -56,7 +56,7 @@ tasks:
 		t.Fatalf("GetTask() returned error: %v", err)
 	}
 
-	want := publish.Task{
+	want := public.Task{
 		ID:          "01M465BRVCYNR0H09A30JE03PW",
 		Title:       "Task A",
 		Description: "",

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"ariadne/backend/services"
-	"ariadne/backend/services/publish"
+	"ariadne/backend/services/public"
 )
 
 // INFO: タスクバウンダリの構造体
@@ -26,7 +26,7 @@ func NewTaskBoundary(
 }
 
 // FUNCTION: タスクの一覧を取得する関数
-func (b *TaskBoundary) ListTasks() ([]publish.TaskSummary, error) {
+func (b *TaskBoundary) ListTasks() ([]public.TaskSummary, error) {
 	tasks, err := b.service.ListTasks()
 	if err != nil {
 		b.logger.Error("ListTasks failed", "error", err)
@@ -37,7 +37,7 @@ func (b *TaskBoundary) ListTasks() ([]publish.TaskSummary, error) {
 }
 
 // FUNCTION: IDを指定してタスクを取得する関数
-func (b *TaskBoundary) GetTask(id string) (*publish.Task, error) {
+func (b *TaskBoundary) GetTask(id string) (*public.Task, error) {
 	task, err := b.service.GetTask(id)
 	if err != nil {
 		b.logger.Error("GetTask failed", "error", err)

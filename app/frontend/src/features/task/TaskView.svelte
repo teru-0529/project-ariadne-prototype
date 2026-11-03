@@ -1,6 +1,6 @@
 <script lang="ts">
   import AriadneView from "../../components/AriadneView.svelte";
-  import type { Task } from "../../../bindings/ariadne/backend/services/publish";
+  import type { Task } from "../../../bindings/ariadne/backend/services/public";
   import TextField from "../../components/TextField.svelte";
   import TextareaField from "../../components/TextareaField.svelte";
   import TaskPriorityField from "./TaskPriorityField.svelte";

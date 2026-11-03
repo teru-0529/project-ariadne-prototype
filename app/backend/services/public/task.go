@@ -1,4 +1,4 @@
-package publish
+package public
 
 // INFO: Task詳細取得用のPublic Model
 type Task struct {

@@ -12,18 +12,18 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as publish$0 from "../../services/publish/models.js";
+import * as public$0 from "../../services/public/models.js";
 
 /**
  * FUNCTION: IDを指定してタスクを取得する関数
  */
-export function GetTask(id: string): $CancellablePromise<publish$0.Task | null> {
+export function GetTask(id: string): $CancellablePromise<public$0.Task | null> {
     return $Call.ByID(690972912, id);
 }
 
 /**
  * FUNCTION: タスクの一覧を取得する関数
  */
-export function ListTasks(): $CancellablePromise<publish$0.TaskSummary[] | null> {
+export function ListTasks(): $CancellablePromise<public$0.TaskSummary[] | null> {
     return $Call.ByID(1997892031);
 }
