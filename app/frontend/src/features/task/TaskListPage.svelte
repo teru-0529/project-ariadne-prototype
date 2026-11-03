@@ -12,6 +12,13 @@
 
   // INFO: タスク一覧（表示元データ）
   const tasks = $derived(context.getData(TaskScreen.List, "taskList"));
+
+  // FUNCTION: Page離脱
+  export function leave(callback: () => void): void {
+    // TODO: 検証用
+    window.alert("TaskListPage.leave()");
+    callback();
+  }
 </script>
 
 <AriadnePage title="Task 一覧">

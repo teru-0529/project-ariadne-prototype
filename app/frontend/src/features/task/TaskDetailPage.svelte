@@ -19,7 +19,14 @@
   // INFO: タスク（表示元データ）
   let task = $derived(context.getData(TaskScreen.Reference, "taskDetail"));
 
-  // INFO: トグル変更時のふるまい
+  // FUNCTION: Page離脱
+  export function leave(callback: () => void): void {
+    // TODO: 検証用
+    window.alert("TaskDetailPage.leave()");
+    callback();
+  }
+
+  // FUNCTION: トグル変更時のふるまい
   function handleModeSelect(value: string) {
     if (value === "edit") {
       // TODO: 将来はTaskManagementへ画面遷移を依頼する

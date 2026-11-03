@@ -14,6 +14,11 @@
 
   let { onError }: Props = $props();
 
+  // INFO: 各Pageへの参照
+  let taskListPage = $state<TaskListPage>();
+  let taskDetailPage = $state<TaskDetailPage>();
+  let taskCreatePage = $state<TaskCreatePage>();
+
   // INFO: Side Navigation に渡すリスト
   const navigationItems: { value: TaskScreen; label: string }[] = [
     { value: TaskScreen.List, label: "List" },
@@ -41,17 +46,37 @@
     }
 
     const screen = value as typeof TaskScreen.List | typeof TaskScreen.Create;
-    void navigate({ screen });
+    const request: TaskNavigation = { screen };
+
+    // INFO: Pageに離脱依頼
+    leave(() => {
+      void navigate(request);
+    });
   }
 
   // FUNCTION: Task一覧からの遷移要求
   function handleTaskSelect(id: string): void {
-    void navigate({
-      screen: TaskScreen.Reference,
-      id,
+    const request: TaskNavigation = { screen: TaskScreen.Reference, id };
+
+    // INFO: Pageに離脱依頼
+    leave(() => {
+      void navigate(request);
     });
   }
 
+  // FUNCTION: 現在のPageへの離脱問い合わせ
+  function leave(callback: () => void): void {
+    if (currentPage === TaskScreen.List) {
+      taskListPage!.leave(callback);
+    } else if (currentPage === TaskScreen.Reference) {
+      taskDetailPage!.leave(callback);
+    } else if (currentPage === TaskScreen.Create) {
+      taskCreatePage!.leave(callback);
+    } else {
+      // INFO: 初期状態はPageが存在しない
+      callback();
+    }
+  }
   // FUNCTION: 共通の画面遷移
   async function navigate(request: TaskNavigation): Promise<void> {
     // INFO: 二重操作防止
@@ -85,11 +110,11 @@
   <main class="main-area">
     {#key navigationKey}
       {#if currentPage === TaskScreen.List}
-        <TaskListPage {context} onTaskSelect={handleTaskSelect} />
+        <TaskListPage bind:this={taskListPage} {context} onTaskSelect={handleTaskSelect} />
       {:else if currentPage === TaskScreen.Reference}
-        <TaskDetailPage {context} />
+        <TaskDetailPage bind:this={taskDetailPage} {context} />
       {:else if currentPage === TaskScreen.Create}
-        <TaskCreatePage />
+        <TaskCreatePage bind:this={taskCreatePage} />
       {:else}
         <p>Select an operation.</p>
       {/if}

@@ -10,6 +10,13 @@
     priority: 3,
     status: "TODO",
   };
+
+  // FUNCTION: Page離脱
+  export function leave(callback: () => void): void {
+    // TODO: 検証用
+    window.alert("TaskCreatePage.leave()");
+    callback();
+  }
 </script>
 
 <AriadnePage title="Task 作成">
