@@ -94,25 +94,13 @@
   );
 
   // FUNCTION: 現在のTask入力値を集約
-  function getValues(): TaskValues {
+  export function getValues(): TaskValues {
     return {
       title: titleField.getValue(),
       description: descriptionField.getValue(),
       priority: priorityField.getValue(),
       status: statusField.getValue(),
     };
-  }
-
-  // FUNCTION: 未保存変更の有無
-  export function hasUnsavedChanges(): boolean {
-    const currentValues = getValues();
-
-    return (
-      currentValues.title !== initialValues.title ||
-      currentValues.description !== initialValues.description ||
-      currentValues.priority !== initialValues.priority ||
-      currentValues.status !== initialValues.status
-    );
   }
 
   // FUNCTION: 全FieldのValidation実行
