@@ -2,11 +2,25 @@
   import TaskManagement from "./features/task/TaskManagement.svelte";
   import Toast from "./components/AriadneToast.svelte";
 
+  // INFO: TaskManagementへの参照
+  let taskManagement = $state<TaskManagement>();
+
   // INFO: Primary Navigation のリスト
   type PrimaryFeature = "task" | "config";
 
   // INFO: 選択中のPrimary Feature
   let currentFeature: PrimaryFeature = $state("task");
+
+  // FUNCTION: Primary Navigationからの遷移要求
+  function handlePrimaryNavSelect(feature: PrimaryFeature): void {
+    if (currentFeature === feature) {
+      return;
+    }
+
+    leave(() => {
+      navigate(feature);
+    });
+  }
 
   // FUNCTION: Primary Feature間の画面遷移
   function navigate(feature: PrimaryFeature): void {
@@ -15,6 +29,16 @@
     }
 
     currentFeature = feature;
+  }
+
+  // FUNCTION: 現在のFeatureへの離脱問い合わせ
+  function leave(callback: () => void): void {
+    if (currentFeature === "task") {
+      taskManagement!.leave(callback);
+    } else {
+      // INFO: Configには離脱判断がない
+      callback();
+    }
   }
 
   // INFO: Toast
@@ -92,14 +116,14 @@
       <button
         type="button"
         aria-current={currentFeature === "task" ? "page" : undefined}
-        onclick={() => navigate("task")}
+        onclick={() => handlePrimaryNavSelect("task")}
       >
         Task
       </button>
       <button
         type="button"
         aria-current={currentFeature === "config" ? "page" : undefined}
-        onclick={() => navigate("config")}
+        onclick={() => handlePrimaryNavSelect("config")}
       >
         Config
       </button>
@@ -108,7 +132,7 @@
 
   <div class="workspace">
     {#if currentFeature === "task"}
-      <TaskManagement onError={notifyError} />
+      <TaskManagement bind:this={taskManagement} onError={notifyError} />
     {:else}
       <main class="main-area">
         <p>Configuration is not available in this prototype.</p>

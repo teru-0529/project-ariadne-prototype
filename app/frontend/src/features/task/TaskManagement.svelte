@@ -65,7 +65,7 @@
   }
 
   // FUNCTION: 現在のPageへの離脱問い合わせ
-  function leave(callback: () => void): void {
+  export function leave(callback: () => void): void {
     if (currentPage === TaskScreen.List) {
       taskListPage!.leave(callback);
     } else if (currentPage === TaskScreen.Reference) {
