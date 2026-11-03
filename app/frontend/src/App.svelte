@@ -105,39 +105,6 @@
     {:else}
       <main class="main-area">
         <p>Configuration is not available in this prototype.</p>
-
-        <!-- TODO: TEMP: Fieldデザイン検証用。正式実装後に削除する -->
-        <div class="samples">
-          <section>
-            <h3>Reference</h3>
-            <AriadneField variant="reference" label="タイトル">
-              <span>サンプルタスク</span>
-            </AriadneField>
-          </section>
-
-          <section>
-            <h3>Edit / 通常</h3>
-            <AriadneField variant="edit" label="タイトル">
-              <input type="text" value="サンプルタスク" />
-            </AriadneField>
-          </section>
-
-          <section>
-            <h3>Edit / 必須 / Error</h3>
-            <AriadneField variant="edit" label="タイトル" required={true} error="タイトルを入力してください。">
-              <input type="text" value="" />
-            </AriadneField>
-          </section>
-
-          <section>
-            <h3>Cell</h3>
-            <AriadneField variant="cell">
-              <span>サンプルタスク</span>
-            </AriadneField>
-          </section>
-        </div>
-
-        <!-- TODO: TEMP: Fieldデザイン検証用。正式実装後に削除する -->
       </main>
     {/if}
   </div>
@@ -365,31 +332,4 @@
     width: 0;
     height: 0;
   }
-
-  /* TODO: TEMP: Fieldデザイン検証用。正式実装後に削除する */
-  .samples {
-    max-width: 480px;
-    padding: 20px;
-  }
-
-  section {
-    margin-bottom: 20px;
-  }
-
-  h3 {
-    margin: 0 0 8px;
-    font-size: 12px;
-    color: #667085;
-  }
-
-  input {
-    width: 100%;
-    border: none;
-    outline: none;
-    background: transparent;
-    font: inherit;
-    box-sizing: border-box;
-  }
-
-  /* TODO: TEMP: Fieldデザイン検証用。正式実装後に削除する */
 </style>

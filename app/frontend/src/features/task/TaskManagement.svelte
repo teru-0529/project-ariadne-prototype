@@ -32,7 +32,7 @@
   // INFO: タスクコンテキスト
   let context = new TaskContext();
 
-  // FUNCTION: Side Navigationからの選択
+  // FUNCTION: Side Navigationからの遷移要求
   function handleSideNavSelect(value: string): void {
     // INFO: Navigationに指定した文字列であることをチェック
     if (!navigationItems.some((item) => item.value === value)) {
@@ -44,7 +44,7 @@
     void navigate({ screen });
   }
 
-  // FUNCTION: Task一覧からの選択
+  // FUNCTION: Task一覧からの遷移要求
   function handleTaskSelect(id: string): void {
     void navigate({
       screen: TaskScreen.Reference,
