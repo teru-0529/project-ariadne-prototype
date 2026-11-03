@@ -21,8 +21,7 @@
 
   // FUNCTION: Page離脱
   export function leave(callback: () => void): void {
-    // TODO: 検証用
-    window.alert("TaskDetailPage.leave()");
+    // TODO: Editの場合は判定あり
     callback();
   }
 

@@ -15,8 +15,6 @@
 
   // FUNCTION: Page離脱
   export function leave(callback: () => void): void {
-    // TODO: 検証用
-    window.alert("TaskListPage.leave()");
     callback();
   }
 </script>
