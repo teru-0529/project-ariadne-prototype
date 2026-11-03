@@ -692,7 +692,86 @@ N/A
 
 ---
 
-## 11. Note
+## 11. C05 登録をConfirmする
+
+### Result Pattern: Success
+
+#### Frontend Module Test
+
+別途検討。
+
+#### Backend Module Test
+
+##### Given
+
+- 有効なTitle、Description、Priority、Statusを持つCreateTaskRequestがある
+- `tasks.yaml`に複数の既存Taskが保存されている
+
+##### When
+
+- `CreateTask(request)`を呼び出す
+
+##### Expected
+
+- Errorが返されない
+- 生成されたULID形式のTask IDが返される
+- 新規Taskが`tasks.yaml`の末尾に追加される
+- 新規Taskの各項目が入力値と一致する
+- 既存Taskの内容が維持される
+
+---
+
+### Result Pattern: Read Failure
+
+#### Frontend Module Test
+
+別途検討。
+
+#### Backend Module Test
+
+##### Given
+
+- 有効なCreateTaskRequestがある
+- `tasks.yaml`が存在しない
+
+##### When
+
+- `CreateTask(request)`を呼び出す
+
+##### Expected
+
+- Read Failureが返される
+- 新規Taskは登録されない
+- `tasks.yaml`は作成されない
+
+---
+
+### Result Pattern: Unexpected Error
+
+#### Frontend Module Test
+
+別途検討。
+
+#### Backend Module Test
+
+##### Given
+
+- Business ModelのValidationを満たさないCreateTaskRequestがある
+- 正常な`tasks.yaml`が存在する
+
+##### When
+
+- `CreateTask(request)`を呼び出す
+
+##### Expected
+
+- Unexpected Errorが返される
+- 新規Taskは登録されない
+- `tasks.yaml`の内容が変更されない
+
+---
+
+## 12. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
