@@ -55,7 +55,7 @@
 
 {#if showConfirmation}
   <AriadneModal
-    title="Task登録確認"
+    title="Task Registration"
     message="Taskを登録しますか？"
     confirmLabel="Confirm"
     cancelLabel="Cancel"
