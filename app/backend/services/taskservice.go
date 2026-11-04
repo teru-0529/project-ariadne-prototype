@@ -1,6 +1,11 @@
 package services
 
-import "ariadne/backend/services/public"
+import (
+	"ariadne/backend/services/public"
+	"fmt"
+
+	"github.com/oklog/ulid/v2"
+)
 
 // INFO: タスクサービスの構造体
 type TaskService struct {
@@ -55,7 +60,24 @@ func (s *TaskService) GetTask(id string) (*public.Task, error) {
 	}, nil
 }
 
-// FUNCTION: 新しいTaskを登録する関数 TODO: TBD
+// FUNCTION: 新しいTaskを登録する関数
 func (s *TaskService) CreateTask(request public.CreateTaskRequest) (string, error) {
-	return "DUMMY_ID", nil
+	id := ulid.Make().String()
+
+	task, err := NewTask(
+		id,
+		request.Title,
+		request.Description,
+		request.Priority,
+		request.Status,
+	)
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrUnexpectedError, err)
+	}
+
+	if err := s.repo.Store(task, StoreDeposit); err != nil {
+		return "", err
+	}
+
+	return id, nil
 }
