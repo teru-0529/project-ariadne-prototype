@@ -413,7 +413,11 @@ Fieldの表示形態は`reference`（参照表示）、`edit`（入力・変更�
 
 業務Pageは`AriadnePage`を利用し、HeaderとContentsの共通構造を備える。`AriadnePage`はContents自体のスクロールを管理せず、必要なスクロールは内部のComponentが担当する。
 
-業務PageはStore / Contextと業務Componentを結びつけるが、Backendを直接呼び出さない。データ変換、入力値の再構成、登録・更新における要求内容の構築は3.3.2で定義する。
+業務Pageは、Store / Contextと業務Componentを結びつけ、画面における業務操作を制御する。
+
+データ取得はContext / Storeを介して行い、登録・更新などの業務操作では、業務PageがBackendを直接呼び出す。
+
+データ変換、入力値の再構成、登録・更新における要求内容の構築は3.3.2で定義する。
 
 ##### Modal / Toast
 
@@ -481,11 +485,11 @@ Field単位のValidationと複数FieldにまたがるValidationは、責務を�
 
 業務操作に必要な入力データを業務Componentから受け取り、Backendへの要求を構成する。
 
-登録・更新におけるBackend呼び出しは、Storeによるデータ取得とは別の責務として扱う。具体的な呼び出し方式と担当要素は、実装時に決定する。
+登録・更新におけるBackend呼び出しは、Storeによるデータ取得とは別の責務として扱い、業務Pageが直接実行する。
 
-利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは判断結果を返すのみで、業務処理を実行しない。
+利用者の確認が必要な場合はConfirmation Modalを利用する。Confirmation Modalは利用者の判断を呼び出し元へ伝えるのみで、業務処理を実行しない。
 
-業務Pageは登録・更新の成功時にNotificationを要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。この成功通知は未実装とする。
+業務Pageは、登録・更新の成功時にはInfo Toast、失敗時にはError Toastによる通知を要求する。Notification Toastは指定された内容を表示するのみで、業務処理の結果判定は担当しない。
 
 #### 3.3.3 Navigation Management
 
@@ -711,7 +715,7 @@ Submit時には利用側の業務ComponentへValidationを要求する。Validat
 
 Confirmation Modalの表示状態はAriadneFormが管理する。Modal表示中は重複するSubmitを受け付けない。
 
-Confirmされた場合は、利用側へ業務処理の実行を通知する。
+Confirmされた場合は、利用側へ業務処理の実行を依頼し、その処理の完了を待つ。処理完了後はModalを閉じる。ただし、処理の結果としてForm自体が破棄される場合は、この限りではない。
 
 Confirmation ModalでCancelされた場合は、Modalを閉じてSubmitを中止する。業務処理の実行や画面遷移は要求しない。
 
@@ -799,7 +803,7 @@ Modalは操作の実行可否についてユーザーの判断を受け付ける
 
 Confirmation Modalは、確認対象の操作内容を表示し、ConfirmとCancelの選択肢を提供する。
 
-- **Confirm**：Modalを閉じ、呼び出し元へ確定の判断結果を返す。
+- **Confirm**：呼び出し元へ確定の判断結果を返す。業務処理の最終確認に使用する場合は、呼び出し元が処理の完了に応じてModalの表示を終了する。
 - **Cancel**：Modalを閉じ、呼び出し元へ取消の判断結果を返す。
 
 Modal自体は、業務処理の実行、入力Stateの変更、および画面遷移を行わない。
@@ -815,6 +819,10 @@ EscキーはCancelと同じ扱いとする。背景クリックではModalを閉
 Modalを閉じた後は入力画面の操作を再開できる状態とし、特定の要素へのフォーカス復帰は要求しない。
 
 ConfirmまたはCancelの判断結果は、呼び出し元へ重複して通知しない。
+
+Confirm後の処理中は、ConfirmおよびCancelの操作を受け付けず、EscキーによるCancelも抑止する。
+
+Modalを再表示する場合は、操作可能な初期状態から開始する。
 
 ##### Usage
 
@@ -1639,5 +1647,27 @@ Priorityが5の場合はDescriptionを必須とする。
 Task Createでは、Submitボタンの有効化に変更有無の条件を設けない。
 
 Submitボタンの有効化およびSubmit時のValidationは4.2.4 Form Submission Validationに従う。
+
+##### Task Registration
+
+Submit時のValidationが成功した場合、Confirmation Modalを表示する。
+
+Confirmされた場合、TaskCreatePageはTaskEntryから取得した入力値をCreateTaskRequestに変換し、Wails Bindingを介してBackendのCreateTaskを呼び出す。
+
+Cancelされた場合は、登録処理を実行しない。
+
+##### Registration Success
+
+登録に成功した場合、Info Toastで成功を通知する。
+
+Task管理機能内でTask Create画面への遷移を行い、新しいTaskCreatePageを生成する。これにより、入力値とValidation Stateを初期状態に戻す。Correlation Validation ModeもINITIALに戻る。
+
+登録成功に伴う画面の初期化では、未保存変更の離脱確認を行わない。
+
+##### Registration Failure
+
+登録に失敗した場合、Error Toastで失敗を通知し、Confirmation Modalを閉じる。
+
+Task Create画面はそのまま維持し、入力値とValidation Stateも変更しない。ユーザーは入力内容を修正するか、そのまま登録を再試行できる。
 
 #### 4.5.4 Task Edit
