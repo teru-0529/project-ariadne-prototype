@@ -1275,7 +1275,7 @@ Versionの検証と保存時の更新はPersistence Adapterが担当する。
 
 ##### Safe Write
 
-ファイル保存時は、既存のCanonical Fileを直接上書きせず、Temporary Fileへの全量WriteとCanonical Fileの置き換えによって保存する。
+ファイル保存時は、既存のCanonical Fileを直接上書きせず、同一ディレクトリに作成したTemporary Fileへの全量Writeと、Canonical Fileの置き換えによって保存する。
 
 ```text
 Business Model
@@ -1287,15 +1287,19 @@ Temporary Fileへ全量Write
 Canonical FileをReplace
 ```
 
-Safe Writeは、書き込み処理の失敗によって既存のCanonical Fileが不完全な内容に置き換わることを防ぐための仕組みとする。
+Safe Writeは、Canonical Fileへの直接上書きを避け、Temporary Fileへの書き込みが完了するまでCanonical Fileを置き換えないことで、不完全な内容が保存されるリスクを低減するための仕組みとする。
+
+Canonical Fileの置き換えには`os.Rename()`を使用する。ただし、Windows環境における置き換えの原子性や、すべての失敗時に既存のCanonical Fileが維持されることは保証しない。
 
 ##### Write Failure
 
-Temporary FileへのWriteに失敗した場合は、Canonical Fileの置き換えを行わず、既存ファイルを維持する。
+Temporary Fileの作成・Write・Closeに失敗した場合は、Canonical Fileの置き換えを行わない。
 
-Canonical FileのReplaceに失敗した場合は、Write Failureとして扱う。
+Canonical Fileの置き換えに失敗した場合は、Write Failureとして扱う。
 
-いずれの場合も、保存処理が正常に完了したものとして扱わない。
+保存処理の途中で失敗した場合は、可能な範囲でTemporary Fileを削除する。
+
+いずれの場合も、保存処理が正常に完了したものとして扱わず、原因情報を保持してWrite Failureを返す。
 
 ##### Read Failure
 
@@ -1492,9 +1496,9 @@ Taskが0件の場合は`tasks: []`とする。
 description: ""
 ```
 
-`description`に値がある場合は、1行の場合も含めてLiteral Block `|`を使用する。
+`description`に値がある場合は、YAMLのスカラー表現を`yaml.Marshal()`の標準出力に従って決定する。Literal Block `|`の使用は必須としない。
 
-複数行の`description`は、Read / Write後も内容を維持する。
+複数行の`description`は、YAMLの表現形式によらず、Read / Write後も内容を維持する。
 
 ##### Task Sequence
 
