@@ -22,6 +22,29 @@ type persistenceTask struct {
 	UpdatedAt   *string `yaml:"updatedAt"`
 }
 
+// FUNCTION: services.TaskからpersistenceTaskを生成する関数
+func newPersistenceTask(
+	task *services.Task,
+	createdAt string,
+	updatedAt string,
+) persistenceTask {
+	description := task.Description
+	if description == nil {
+		empty := ""
+		description = &empty
+	}
+
+	return persistenceTask{
+		ID:          &task.ID,
+		Title:       &task.Title,
+		Description: description,
+		Priority:    &task.Priority,
+		Status:      &task.Status,
+		CreatedAt:   &createdAt,
+		UpdatedAt:   &updatedAt,
+	}
+}
+
 // FUNCTION: persistenceTaskをservices.Taskに変換する関数
 func (p *persistenceTask) toTask() (*services.Task, error) {
 	if err := p.validateFormat(); err != nil {

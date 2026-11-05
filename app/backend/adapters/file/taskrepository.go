@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -60,7 +61,30 @@ func (r *TaskRepository) Pick(id string) (*services.Task, error) {
 
 // FUNCTION: Taskを永続化する関数 TODO:（A15-05以降で本実装）
 func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent) error {
-	return fmt.Errorf("Store not implemented")
+	dataset, err := r.readYAML()
+	if err != nil {
+		return err
+	}
+
+	switch intent {
+	case services.StoreDeposit:
+		for _, existing := range dataset.Tasks {
+			if existing.ID != nil && *existing.ID == task.ID {
+				return &services.KeyDuplicateError{Key: task.ID}
+			}
+		}
+
+		now := time.Now().Format(time.RFC3339)
+		dataset.Tasks = append(
+			dataset.Tasks,
+			newPersistenceTask(task, now, now),
+		)
+
+	default:
+		return fmt.Errorf("%w: unsupported store intent: %d", services.ErrUnexpectedError, intent)
+	}
+
+	return r.writeYAML(dataset)
 }
 
 // FUNCTION: ディレクトリからYAML形式のタスクデータを読み込む関数
@@ -138,4 +162,43 @@ func parseYAML(data []byte) (*taskDataset, error) {
 		return nil, err
 	}
 	return &dataset, nil
+}
+
+// FUNCTION: Dataset全体をYAML形式で安全に保存する関数
+func (r *TaskRepository) writeYAML(dataset *taskDataset) error {
+	// YAML形式に変換
+	data, err := yaml.Marshal(dataset)
+	if err != nil {
+		return fmt.Errorf("%w: %w", services.ErrWriteFailure, err)
+	}
+
+	// 正本と同じディレクトリに一時ファイルを作成
+	temp, err := os.CreateTemp(r.dir, ".tasks-*.tmp")
+	if err != nil {
+		return fmt.Errorf("%w: %w", services.ErrWriteFailure, err)
+	}
+
+	// 処理失敗時の一時ファイルを後始末
+	defer os.Remove(temp.Name())
+
+	// 一時ファイルに全量書き込み
+	if _, err := temp.Write(data); err != nil {
+		temp.Close()
+		return fmt.Errorf("%w: %w", services.ErrWriteFailure, err)
+	}
+
+	// 書き込み完了後にファイルを閉じる
+	if err := temp.Close(); err != nil {
+		return fmt.Errorf("%w: %w", services.ErrWriteFailure, err)
+	}
+
+	// 一時ファイルで正本を置換
+	if err := os.Rename(
+		temp.Name(),
+		filepath.Join(r.dir, "tasks.yaml"),
+	); err != nil {
+		return fmt.Errorf("%w: %w", services.ErrWriteFailure, err)
+	}
+
+	return nil
 }

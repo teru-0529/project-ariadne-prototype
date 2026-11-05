@@ -19,9 +19,9 @@ func Test_NewTask_IDValidation(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "empty id is valid",
+			name:    "empty id is invalid",
 			id:      "",
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:    "valid ulid is valid",
@@ -101,7 +101,7 @@ func Test_NewTask_TitleValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewTask(
-				"",
+				"01M4655XT94C1RCKEN92HWW6BM",
 				tt.title,
 				"",
 				3,
@@ -166,7 +166,7 @@ func Test_NewTask_DescriptionNormalization(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewTask(
-				"",
+				"01M4655XT94C1RCKEN92HWW6BM",
 				"Task A",
 				tt.description,
 				3,
@@ -234,7 +234,7 @@ func Test_NewTask_PriorityValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewTask(
-				"",
+				"01M4655XT94C1RCKEN92HWW6BM",
 				"Task A",
 				"Description A",
 				tt.priority,
@@ -297,7 +297,7 @@ func Test_NewTask_StatusValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewTask(
-				"",
+				"01M4655XT94C1RCKEN92HWW6BM",
 				"Task A",
 				"Description A",
 				3,
@@ -354,7 +354,7 @@ func Test_NewTask_CorrelationValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewTask(
-				"",
+				"01M4655XT94C1RCKEN92HWW6BM",
 				"Task A",
 				tt.description,
 				tt.priority,
