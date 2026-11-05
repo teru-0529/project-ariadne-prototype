@@ -755,6 +755,10 @@ Frontend Module TestではWails BindingをMock化する。失敗系はWrite Fail
  
 ### Result Pattern: Read Failure
 
+#### Frontend Module Test
+
+N/A
+
 #### Backend Module Test
 
 ##### Given
@@ -808,6 +812,10 @@ N/A
 ---
 
 ### Result Pattern: Unexpected Error
+
+#### Frontend Module Test
+
+N/A
 
 #### Backend Module Test
 
