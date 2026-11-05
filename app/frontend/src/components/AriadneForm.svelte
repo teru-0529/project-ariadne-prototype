@@ -37,9 +37,9 @@
   }
 
   // FUNCTION: Confirmation ModalのConfirm処理
-  function handleConfirm(): void {
+  async function handleConfirm(): Promise<void> {
+    await onConfirm?.();
     showConfirmation = false;
-    void onConfirm?.();
   }
 </script>
 

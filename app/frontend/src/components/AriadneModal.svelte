@@ -4,15 +4,12 @@
 
   let dialog: HTMLDialogElement;
 
+  // INFO: Confirm処理中の状態
+  let isProcessing = $state(false);
+
   onMount(() => {
     dialog.showModal();
   });
-
-  // FUNCTION: EscキーによるCancel処理
-  function handleDialogCancel(event: Event): void {
-    event.preventDefault();
-    onCancel?.();
-  }
 
   type Props = {
     title: string;
@@ -24,6 +21,31 @@
   };
 
   let { title, message, confirmLabel, cancelLabel, onConfirm, onCancel }: Props = $props();
+
+  // FUNCTION: Confirm処理
+  async function handleConfirm(): Promise<void> {
+    if (isProcessing) {
+      return;
+    }
+
+    isProcessing = true;
+    await onConfirm?.();
+  }
+
+  // FUNCTION: Cancel処理
+  function handleCancel(): void {
+    if (isProcessing) {
+      return;
+    }
+
+    onCancel?.();
+  }
+
+  // FUNCTION: EscキーによるCancel処理
+  function handleDialogCancel(event: Event): void {
+    event.preventDefault();
+    handleCancel();
+  }
 </script>
 
 <dialog
@@ -42,8 +64,8 @@
   </div>
 
   <div class="modal-actions">
-    <AriadneButton label={cancelLabel} variant="secondary" onclick={onCancel} />
-    <AriadneButton label={confirmLabel} variant="primary" onclick={onConfirm} />
+    <AriadneButton label={cancelLabel} variant="secondary" disabled={isProcessing} onclick={handleCancel} />
+    <AriadneButton label={confirmLabel} variant="primary" disabled={isProcessing} onclick={handleConfirm} />
   </div>
 </dialog>
 

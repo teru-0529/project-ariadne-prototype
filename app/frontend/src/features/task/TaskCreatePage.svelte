@@ -32,7 +32,11 @@
       Status: values.status,
     };
 
-    await TaskBoundary.CreateTask(request);
+    try {
+      await TaskBoundary.CreateTask(request);
+    } catch {
+      // TODO: エラー通知はA17-05で実装する
+    }
   }
 
   // FUNCTION: Page離脱
