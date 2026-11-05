@@ -694,11 +694,43 @@ N/A
 
 ## 11. C05 登録をConfirmする
 
+### Test Scenarioの考え方
+
+Behavior MapのResult PatternはSuccess／Write Failureとする。
+
+Backend Module Testでは、失敗時の振る舞いをUse Case境界から検証可能なRead FailureおよびUnexpected Errorで確認する。実際のFile Write FailureはAdapter Logic Testで保証する。
+
+Frontend Module TestではWails BindingをMock化する。失敗系はWrite FailureのPublic Errorを代表ケースとして使用し、BackendのError種別によらず共通の失敗時Behaviorを確認する。
+
 ### Result Pattern: Success
 
 #### Frontend Module Test
 
-別途検討。
+##### Dependency
+
+- C03 `Create Buttonを押す`（Valid）
+
+##### Given
+
+- Task Create画面で有効な入力値が設定されている
+- Confirmation Modalが表示されている
+- Wails Mockの`CreateTask`が正常応答する
+
+##### When
+
+- Confirmation ModalでConfirmを選択する
+
+##### Expected
+
+- Confirmation Modalが表示されなくなる
+- Info Toastが表示される
+- Task Create画面が表示される
+- Titleが空文字列に戻る
+- Descriptionが空文字列に戻る
+- Priorityが3に戻る
+- StatusがTODOに戻る
+- Validation Errorが表示されない
+- Create ButtonがDisabledになる
 
 #### Backend Module Test
 
@@ -720,12 +752,8 @@ N/A
 - 既存Taskの内容が維持される
 
 ---
-
+ 
 ### Result Pattern: Read Failure
-
-#### Frontend Module Test
-
-別途検討。
 
 #### Backend Module Test
 
@@ -746,11 +774,36 @@ N/A
 
 ---
 
-### Result Pattern: Unexpected Error
+### Result Pattern: Write Failure
 
 #### Frontend Module Test
 
-別途検討。
+##### Dependency
+
+- C03 `Create Buttonを押す`（Valid）
+
+##### Given
+
+- Task Create画面で有効な入力値が設定されている
+- Confirmation Modalが表示されている
+- Wails Mockの`CreateTask`がWrite FailureのPublic Errorを返す
+
+##### When
+
+- Confirmation ModalでConfirmを選択する
+
+##### Expected
+
+- Confirmation Modalが表示されなくなる
+- Error Toastが表示される
+- Task Create画面が維持される
+- 入力値（Title／Description／Priority／Status）が維持される
+- Validation Errorが表示されない
+- Create ButtonがEnabledのままである
+
+---
+
+### Result Pattern: Unexpected Error
 
 #### Backend Module Test
 
