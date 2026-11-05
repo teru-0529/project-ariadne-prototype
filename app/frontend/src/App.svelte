@@ -132,7 +132,7 @@
 
   <div class="workspace">
     {#if currentFeature === "task"}
-      <TaskManagement bind:this={taskManagement} onError={notifyError} />
+      <TaskManagement bind:this={taskManagement} onError={notifyError} onSuccess={notifySuccess} />
     {:else}
       <main class="main-area">
         <p>Configuration is not available in this prototype.</p>

@@ -55,7 +55,7 @@ test("C05 Taskを登録する - Success", async () => {
 
     // Success Toast
     const toast = screen.getByRole("alert");
-    expect(toast.textContent).toMatch(/登録|作成|成功/);
+    expect(toast.textContent).toMatch("Taskを登録しました。");
 
     // Title
     expect((screen.getByRole("textbox", { name: "タイトル" }) as HTMLInputElement).value).toBe("");

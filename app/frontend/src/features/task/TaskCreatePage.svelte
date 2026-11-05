@@ -15,6 +15,13 @@
     status: "TODO",
   };
 
+  type Props = {
+    onSuccess: (message: string) => void;
+    onCreated: () => void;
+  };
+
+  let { onSuccess, onCreated }: Props = $props();
+
   // INFO: taskEntryへの参照
   let taskEntry = $state<TaskEntry>();
 
@@ -34,6 +41,10 @@
 
     try {
       await TaskBoundary.CreateTask(request);
+
+      // INFO: 登録成功時の通知・再遷移
+      onSuccess("Taskを登録しました。");
+      onCreated();
     } catch {
       // TODO: エラー通知はA17-05で実装する
     }

@@ -10,9 +10,10 @@
 
   type Props = {
     onError: (message: string) => void;
+    onSuccess: (message: string) => void;
   };
 
-  let { onError }: Props = $props();
+  let { onError, onSuccess }: Props = $props();
 
   // INFO: 各Pageへの参照
   let taskListPage = $state<TaskListPage>();
@@ -102,6 +103,11 @@
   function handleError(error: unknown): void {
     onError(toErrorMessage(error));
   }
+
+  // FUNCTION: Task登録成功後の再遷移
+  function handleTaskCreated(): void {
+    void navigate({ screen: TaskScreen.Create });
+  }
 </script>
 
 <div class="feature-area with-side-navigation">
@@ -114,7 +120,7 @@
       {:else if currentPage === TaskScreen.Reference}
         <TaskDetailPage bind:this={taskDetailPage} {context} />
       {:else if currentPage === TaskScreen.Create}
-        <TaskCreatePage bind:this={taskCreatePage} />
+        <TaskCreatePage bind:this={taskCreatePage} {onSuccess} onCreated={handleTaskCreated} />
       {:else}
         <p>Select an operation.</p>
       {/if}
