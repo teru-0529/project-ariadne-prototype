@@ -391,3 +391,90 @@ func Test_TaskRepository_Store_Replace_NotFound(t *testing.T) {
 		t.Errorf("YAML was modified on Not Found")
 	}
 }
+
+// TEST: 一時ファイル作成失敗時にWriteFailureを返すこと
+func Test_TaskRepository_WriteYAML_CreateTempFailure(t *testing.T) {
+	if !*testutil.Logic {
+		t.SkipNow()
+	}
+
+	// INFO: GIVEN
+	dir := filepath.Join(t.TempDir(), "nonexistent")
+	repo := NewTaskRepository(dir)
+
+	dataset := &taskDataset{
+		Format:  formatName,
+		Version: "2.1",
+	}
+
+	// INFO: ACTION
+	err := repo.writeYAML(dataset)
+
+	// INFO: VERIFY
+	if !errors.Is(err, services.ErrWriteFailure) {
+		t.Errorf("writeYAML() error = %v, want ErrWriteFailure", err)
+	}
+
+	var pathErr *os.PathError
+	if !errors.As(err, &pathErr) {
+		t.Errorf("writeYAML() error = %v, want *os.PathError", err)
+	}
+
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("Temporary directory unexpectedly exists: %v", err)
+	}
+}
+
+// TEST: Rename失敗時にWriteFailureを返し、一時ファイルを残さないこと
+func Test_TaskRepository_WriteYAML_RenameFailure(t *testing.T) {
+	if !*testutil.Logic {
+		t.SkipNow()
+	}
+
+	// INFO: GIVEN
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tasks.yaml")
+
+	// Rename先に同名のディレクトリを用意する
+	if err := os.Mkdir(path, 0700); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewTaskRepository(dir)
+
+	dataset := &taskDataset{
+		Format:  formatName,
+		Version: "2.1",
+	}
+
+	// INFO: ACTION
+	err := repo.writeYAML(dataset)
+
+	// INFO: VERIFY
+	if !errors.Is(err, services.ErrWriteFailure) {
+		t.Errorf("writeYAML() error = %v, want ErrWriteFailure", err)
+	}
+
+	var linkErr *os.LinkError
+	if !errors.As(err, &linkErr) {
+		t.Errorf("writeYAML() error = %v, want *os.LinkError", err)
+	}
+
+	// Rename先のディレクトリが維持されていること
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !info.IsDir() {
+		t.Error("Rename destination directory was replaced")
+	}
+
+	// 一時ファイルが残っていないこと
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "tasks.yaml" {
+		t.Errorf("Unexpected files remain after Rename failure: %v", entries)
+	}
+}
