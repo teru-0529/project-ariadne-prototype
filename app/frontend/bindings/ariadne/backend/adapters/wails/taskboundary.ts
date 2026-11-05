@@ -15,6 +15,13 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as public$0 from "../../services/public/models.js";
 
 /**
+ * FUNCTION: 新しいタスクを登録する関数
+ */
+export function CreateTask(request: public$0.CreateTaskRequest): $CancellablePromise<string> {
+    return $Call.ByID(1725283574, request);
+}
+
+/**
  * FUNCTION: IDを指定してタスクを取得する関数
  */
 export function GetTask(id: string): $CancellablePromise<public$0.Task | null> {

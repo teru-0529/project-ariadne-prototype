@@ -47,12 +47,24 @@ func (b *TaskBoundary) GetTask(id string) (*public.Task, error) {
 	return task, nil
 }
 
+// FUNCTION: 新しいタスクを登録する関数
+func (b *TaskBoundary) CreateTask(request public.CreateTaskRequest) (string, error) {
+	id, err := b.service.CreateTask(request)
+	if err != nil {
+		b.logger.Error("CreateTask failed", "error", err)
+		return "", toPublicError(err)
+	}
+
+	return id, nil
+}
+
 // FUNCTION: 公開エラーに変換する
 func toPublicError(err error) error {
 	var message string
 
 	var versionErr *services.UnsupportedMajorVersionError
 	var notFound *services.NotFoundError
+	var keyDuplicate *services.KeyDuplicateError
 
 	if errors.As(err, &versionErr) {
 		message = fmt.Sprintf(
@@ -62,12 +74,15 @@ func toPublicError(err error) error {
 		)
 	} else if errors.As(err, &notFound) {
 		message = "指定されたタスクが見つかりませんでした。"
+	} else if errors.As(err, &keyDuplicate) {
+		message = "同じIDのタスクが既に存在します。"
 	} else if errors.Is(err, services.ErrReadFailure) {
 		message = "タスクを読み込めませんでした。"
+	} else if errors.Is(err, services.ErrWriteFailure) {
+		message = "タスクを保存できませんでした。"
 	} else {
 		message = "予期しないエラーが発生しました。"
 	}
-
 	return &PublicError{
 		Processed: true,
 		Message:   message,
