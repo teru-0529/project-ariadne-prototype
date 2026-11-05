@@ -120,7 +120,7 @@
       {:else if currentPage === TaskScreen.Reference}
         <TaskDetailPage bind:this={taskDetailPage} {context} />
       {:else if currentPage === TaskScreen.Create}
-        <TaskCreatePage bind:this={taskCreatePage} {onSuccess} onCreated={handleTaskCreated} />
+        <TaskCreatePage bind:this={taskCreatePage} {onSuccess} {onError} onCreated={handleTaskCreated} />
       {:else}
         <p>Select an operation.</p>
       {/if}

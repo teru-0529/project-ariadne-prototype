@@ -3,6 +3,7 @@
   import TaskEntry from "./TaskEntry.svelte";
   import type { TaskValues } from "./TaskValues";
   import AriadneModal from "../../components/AriadneModal.svelte";
+  import { toErrorMessage } from "../../lib/errors/ProcessedError";
 
   import { TaskBoundary } from "../../../bindings/ariadne/backend/adapters/wails";
   import type { CreateTaskRequest } from "../../../bindings/ariadne/backend/services/public/models";
@@ -17,10 +18,11 @@
 
   type Props = {
     onSuccess: (message: string) => void;
+    onError: (message: string) => void;
     onCreated: () => void;
   };
 
-  let { onSuccess, onCreated }: Props = $props();
+  let { onSuccess, onError, onCreated }: Props = $props();
 
   // INFO: taskEntryへの参照
   let taskEntry = $state<TaskEntry>();
@@ -45,8 +47,8 @@
       // INFO: 登録成功時の通知・再遷移
       onSuccess("Taskを登録しました。");
       onCreated();
-    } catch {
-      // TODO: エラー通知はA17-05で実装する
+    } catch (error) {
+      onError(toErrorMessage(error));
     }
   }
 
