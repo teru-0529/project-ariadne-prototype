@@ -16,9 +16,10 @@
     submitLabel: string;
     initialValues: TaskValues;
     submitCondition?: (currentValues: TaskValues) => boolean;
+    onConfirm?: () => Promise<void>;
   };
 
-  let { submitLabel, initialValues, submitCondition }: Props = $props();
+  let { submitLabel, initialValues, submitCondition, onConfirm }: Props = $props();
 
   // INFO: 相関Validotor
   const initialPriority = () => initialValues.priority;
@@ -132,7 +133,7 @@
 </script>
 
 <div class="entry-layout">
-  <AriadneForm {submitLabel} {canSubmit} onSubmit={handleSubmit}>
+  <AriadneForm {submitLabel} {canSubmit} onSubmit={handleSubmit} {onConfirm}>
     <div class="entry-fields">
       <TextField
         bind:this={titleField}

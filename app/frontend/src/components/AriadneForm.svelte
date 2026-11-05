@@ -8,9 +8,10 @@
     submitLabel: string;
     canSubmit: boolean;
     onSubmit?: () => boolean;
+    onConfirm?: () => Promise<void>;
   };
 
-  let { children, submitLabel, canSubmit, onSubmit }: Props = $props();
+  let { children, submitLabel, canSubmit, onSubmit, onConfirm }: Props = $props();
 
   // INFO: Confirmation Modal表示状態
   let showConfirmation = $state(false);
@@ -38,8 +39,7 @@
   // FUNCTION: Confirmation ModalのConfirm処理
   function handleConfirm(): void {
     showConfirmation = false;
-    // TODO: 暫定処理
-    window.alert("Task登録は未実装です。");
+    void onConfirm?.();
   }
 </script>
 

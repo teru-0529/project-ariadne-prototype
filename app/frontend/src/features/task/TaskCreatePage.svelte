@@ -4,6 +4,9 @@
   import type { TaskValues } from "./TaskValues";
   import AriadneModal from "../../components/AriadneModal.svelte";
 
+  import { TaskBoundary } from "../../../bindings/ariadne/backend/adapters/wails";
+  import type { CreateTaskRequest } from "../../../bindings/ariadne/backend/services/public/models";
+
   // INFO: 登録時初期値
   const initialValues: TaskValues = {
     title: "",
@@ -17,6 +20,20 @@
 
   // INFO: 離脱確認待ちのCallback
   let pendingLeaveCallback = $state<(() => void) | undefined>(undefined);
+
+  // FUNCTION: Task登録
+  async function handleCreate(): Promise<void> {
+    const values = taskEntry!.getValues();
+
+    const request: CreateTaskRequest = {
+      Title: values.title,
+      Description: values.description,
+      Priority: values.priority,
+      Status: values.status,
+    };
+
+    await TaskBoundary.CreateTask(request);
+  }
 
   // FUNCTION: Page離脱
   export function leave(callback: () => void): void {
@@ -55,7 +72,7 @@
 </script>
 
 <AriadnePage title="Task 作成">
-  <TaskEntry bind:this={taskEntry} submitLabel="Create Task" {initialValues} />
+  <TaskEntry bind:this={taskEntry} submitLabel="Create Task" {initialValues} onConfirm={handleCreate} />
 </AriadnePage>
 
 {#if pendingLeaveCallback}
