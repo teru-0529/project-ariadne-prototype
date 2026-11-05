@@ -223,3 +223,171 @@ func Test_NewPersistenceTask_EmptyDescription(t *testing.T) {
 		t.Errorf("Persistence Task Description = %q, want empty string", *got.Description)
 	}
 }
+
+// TEST: Replaceで指定Taskを丸ごと置換できること
+func Test_TaskRepository_Store_Replace_Success(t *testing.T) {
+	if !*testutil.Logic {
+		t.SkipNow()
+	}
+
+	// INFO: GIVEN
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tasks.yaml")
+
+	before := `format: ariadne-tasks
+version: "2.1"
+tasks:
+  - id: 01M46599N791CM7QP2YN9KK94K
+    title: Task A
+    description: Description A
+    priority: 2
+    status: TODO
+    createdAt: "2026-10-04T09:00:00+09:00"
+    updatedAt: "2026-10-04T11:00:00+09:00"
+  - id: 01M46599N791CM7QP2YN9KK95K
+    title: Task B
+    description: Description B
+    priority: 3
+    status: DOING
+    createdAt: "2026-10-05T09:00:00+09:00"
+    updatedAt: "2026-10-05T11:00:00+09:00"
+`
+	if err := os.WriteFile(path, []byte(before), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewTaskRepository(dir)
+
+	task, err := services.NewTask(
+		"01M46599N791CM7QP2YN9KK95K",
+		"Updated Task B",
+		"Updated Description B",
+		5,
+		"DONE",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// INFO: ACTION
+	err = repo.Store(task, services.StoreReplace)
+
+	// INFO: VERIFY
+	if err != nil {
+		t.Fatalf("Store() returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var dataset taskDataset
+	if err := yaml.Unmarshal(data, &dataset); err != nil {
+		t.Fatalf("YAML parse failed: %v", err)
+	}
+
+	if dataset.Format != formatName || dataset.Version != "2.1" {
+		t.Errorf("YAML header was changed")
+	}
+
+	if len(dataset.Tasks) != 2 {
+		t.Fatalf("Task count = %d, want 2", len(dataset.Tasks))
+	}
+
+	// 置換対象外のTaskは変更されない
+	original := dataset.Tasks[0]
+	if original.ID == nil || *original.ID != "01M46599N791CM7QP2YN9KK94K" ||
+		original.Title == nil || *original.Title != "Task A" ||
+		original.Description == nil || *original.Description != "Description A" ||
+		original.Priority == nil || *original.Priority != 2 ||
+		original.Status == nil || *original.Status != "TODO" ||
+		original.CreatedAt == nil || *original.CreatedAt != "2026-10-04T09:00:00+09:00" ||
+		original.UpdatedAt == nil || *original.UpdatedAt != "2026-10-04T11:00:00+09:00" {
+		t.Errorf("Unrelated Task was changed")
+	}
+
+	// 2件目が同じ位置で置換される
+	replaced := dataset.Tasks[1]
+
+	if replaced.ID == nil || *replaced.ID != task.ID {
+		t.Errorf("ID mismatch")
+	}
+	if replaced.Title == nil || *replaced.Title != task.Title {
+		t.Errorf("Title mismatch")
+	}
+	if replaced.Description == nil || *replaced.Description != *task.Description {
+		t.Errorf("Description mismatch")
+	}
+	if replaced.Priority == nil || *replaced.Priority != task.Priority {
+		t.Errorf("Priority mismatch")
+	}
+	if replaced.Status == nil || *replaced.Status != task.Status {
+		t.Errorf("Status mismatch")
+	}
+
+	if replaced.CreatedAt == nil || replaced.UpdatedAt == nil {
+		t.Fatal("Timestamp is missing")
+	}
+
+	if *replaced.CreatedAt != "2026-10-05T09:00:00+09:00" {
+		t.Errorf("CreatedAt was changed: %q", *replaced.CreatedAt)
+	}
+
+	if _, err := time.Parse(time.RFC3339, *replaced.UpdatedAt); err != nil {
+		t.Errorf("UpdatedAt is not RFC3339: %v", err)
+	}
+
+	if *replaced.UpdatedAt == "2026-10-05T11:00:00+09:00" {
+		t.Errorf("UpdatedAt was not updated")
+	}
+}
+
+// TEST: Replaceで対象Taskが存在しない場合にエラーとなること
+func Test_TaskRepository_Store_Replace_NotFound(t *testing.T) {
+	if !*testutil.Logic {
+		t.SkipNow()
+	}
+
+	// INFO: GIVEN
+	dir := t.TempDir()
+	path := filepath.Join(dir, "tasks.yaml")
+
+	before := []byte(storeTestYAML)
+	if err := os.WriteFile(path, before, 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := NewTaskRepository(dir)
+
+	task, err := services.NewTask(
+		"01M46599N791CM7QP2YN9KK95K",
+		"Unknown Task",
+		"Unknown Description",
+		3,
+		"DOING",
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// INFO: ACTION
+	err = repo.Store(task, services.StoreReplace)
+
+	// INFO: VERIFY
+	var notFoundErr *services.NotFoundError
+	if !errors.As(err, &notFoundErr) {
+		t.Errorf("Store() error = %v, want NotFoundError", err)
+	} else if notFoundErr.Key != task.ID {
+		t.Errorf("NotFound key = %q, want %q", notFoundErr.Key, task.ID)
+	}
+
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(before, after) {
+		t.Errorf("YAML was modified on Not Found")
+	}
+}

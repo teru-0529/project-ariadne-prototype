@@ -80,6 +80,28 @@ func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent)
 			newPersistenceTask(task, now, now),
 		)
 
+	case services.StoreReplace:
+		found := false
+
+		for i, existing := range dataset.Tasks {
+			if existing.ID != nil && *existing.ID == task.ID {
+				now := time.Now().Format(time.RFC3339)
+
+				dataset.Tasks[i] = newPersistenceTask(
+					task,
+					*existing.CreatedAt,
+					now,
+				)
+
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return &services.NotFoundError{Key: task.ID}
+		}
+
 	default:
 		return fmt.Errorf("%w: unsupported store intent: %d", services.ErrUnexpectedError, intent)
 	}
