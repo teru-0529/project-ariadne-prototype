@@ -82,7 +82,20 @@ func (s *TaskService) CreateTask(request public.CreateTaskRequest) (string, erro
 	return id, nil
 }
 
-// FUNCTION: Taskを更新する関数 TODO:（A04-02 RED確認用スタブ）
+// FUNCTION: Taskを更新する関数
 func (s *TaskService) ModifyTask(id string, changes []TaskChange) error {
-	return ErrUnexpectedError
+	task, err := s.repo.Pick(id)
+	if err != nil {
+		return err
+	}
+
+	edit := task.Edit()
+	edit.Apply(changes)
+
+	updatedTask, err := edit.Build()
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrUnexpectedError, err)
+	}
+
+	return s.repo.Store(updatedTask, StoreReplace)
 }
