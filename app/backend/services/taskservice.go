@@ -81,3 +81,8 @@ func (s *TaskService) CreateTask(request public.CreateTaskRequest) (string, erro
 
 	return id, nil
 }
+
+// FUNCTION: Taskを更新する関数 TODO:（A04-02 RED確認用スタブ）
+func (s *TaskService) ModifyTask(id string, changes []TaskChange) error {
+	return ErrUnexpectedError
+}

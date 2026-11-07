@@ -4,6 +4,7 @@ import (
 	"ariadne/backend/tests/createtask"
 	"ariadne/backend/tests/gettask"
 	"ariadne/backend/tests/listtasks"
+	"ariadne/backend/tests/modifytask"
 	"testing"
 )
 
@@ -80,4 +81,19 @@ func Test_CreateTask_ReadFailure(t *testing.T) {
 // TEST:
 func Test_CreateTask_UnexpectedError(t *testing.T) {
 	createtask.UnexpectedError(t)
+}
+
+// TEST:
+func Test_ModifyTask_Success(t *testing.T) {
+	modifytask.Success(t)
+}
+
+// TEST:
+func Test_ModifyTask_NotFound(t *testing.T) {
+	modifytask.NotFound(t)
+}
+
+// TEST:
+func Test_ModifyTask_UnexpectedError(t *testing.T) {
+	modifytask.UnexpectedError(t)
 }
