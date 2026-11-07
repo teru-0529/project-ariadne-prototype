@@ -836,7 +836,113 @@ N/A
 
 ---
 
-## 12. Note
+## 12. M03 入力項目からFocus Outする
+
+### Test Scenarioの考え方
+
+単項目Validationおよび相関Validationの共通処理はC02で保証する。
+Edit固有のChanged FieldsによるModify Buttonの活性判定をテストする。
+
+TODO: Frontend実装工程で具体的なTest Scenarioを定義する。
+
+---
+
+## 13. M04 Modify Buttonを押す
+
+C03と共通の処理を使用するため、個別のBehavior Testは実施しない。
+
+---
+
+## 14. M05 更新をCancelする
+
+C04と共通の処理を使用するため、個別のBehavior Testは実施しない。
+
+---
+
+## 15. M06 更新をConfirmする
+
+### Result Pattern: Success
+
+#### Frontend Module Test
+
+TODO: Frontend実装工程でTest Scenarioを定義する。
+
+#### Backend Module Test
+
+##### Given
+
+- `tasks.yaml`に異なるIDを持つ複数のTaskが保存されている
+- 更新対象のTaskにはTitle／Description／Priority／Statusが設定されている
+- 更新対象のTaskのDescriptionとPriorityを変更する`TaskChange`がある
+
+##### When
+
+- 対象IDと変更指示を指定して`ModifyTask`を呼び出す
+
+##### Expected
+
+- Errorが返されない
+- 対象TaskのDescriptionとPriorityが指定値に更新される
+- 対象TaskのTitleとStatusは変更されない
+- 対象TaskのIDが維持される
+- 対象Taskの`createdAt`が維持される
+- 対象Taskの`updatedAt`が更新される
+- 対象TaskのYAML Sequence上の位置が維持される
+- 更新対象以外のTaskは変更されない
+
+---
+
+### Result Pattern: Not Found
+
+#### Frontend Module Test
+
+TODO: Frontend実装工程でTest Scenarioを定義する。
+
+#### Backend Module Test
+
+##### Given
+
+- `tasks.yaml`に複数のTaskが保存されている
+- 指定するIDに一致するTaskは保存されていない
+- DescriptionとPriorityを変更する有効な`TaskChange`がある
+
+##### When
+
+- 存在しないTaskのIDと変更指示を指定して`ModifyTask`を呼び出す
+
+##### Expected
+
+- Not Foundが返される
+- `tasks.yaml`の内容が変更されない
+
+---
+
+### Result Pattern: Unexpected Error
+
+#### Frontend Module Test
+
+TODO: Frontend実装工程でTest Scenarioを定義する。
+
+#### Backend Module Test
+
+##### Given
+
+- `tasks.yaml`に有効なTaskが保存されている
+- 更新対象のTaskが存在する
+- Titleを空文字列に変更する`TaskChange`がある
+
+##### When
+
+- 対象IDと変更指示を指定して`ModifyTask`を呼び出す
+
+##### Expected
+
+- Unexpected Errorが返される
+- `tasks.yaml`の内容が変更されない
+
+---
+
+## 16. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
