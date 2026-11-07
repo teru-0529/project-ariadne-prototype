@@ -59,7 +59,7 @@ func (r *TaskRepository) Pick(id string) (*services.Task, error) {
 	return nil, &services.NotFoundError{Key: id}
 }
 
-// FUNCTION: Taskを永続化する関数 TODO:（A15-05以降で本実装）
+// FUNCTION: Taskを永続化する関数
 func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent) error {
 	dataset, err := r.readYAML()
 	if err != nil {
