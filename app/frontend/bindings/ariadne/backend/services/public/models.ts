@@ -12,6 +12,13 @@ export interface CreateTaskRequest {
 }
 
 /**
+ * INFO: Taskの更新要求
+ */
+export interface EditTaskRequest {
+    "Changes": TaskPropertyChange[] | null;
+}
+
+/**
  * INFO: Task詳細取得用のPublic Model
  */
 export interface Task {
@@ -20,6 +27,14 @@ export interface Task {
     "Description": string;
     "Priority": number;
     "Status": string;
+}
+
+/**
+ * INFO: Taskの単一Propertyに対する変更要求
+ */
+export interface TaskPropertyChange {
+    "Type": string;
+    "Value": any;
 }
 
 /**

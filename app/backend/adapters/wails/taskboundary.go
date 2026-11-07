@@ -58,6 +58,54 @@ func (b *TaskBoundary) CreateTask(request public.CreateTaskRequest) (string, err
 	return id, nil
 }
 
+// FUNCTION: タスクを更新する関数
+func (b *TaskBoundary) ModifyTask(id string, request public.EditTaskRequest) error {
+	changes, err := convertTaskChanges(request)
+	if err != nil {
+		b.logger.Error("ModifyTask failed", "error", err)
+		return toPublicError(err)
+	}
+
+	if err := b.service.ModifyTask(id, changes); err != nil {
+		b.logger.Error("ModifyTask failed", "error", err)
+		return toPublicError(err)
+	}
+
+	return nil
+}
+
+// FUNCTION: 公開モデルの変更指示をTaskChangeに変換する関数
+func convertTaskChanges(request public.EditTaskRequest) ([]services.TaskChange, error) {
+	changes := make([]services.TaskChange, 0, len(request.Changes))
+
+	for _, property := range request.Changes {
+		var change services.TaskChange
+		var err error
+
+		switch property.Type {
+		case "title":
+			change, err = services.NewTitleChange(property.Value)
+		case "description":
+			change, err = services.NewDescriptionChange(property.Value)
+		case "priority":
+			change, err = services.NewPriorityChange(property.Value)
+		case "status":
+			change, err = services.NewStatusChange(property.Value)
+		default:
+			return nil, fmt.Errorf("%w: unknown property type %q",
+				services.ErrUnexpectedError, property.Type)
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", services.ErrUnexpectedError, err)
+		}
+
+		changes = append(changes, change)
+	}
+
+	return changes, nil
+}
+
 // FUNCTION: 公開エラーに変換する
 func toPublicError(err error) error {
 	var message string

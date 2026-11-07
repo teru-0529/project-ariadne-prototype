@@ -3,6 +3,8 @@
 
 export type {
     CreateTaskRequest,
+    EditTaskRequest,
     Task,
+    TaskPropertyChange,
     TaskSummary
 } from "./models.js";

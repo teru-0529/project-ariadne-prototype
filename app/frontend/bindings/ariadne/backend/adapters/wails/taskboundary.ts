@@ -34,3 +34,10 @@ export function GetTask(id: string): $CancellablePromise<public$0.Task | null> {
 export function ListTasks(): $CancellablePromise<public$0.TaskSummary[] | null> {
     return $Call.ByID(1997892031);
 }
+
+/**
+ * FUNCTION: タスクを更新する関数
+ */
+export function ModifyTask(id: string, request: public$0.EditTaskRequest): $CancellablePromise<void> {
+    return $Call.ByID(620623668, id, request);
+}
