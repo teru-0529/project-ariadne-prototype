@@ -836,13 +836,36 @@ N/A
 
 ---
 
-## 12. E01 Taskを更新する（Backend）
+## 12. M03 入力項目からFocus Outする
+
+### Test Scenarioの考え方
+
+単項目Validationおよび相関Validationの共通処理はC02で保証する。
+Edit固有のChanged FieldsによるModify Buttonの活性判定をテストする。
+
+TODO: Frontend実装工程で具体的なTest Scenarioを定義する。
+
+---
+
+## 13. M04 Modify Buttonを押す
+
+C03と共通の処理を使用するため、個別のBehavior Testは実施しない。
+
+---
+
+## 14. M05 更新をCancelする
+
+C04と共通の処理を使用するため、個別のBehavior Testは実施しない。
+
+---
+
+## 15. M06 更新をConfirmする
 
 ### Result Pattern: Success
 
 #### Frontend Module Test
 
-N/A
+TODO: Frontend実装工程でTest Scenarioを定義する。
 
 #### Backend Module Test
 
@@ -873,7 +896,7 @@ N/A
 
 #### Frontend Module Test
 
-N/A
+TODO: Frontend実装工程でTest Scenarioを定義する。
 
 #### Backend Module Test
 
@@ -898,7 +921,7 @@ N/A
 
 #### Frontend Module Test
 
-N/A
+TODO: Frontend実装工程でTest Scenarioを定義する。
 
 #### Backend Module Test
 
@@ -919,7 +942,7 @@ N/A
 
 ---
 
-## 13. Note
+## 16. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
