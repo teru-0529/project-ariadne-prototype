@@ -120,8 +120,8 @@ func Test_NewTask_TitleValidation(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
-			if got.Title != tt.title {
-				t.Errorf("Title = %q, want %q", got.Title, tt.title)
+			if got.Title() != tt.title {
+				t.Errorf("Title = %q, want %q", got.Title(), tt.title)
 			}
 		})
 	}
@@ -177,20 +177,20 @@ func Test_NewTask_DescriptionNormalization(t *testing.T) {
 			}
 
 			if tt.wantNil {
-				if got.Description != nil {
-					t.Errorf("Description = %q, want nil", *got.Description)
+				if got.Description() != nil {
+					t.Errorf("Description = %q, want nil", *got.Description())
 				}
 				return
 			}
 
-			if got.Description == nil {
+			if got.Description() == nil {
 				t.Fatalf("Description = nil, want %q", tt.wantDescription)
 			}
 
-			if *got.Description != tt.wantDescription {
+			if *got.Description() != tt.wantDescription {
 				t.Errorf(
 					"Description = %q, want %q",
-					*got.Description,
+					*got.Description(),
 					tt.wantDescription,
 				)
 			}

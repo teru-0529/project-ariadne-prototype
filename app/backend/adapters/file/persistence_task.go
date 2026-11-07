@@ -28,18 +28,23 @@ func newPersistenceTask(
 	createdAt string,
 	updatedAt string,
 ) persistenceTask {
-	description := task.Description
+	id := task.ID()
+	title := task.Title()
+	description := task.Description()
+	priority := task.Priority()
+	status := task.Status()
+
 	if description == nil {
 		empty := ""
 		description = &empty
 	}
 
 	return persistenceTask{
-		ID:          &task.ID,
-		Title:       &task.Title,
+		ID:          &id,
+		Title:       &title,
 		Description: description,
-		Priority:    &task.Priority,
-		Status:      &task.Status,
+		Priority:    &priority,
+		Status:      &status,
 		CreatedAt:   &createdAt,
 		UpdatedAt:   &updatedAt,
 	}

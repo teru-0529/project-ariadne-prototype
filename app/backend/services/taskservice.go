@@ -29,10 +29,10 @@ func (s *TaskService) ListTasks() ([]public.TaskSummary, error) {
 	summaries := make([]public.TaskSummary, 0, len(tasks))
 	for _, task := range tasks {
 		summaries = append(summaries, public.TaskSummary{
-			ID:       task.ID,
-			Title:    task.Title,
-			Priority: task.Priority,
-			Status:   task.Status,
+			ID:       task.ID(),
+			Title:    task.Title(),
+			Priority: task.Priority(),
+			Status:   task.Status(),
 		})
 	}
 
@@ -47,16 +47,16 @@ func (s *TaskService) GetTask(id string) (*public.Task, error) {
 	}
 
 	description := ""
-	if task.Description != nil {
-		description = *task.Description
+	if value := task.Description(); value != nil {
+		description = *value
 	}
 
 	return &public.Task{
-		ID:          task.ID,
-		Title:       task.Title,
+		ID:          task.ID(),
+		Title:       task.Title(),
 		Description: description,
-		Priority:    task.Priority,
-		Status:      task.Status,
+		Priority:    task.Priority(),
+		Status:      task.Status(),
 	}, nil
 }
 

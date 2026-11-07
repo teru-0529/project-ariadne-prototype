@@ -34,23 +34,23 @@ func Test_PersistenceTask_To_Task_Success(t *testing.T) {
 		t.Fatalf("toTask() returned error: %v", err)
 	}
 
-	if got.ID != *source.ID {
-		t.Errorf("ID = %q, want %q", got.ID, *source.ID)
+	if got.ID() != *source.ID {
+		t.Errorf("ID = %q, want %q", got.ID(), *source.ID)
 	}
 
-	if got.Title != *source.Title {
-		t.Errorf("Title = %q, want %q", got.Title, *source.Title)
+	if got.Title() != *source.Title {
+		t.Errorf("Title = %q, want %q", got.Title(), *source.Title)
 	}
 
-	if *got.Description != *source.Description {
-		t.Errorf("Description = %q, want %q", *got.Description, *source.Description)
+	if *got.Description() != *source.Description {
+		t.Errorf("Description = %q, want %q", *got.Description(), *source.Description)
 	}
 
-	if got.Priority != *source.Priority {
-		t.Errorf("Priority = %d, want %d", got.Priority, *source.Priority)
+	if got.Priority() != *source.Priority {
+		t.Errorf("Priority = %d, want %d", got.Priority(), *source.Priority)
 	}
 
-	if got.Status != *source.Status {
-		t.Errorf("Status = %q, want %q", got.Status, *source.Status)
+	if got.Status() != *source.Status {
+		t.Errorf("Status = %q, want %q", got.Status(), *source.Status)
 	}
 }

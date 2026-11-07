@@ -106,19 +106,19 @@ func Test_TaskRepository_Store_Deposit_Success(t *testing.T) {
 
 	added := dataset.Tasks[1]
 
-	if added.ID == nil || *added.ID != task.ID {
+	if added.ID == nil || *added.ID != task.ID() {
 		t.Errorf("ID mismatch")
 	}
-	if added.Title == nil || *added.Title != task.Title {
+	if added.Title == nil || *added.Title != task.Title() {
 		t.Errorf("Title mismatch")
 	}
-	if added.Description == nil || *added.Description != *task.Description {
+	if added.Description == nil || *added.Description != *task.Description() {
 		t.Errorf("Description mismatch")
 	}
-	if added.Priority == nil || *added.Priority != task.Priority {
+	if added.Priority == nil || *added.Priority != task.Priority() {
 		t.Errorf("Priority mismatch")
 	}
-	if added.Status == nil || *added.Status != task.Status {
+	if added.Status == nil || *added.Status != task.Status() {
 		t.Errorf("Status mismatch")
 	}
 
@@ -172,8 +172,8 @@ func Test_TaskRepository_Store_Deposit_KeyDuplicate(t *testing.T) {
 	var duplicateErr *services.KeyDuplicateError
 	if !errors.As(err, &duplicateErr) {
 		t.Errorf("Store() error = %v, want KeyDuplicateError", err)
-	} else if duplicateErr.Key != task.ID {
-		t.Errorf("Duplicate key = %q, want %q", duplicateErr.Key, task.ID)
+	} else if duplicateErr.Key != task.ID() {
+		t.Errorf("Duplicate key = %q, want %q", duplicateErr.Key, task.ID())
 	}
 
 	after, err := os.ReadFile(path)
@@ -211,8 +211,8 @@ func Test_NewPersistenceTask_EmptyDescription(t *testing.T) {
 	got := newPersistenceTask(task, createdAt, updatedAt)
 
 	// INFO: VERIFY
-	if task.Description != nil {
-		t.Errorf("Business Task Description = %v, want nil", task.Description)
+	if task.Description() != nil {
+		t.Errorf("Business Task Description = %v, want nil", task.Description())
 	}
 
 	if got.Description == nil {
@@ -310,19 +310,19 @@ tasks:
 	// 2件目が同じ位置で置換される
 	replaced := dataset.Tasks[1]
 
-	if replaced.ID == nil || *replaced.ID != task.ID {
+	if replaced.ID == nil || *replaced.ID != task.ID() {
 		t.Errorf("ID mismatch")
 	}
-	if replaced.Title == nil || *replaced.Title != task.Title {
+	if replaced.Title == nil || *replaced.Title != task.Title() {
 		t.Errorf("Title mismatch")
 	}
-	if replaced.Description == nil || *replaced.Description != *task.Description {
+	if replaced.Description == nil || *replaced.Description != *task.Description() {
 		t.Errorf("Description mismatch")
 	}
-	if replaced.Priority == nil || *replaced.Priority != task.Priority {
+	if replaced.Priority == nil || *replaced.Priority != task.Priority() {
 		t.Errorf("Priority mismatch")
 	}
-	if replaced.Status == nil || *replaced.Status != task.Status {
+	if replaced.Status == nil || *replaced.Status != task.Status() {
 		t.Errorf("Status mismatch")
 	}
 
@@ -378,8 +378,8 @@ func Test_TaskRepository_Store_Replace_NotFound(t *testing.T) {
 	var notFoundErr *services.NotFoundError
 	if !errors.As(err, &notFoundErr) {
 		t.Errorf("Store() error = %v, want NotFoundError", err)
-	} else if notFoundErr.Key != task.ID {
-		t.Errorf("NotFound key = %q, want %q", notFoundErr.Key, task.ID)
+	} else if notFoundErr.Key != task.ID() {
+		t.Errorf("NotFound key = %q, want %q", notFoundErr.Key, task.ID())
 	}
 
 	after, err := os.ReadFile(path)

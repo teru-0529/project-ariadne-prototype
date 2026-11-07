@@ -51,7 +51,7 @@ func (r *TaskRepository) Pick(id string) (*services.Task, error) {
 	}
 
 	for _, task := range tasks {
-		if task.ID == id {
+		if task.ID() == id {
 			return task, nil
 		}
 	}
@@ -69,8 +69,8 @@ func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent)
 	switch intent {
 	case services.StoreDeposit:
 		for _, existing := range dataset.Tasks {
-			if existing.ID != nil && *existing.ID == task.ID {
-				return &services.KeyDuplicateError{Key: task.ID}
+			if existing.ID != nil && *existing.ID == task.ID() {
+				return &services.KeyDuplicateError{Key: task.ID()}
 			}
 		}
 
@@ -84,7 +84,7 @@ func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent)
 		found := false
 
 		for i, existing := range dataset.Tasks {
-			if existing.ID != nil && *existing.ID == task.ID {
+			if existing.ID != nil && *existing.ID == task.ID() {
 				now := time.Now().Format(time.RFC3339)
 
 				dataset.Tasks[i] = newPersistenceTask(
@@ -99,7 +99,7 @@ func (r *TaskRepository) Store(task *services.Task, intent services.StoreIntent)
 		}
 
 		if !found {
-			return &services.NotFoundError{Key: task.ID}
+			return &services.NotFoundError{Key: task.ID()}
 		}
 
 	default:
