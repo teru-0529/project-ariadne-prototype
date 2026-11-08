@@ -7,12 +7,18 @@
   import AriadneToggle from "../../components/AriadneToggle.svelte";
   import AriadneModal from "../../components/AriadneModal.svelte";
 
+  import { toErrorMessage } from "../../lib/errors/ProcessedError";
+  import { TaskBoundary } from "../../../bindings/ariadne/backend/adapters/wails";
+  import type { EditTaskRequest } from "../../../bindings/ariadne/backend/services/public/models";
+
   type Props = {
     context: TaskContext;
+    onSuccess: (message: string) => void;
+    onError: (message: string) => void;
     onReload: () => void;
   };
 
-  let { context, onReload }: Props = $props();
+  let { context, onSuccess, onError, onReload }: Props = $props();
 
   // INFO: TaskEntry参照
   let taskEntry = $state<TaskEntry>();
@@ -65,9 +71,26 @@
     return calculateChanges(taskEntry!.getValues());
   }
 
-  // FUNCTION: Task更新（A08仮実装）
+  // FUNCTION: Task更新
   async function handleEdit(): Promise<void> {
-    window.alert("Task更新処理（仮実装）");
+    const changes = getChanges();
+
+    const request: EditTaskRequest = {
+      Changes: Object.entries(changes).map(([type, value]) => ({
+        Type: type,
+        Value: value,
+      })),
+    };
+
+    try {
+      await TaskBoundary.ModifyTask(task.ID, request);
+
+      // INFO: 更新成功時の通知・再遷移
+      onSuccess("Taskを更新しました。");
+      onReload();
+    } catch (error) {
+      onError(toErrorMessage(error));
+    }
   }
 
   // FUNCTION: 未保存変更判定

@@ -122,7 +122,7 @@
       {#if currentPage === TaskScreen.List}
         <TaskListPage bind:this={taskListPage} {context} onTaskSelect={handleTaskSelect} />
       {:else if currentPage === TaskScreen.Detail}
-        <TaskDetailPage bind:this={taskDetailPage} {context} onReload={createReloadCallback()} />
+        <TaskDetailPage bind:this={taskDetailPage} {context} {onSuccess} {onError} onReload={createReloadCallback()} />
       {:else if currentPage === TaskScreen.Create}
         <TaskCreatePage bind:this={taskCreatePage} {onSuccess} {onError} onReload={createReloadCallback()} />
       {:else}

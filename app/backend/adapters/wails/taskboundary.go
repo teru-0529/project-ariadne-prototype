@@ -3,6 +3,7 @@ package wails
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	"ariadne/backend/services"
 	"ariadne/backend/services/public"
@@ -88,7 +89,14 @@ func convertTaskChanges(request public.EditTaskRequest) ([]services.TaskChange, 
 		case "description":
 			change, err = services.NewDescriptionChange(property.Value)
 		case "priority":
-			change, err = services.NewPriorityChange(property.Value)
+			value, ok := property.Value.(float64)
+			if !ok || math.IsNaN(value) || math.IsInf(value, 0) ||
+				value != math.Trunc(value) ||
+				value < -0x1p63 || value >= 0x1p63 {
+				return nil, fmt.Errorf("%w: invalid priority value",
+					services.ErrUnexpectedError)
+			}
+			change, err = services.NewPriorityChange(int(value))
 		case "status":
 			change, err = services.NewStatusChange(property.Value)
 		default:
