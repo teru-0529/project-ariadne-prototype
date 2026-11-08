@@ -89,6 +89,15 @@
     }
   }
 
+  // FUNCTION: 再遷移Callbackの生成
+  function createReloadCallback(): () => void {
+    const navigation = context.currentNavigation();
+
+    return () => {
+      void navigate(navigation);
+    };
+  }
+
   // FUNCTION: エラーハンドリング
   function handleError(error: unknown): void {
     onError(toErrorMessage(error));
