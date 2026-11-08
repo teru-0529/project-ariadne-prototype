@@ -5,6 +5,7 @@
   import TaskEntry from "./TaskEntry.svelte";
   import type { TaskValues } from "./TaskValues";
   import AriadneToggle from "../../components/AriadneToggle.svelte";
+  import AriadneModal from "../../components/AriadneModal.svelte";
 
   type Props = {
     context: TaskContext;
@@ -15,6 +16,9 @@
 
   // INFO: TaskEntry参照
   let taskEntry = $state<TaskEntry>();
+
+  // INFO: 離脱確認待ちのCallback
+  let pendingLeaveCallback = $state<(() => void) | undefined>(undefined);
 
   // INFO: タスク（表示元データ）
   let task = $derived(context.getData(TaskScreen.Detail, "taskDetail"));
@@ -73,17 +77,33 @@
 
   // FUNCTION: Page離脱
   export function leave(callback: () => void): void {
-    // TODO: Editの場合は判定あり
-    callback();
+    if (mode === "reference" || !hasUnsavedChanges()) {
+      callback();
+      return;
+    }
+
+    pendingLeaveCallback = callback;
+  }
+
+  // FUNCTION: 離脱確認ModalのCancel処理
+  function handleLeaveCancel(): void {
+    pendingLeaveCallback = undefined;
+  }
+
+  // FUNCTION: 離脱確認ModalのConfirm処理
+  function handleLeaveConfirm(): void {
+    const callback = pendingLeaveCallback;
+    pendingLeaveCallback = undefined;
+    callback?.();
   }
 
   // FUNCTION: トグル変更時のふるまい
   function handleModeSelect(value: string): void {
     if (value === "edit" && mode === "reference") {
       mode = "edit";
+    } else if (value === "reference" && mode === "edit") {
+      leave(onReload);
     }
-
-    // TODO: Edit → ReferenceはA07-07で実装
   }
 </script>
 
@@ -105,3 +125,14 @@
     />
   {/if}
 </AriadnePage>
+
+{#if pendingLeaveCallback}
+  <AriadneModal
+    title="Unsaved Changes"
+    message="入力内容が保存されていません。画面を離れますか？"
+    confirmLabel="Leave"
+    cancelLabel="Cancel"
+    onConfirm={handleLeaveConfirm}
+    onCancel={handleLeaveCancel}
+  />
+{/if}
