@@ -59,7 +59,7 @@
   export function leave(callback: () => void): void {
     if (currentPage === TaskScreen.List) {
       taskListPage!.leave(callback);
-    } else if (currentPage === TaskScreen.Reference) {
+    } else if (currentPage === TaskScreen.Detail) {
       taskDetailPage!.leave(callback);
     } else if (currentPage === TaskScreen.Create) {
       taskCreatePage!.leave(callback);
@@ -96,7 +96,7 @@
 
   // FUNCTION: Task一覧からの遷移要求
   function handleTaskSelect(id: string): void {
-    const request: TaskNavigation = { screen: TaskScreen.Reference, id };
+    const request: TaskNavigation = { screen: TaskScreen.Detail, id };
 
     // INFO: Pageに離脱依頼
     leave(() => {
@@ -117,7 +117,7 @@
     {#key navigationKey}
       {#if currentPage === TaskScreen.List}
         <TaskListPage bind:this={taskListPage} {context} onTaskSelect={handleTaskSelect} />
-      {:else if currentPage === TaskScreen.Reference}
+      {:else if currentPage === TaskScreen.Detail}
         <TaskDetailPage bind:this={taskDetailPage} {context} />
       {:else if currentPage === TaskScreen.Create}
         <TaskCreatePage bind:this={taskCreatePage} {onSuccess} {onError} onCreated={handleTaskCreated} />

@@ -6,9 +6,8 @@ import { createProcessedError } from "../../lib/errors/ProcessedError";
 export const TaskScreen = {
   Initial: "TaskInitial",
   List: "TaskList",
-  Reference: "TaskReference", //TODO:
+  Detail: "TaskDetail",
   Create: "TaskCreate",
-  Edit: "TaskEdit", //TODO:
 } as const;
 
 // INFO: 画面識別一覧
@@ -18,7 +17,7 @@ export type TaskScreen = (typeof TaskScreen)[keyof typeof TaskScreen];
 export type TaskNavigation =
   | { screen: typeof TaskScreen.Initial }
   | { screen: typeof TaskScreen.List }
-  | { screen: typeof TaskScreen.Reference; id: string } //TODO:
+  | { screen: typeof TaskScreen.Detail; id: string }
   | { screen: typeof TaskScreen.Create };
 
 // INFO: コンテキスト構造
@@ -62,7 +61,7 @@ export class TaskContext {
           taskList: store,
         },
       };
-    } else if (request.screen === TaskScreen.Reference) {
+    } else if (request.screen === TaskScreen.Detail) {
       // INFO: ReferenceTask
       const store = await TaskDetailStore.create(request.id);
       this.prepared = {

@@ -17,7 +17,7 @@
   let { context }: Props = $props();
 
   // INFO: タスク（表示元データ）
-  let task = $derived(context.getData(TaskScreen.Reference, "taskDetail"));
+  let task = $derived(context.getData(TaskScreen.Detail, "taskDetail"));
 
   // FUNCTION: Page離脱
   export function leave(callback: () => void): void {
