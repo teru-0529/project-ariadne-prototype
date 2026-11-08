@@ -836,7 +836,101 @@ N/A
 
 ---
 
-## 12. M03 入力項目からFocus Outする
+## 12. M01 参照モードからEditモードへ切り替える
+
+### Frontend Module Test
+
+#### Dependency
+
+- L02 `Taskを選択する`（Success）
+
+#### Given
+
+- Task詳細画面が参照モードで表示されている
+- Backendから取得したTaskのTitle／Description／Priority／Statusが表示されている
+
+#### When
+
+- Reference / EditトグルでEditを選択する
+
+#### Expected
+
+- Reference / EditトグルでEditが選択状態になる
+- Title／Description／Priority／Statusの入力項目が表示され、それぞれの初期値が参照モードで保持していたTaskの値と一致する
+- Task IDが参照項目として表示される
+- Validation Errorが表示されない
+- Modify ButtonがDisabledである
+
+### Backend Module Test
+
+N/A
+
+---
+
+## 13. M02 Editモードから参照モードへ戻る
+
+### Result Pattern: Success
+
+#### Frontend Module Test
+
+##### Dependency
+
+- M01 `参照モードからEditモードへ切り替える`
+
+##### Given
+
+- Task詳細画面がEditモードで表示されている
+- Backendから対象Taskを取得できる状態である
+- Backendから再取得するTaskの内容が、Edit開始時の内容とは異なる状態である
+- 入力項目に未保存の変更はない
+
+##### When
+
+- Reference / EditトグルでReferenceを選択する
+
+##### Expected
+
+- Reference / EditトグルでReferenceが選択状態になる
+- ID／Title／Description／Priority／Statusが参照項目として表示され、それぞれの値がBackendから再取得したTaskの値と一致する
+- Error Toastが表示されない
+
+#### Backend Module Test
+
+N/A
+
+---
+
+### Result Pattern: Not Found
+
+#### Frontend Module Test
+
+##### Dependency
+
+- M01 `参照モードからEditモードへ切り替える`
+
+##### Given
+
+- Task詳細画面がEditモードで表示されている
+- 入力項目に未保存の変更はない
+- Backendから対象Taskを再取得すると、Not FoundのPublic Errorが返る状態である
+
+##### When
+
+- Reference / EditトグルでReferenceを選択する
+
+##### Expected
+
+- Reference / EditトグルでEditの選択状態が維持される
+- ID／Title／Description／Priority／Statusの表示内容が維持される
+- Not FoundのError Toastが表示される
+
+#### Backend Module Test
+
+N/A
+
+---
+
+## 14. M03 入力項目からFocus Outする
 
 ### Test Scenarioの考え方
 
@@ -847,19 +941,19 @@ TODO: Frontend実装工程で具体的なTest Scenarioを定義する。
 
 ---
 
-## 13. M04 Modify Buttonを押す
+## 15. M04 Modify Buttonを押す
 
 C03と共通の処理を使用するため、個別のBehavior Testは実施しない。
 
 ---
 
-## 14. M05 更新をCancelする
+## 16. M05 更新をCancelする
 
 C04と共通の処理を使用するため、個別のBehavior Testは実施しない。
 
 ---
 
-## 15. M06 更新をConfirmする
+## 17. M06 更新をConfirmする
 
 ### Result Pattern: Success
 
@@ -942,7 +1036,7 @@ TODO: Frontend実装工程でTest Scenarioを定義する。
 
 ---
 
-## 16. Note
+## 18. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
