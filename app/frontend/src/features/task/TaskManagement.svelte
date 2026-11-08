@@ -55,16 +55,6 @@
     });
   }
 
-  // FUNCTION: Task一覧からの遷移要求
-  function handleTaskSelect(id: string): void {
-    const request: TaskNavigation = { screen: TaskScreen.Reference, id };
-
-    // INFO: Pageに離脱依頼
-    leave(() => {
-      void navigate(request);
-    });
-  }
-
   // FUNCTION: 現在のPageへの離脱問い合わせ
   export function leave(callback: () => void): void {
     if (currentPage === TaskScreen.List) {
@@ -89,7 +79,7 @@
     isNavigating = true;
     try {
       await context.prepare(request);
-      context.commit(request.screen);
+      context.commit();
       currentPage = request.screen;
       navigationKey += 1;
     } catch (error) {
@@ -102,6 +92,16 @@
   // FUNCTION: エラーハンドリング
   function handleError(error: unknown): void {
     onError(toErrorMessage(error));
+  }
+
+  // FUNCTION: Task一覧からの遷移要求
+  function handleTaskSelect(id: string): void {
+    const request: TaskNavigation = { screen: TaskScreen.Reference, id };
+
+    // INFO: Pageに離脱依頼
+    leave(() => {
+      void navigate(request);
+    });
   }
 
   // FUNCTION: Task登録成功後の再遷移
