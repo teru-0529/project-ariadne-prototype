@@ -1,0 +1,81 @@
+package services
+
+import (
+	"errors"
+	"fmt"
+)
+
+// INFO: YAMLフォーマット読み込みに失敗した場合に返されるエラー
+var ErrReadFailure = errors.New("read failure")
+
+// INFO: YAMLフォーマットの書き込みに失敗した場合に返されるエラー
+var ErrWriteFailure = errors.New("write failure")
+
+// INFO: 想定外のエラーが発生した場合に返されるエラー
+var ErrUnexpectedError = errors.New("unexpected error")
+
+// INFO: キーに該当するデータがYAMLに既に存在する場合に返されるエラー
+type KeyDuplicateError struct {
+	Key string
+}
+
+// FUNCTION: KeyDuplicateErrorのエラーメッセージを返す関数
+func (e *KeyDuplicateError) Error() string {
+	return fmt.Sprintf("key duplicate: key=%s", e.Key)
+}
+
+// INFO: キーに該当するデータがYAMLに存在しない場合に返されるエラー
+type NotFoundError struct {
+	Key string
+}
+
+// FUNCTION: NotFoundErrorのエラーメッセージを返す関数
+func (e *NotFoundError) Error() string {
+	return fmt.Sprintf("not found: key=%s", e.Key)
+}
+
+// INFO: YAMLフォーマットが不正な場合に返されるエラー
+type FormatError struct {
+	Detail string
+}
+
+// FUNCTION: FormatErrorのエラーメッセージを返す関数
+func (e *FormatError) Error() string {
+	return fmt.Sprintf("invalid format: %s", e.Detail)
+}
+
+// INFO: サポートされていないメジャーバージョンのYAMLフォーマットが読み込まれた場合に返されるエラー
+type UnsupportedMajorVersionError struct {
+	ActualMajor    int
+	SupportedMajor int
+}
+
+// FUNCTION: UnsupportedMajorVersionErrorのエラーメッセージを返す関数
+func (e *UnsupportedMajorVersionError) Error() string {
+	return fmt.Sprintf("unsupported major version: actual=%d, supported=%d", e.ActualMajor, e.SupportedMajor)
+}
+
+// INFO: サポートされていないマイナーバージョンのYAMLフォーマットが読み込まれた場合に返されるエラー
+type UnsupportedMinorVersionError struct {
+	Major int
+	Minor int
+}
+
+// FUNCTION: UnsupportedMinorVersionErrorのエラーメッセージを返す関数
+func (e *UnsupportedMinorVersionError) Error() string {
+	return fmt.Sprintf(
+		"unsupported minor version: %d.%d",
+		e.Major,
+		e.Minor,
+	)
+}
+
+// INFO: タスク項目のバリデーションに失敗した場合に返されるエラー
+type ModelValidationError struct {
+	Detail string
+}
+
+// FUNCTION: ModelValidationErrorのエラーメッセージを返す関数
+func (e *ModelValidationError) Error() string {
+	return fmt.Sprintf("invalid model: %s", e.Detail)
+}

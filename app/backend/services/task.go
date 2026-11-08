@@ -1,0 +1,144 @@
+package services
+
+import (
+	"strings"
+	"unicode/utf8"
+
+	"github.com/oklog/ulid/v2"
+)
+
+// INFO: タスクを表す構造体
+type Task struct {
+	id          string
+	title       string
+	description *string
+	priority    int
+	status      string
+}
+
+// FUNCTION: 新しいタスクを作成する関数
+func NewTask(id string, title string, description string, priority int, status string) (*Task, error) {
+
+	if _, err := ulid.ParseStrict(id); err != nil {
+		return nil, &ModelValidationError{
+			Detail: "id is not a valid ULID",
+		}
+	}
+
+	if strings.TrimSpace(title) == "" {
+		return nil, &ModelValidationError{
+			Detail: "title is required",
+		}
+	}
+
+	if utf8.RuneCountInString(title) > 50 {
+		return nil, &ModelValidationError{
+			Detail: "title exceeds max length 50",
+		}
+	}
+
+	var normalizedDescription *string
+
+	if strings.TrimSpace(description) != "" {
+		normalizedDescription = &description
+	}
+
+	if priority < 1 || priority > 5 {
+		return nil, &ModelValidationError{
+			Detail: "priority must be between 1 and 5",
+		}
+	}
+
+	if status != "TODO" && status != "DOING" && status != "DONE" {
+		return nil, &ModelValidationError{
+			Detail: "status must be TODO, DOING, or DONE",
+		}
+	}
+
+	if priority == 5 && normalizedDescription == nil {
+		return nil, &ModelValidationError{
+			Detail: "description is required when priority is 5",
+		}
+	}
+
+	return &Task{
+		id:          id,
+		title:       title,
+		description: normalizedDescription,
+		priority:    priority,
+		status:      status,
+	}, nil
+}
+
+// FUNCTION: TaskのIDを取得する関数
+func (t *Task) ID() string {
+	return t.id
+}
+
+// FUNCTION: TaskのTitleを取得する関数
+func (t *Task) Title() string {
+	return t.title
+}
+
+// FUNCTION: TaskのDescriptionを取得する関数
+func (t *Task) Description() *string {
+	if t.description == nil {
+		return nil
+	}
+
+	description := *t.description
+	return &description
+}
+
+// FUNCTION: TaskのPriorityを取得する関数
+func (t *Task) Priority() int {
+	return t.priority
+}
+
+// FUNCTION: TaskのStatusを取得する関数
+func (t *Task) Status() string {
+	return t.status
+}
+
+// FUNCTION: Taskの編集用オブジェクトを生成する関数
+func (t *Task) Edit() *TaskEdit {
+	description := ""
+	if t.description != nil {
+		description = *t.description
+	}
+
+	return &TaskEdit{
+		id:          t.id,
+		title:       t.title,
+		description: description,
+		priority:    t.priority,
+		status:      t.status,
+	}
+}
+
+// INFO: Taskの編集途中の状態を保持する型
+type TaskEdit struct {
+	id          string
+	title       string
+	description string
+	priority    int
+	status      string
+}
+
+// FUNCTION: TaskEditに変更指示を順番に適用する関数
+func (e *TaskEdit) Apply(changes []TaskChange) {
+	for _, change := range changes {
+		change.apply(e)
+	}
+}
+
+// FUNCTION: 編集途中のTaskEditからTaskを生成する関数
+func (e *TaskEdit) Build() (*Task, error) {
+	return NewTask(
+		e.id,
+		e.title,
+		e.description,
+		e.priority,
+		e.status,
+	)
+}
