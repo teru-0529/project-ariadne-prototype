@@ -332,6 +332,16 @@ Business Modelが保証する成立条件を前提として、Operationに必要
 
 Application Serviceは、Frontendの画面表示や具体的な永続化方式を認識しない。
 
+Taskの更新処理では、Application ServiceがPersistence Portを介して既存のBusiness Modelを取得し、変更対象Propertyに対する変更指示を適用する。
+
+Taskの編集には、Business Modelが提供する`TaskEdit`を使用する。`TaskEdit`は既存のTaskを起点とする編集用オブジェクトであり、Property単位の型付き変更指示である`TaskChange`を受け取り、変更後のTaskを構築する。
+
+変更後のTaskは、新規作成と同じBusiness Modelの成立条件に従って再構築する。これにより、作成と更新で成立条件が分岐しないようにする。
+
+Application Serviceは、再構築されたBusiness ModelをPersistence PortのReplace操作によって保存する。
+
+変更指示の適用とTaskの再構築はBusiness Modelが担い、Application Serviceがその処理を組み立てる。Persistence Adapterには差分適用の責務を持たせない。
+
 #### 3.2.3 Persistence Adapter
 
 Persistence Adapterは、Business Modelの保存・復元を実現する。
@@ -561,6 +571,16 @@ Business LogicやValidationは実装しない。
 FrontendとApplication Serviceの間で受け渡すデータにはPublic Modelを使用する。
 
 Wailsが生成するTypeScript BindingおよびModelはFramework管理のコードとして扱い、手動編集しない。
+
+Taskの更新要求では、Public Modelの`TaskPropertyChange`を使用し、変更対象Propertyを`Type`、変更値を`Value`として受け渡す。
+
+Wails Boundaryは、`Type`に応じて`Value`の型を確認し、Backend内部の型付き`TaskChange`へ変換する。
+
+`Value`はWails Bindingを介した受け渡しによって、Backend側での具体的な型がFrontendの型と異なる場合がある。そのため、Boundaryでは通信時の型表現を考慮して変換する。
+
+未知の`Type`や、対応するPropertyへ変換できない`Value`はUnexpected Errorとして扱う。
+
+Business Modelの成立条件に関するValidationはWails Boundaryでは行わず、Business Modelに委ねる。
 
 
 ### 3.5 Error Handling / Logging
@@ -1390,9 +1410,9 @@ Persistence Adapterは、成立済みのBusiness Taskを永続化し、保存デ
 
 ##### Overview
 
-Public Task Modelは、Application ServiceがFrontendへ公開するTaskのData Modelとする。
+Public Task Modelは、Application ServiceとFrontendの間で受け渡すTaskのData Modelとする。
 
-Business Modelとは独立して定義し、Frontendとの出力契約として使用する。
+Business Modelとは独立して定義し、取得用の出力モデルと登録・更新用の入力モデルを、Operationの目的に応じて定義する。
 
 Prototypeでは、以下のPublic Modelを定義する。
 
@@ -1400,6 +1420,9 @@ Prototypeでは、以下のPublic Modelを定義する。
 |---|---|
 | `TaskSummary` | `ListTasks`の返却 |
 | `Task` | `GetTask`の返却 |
+| `CreateTaskRequest` | `CreateTask`の入力 |
+| `EditTaskRequest` | `ModifyTask`の入力 |
+| `TaskPropertyChange` | 更新対象Propertyと変更値の表現 |
 
 ##### TaskSummary
 
@@ -1429,6 +1452,33 @@ Task詳細取得用のPublic Modelとする。
 `createdAt / updatedAt`は公開しない。
 
 Business Modelで`description`が未設定の場合、Public Modelでは空文字列`""`として公開する。
+
+##### EditTaskRequest
+
+Task更新用の入力モデルとする。
+
+| Property | Type |
+|---|---|
+| `changes` | TaskPropertyChange[] |
+
+`changes`には、変更されたPropertyのみを指定する。
+
+更新対象のTask IDは`EditTaskRequest`に含めず、`ModifyTask`の独立した引数として渡す。
+
+##### TaskPropertyChange
+
+Taskの変更対象Propertyと変更値を表す。
+
+| Property | Type |
+|---|---|
+| `type` | String |
+| `value` | Any |
+
+`type`にはTitle、Description、Priority、Statusのいずれかを指定し、`value`には対応するPropertyの値を設定する。
+
+`value`の型はPropertyごとに異なるため、通信契約ではAnyとする。Backend内部では、Wails BoundaryでPropertyごとの型付き変更指示に変換する。
+
+変更のないPropertyは`changes`に含めない。
 
 ##### Model Conversion
 
@@ -1590,16 +1640,14 @@ Task Listで保持している`TaskSummary`を詳細表示に流用せず、選�
 | `reference` | Taskの内容を参照表示する |
 | `edit` | Taskの内容を編集する |
 
-ToggleによるMode切替は実装済みとする。Edit機能の実装はStep 6で行う。
-
 ##### Mode Transition
 
-| Transition | Task Data Handling | Implementation |
-|---|---|---|
-| List → Detail（reference） | IDを使って`GetTask`で再取得する | 実装済み |
-| reference → edit（Toggle） | Referenceで保持しているTaskをそのまま利用する | 未実装 |
-| edit → reference（Toggle） | IDを使って`GetTask`で再取得する | 未実装 |
-| edit → reference（更新成功） | 更新成功後、IDを使って`GetTask`で再取得する | 未実装 |
+| Transition | Task Data Handling |
+|---|---|
+| List → Detail（reference） | IDを使って`GetTask`で再取得する |
+| reference → edit（Toggle） | Referenceで保持しているTaskをそのまま利用する |
+| edit → reference（Toggle） | IDを使って`GetTask`で再取得する |
+| edit → reference（更新成功） | 更新成功後、IDを使って`GetTask`で再取得する |
 
 Referenceへ戻る際は、Edit中の入力値を参照表示に流用せず、永続化されたTaskを再取得する。
 
@@ -1612,8 +1660,6 @@ Edit中に未保存の変更がある状態で別画面へ遷移しようとし�
 ユーザーが遷移をキャンセルした場合は、Edit画面を維持する。
 
 未保存の変更がない場合は、Confirmation Modalを表示せずに遷移する。
-
-この振る舞いはStep 6で実装する。
 
 #### 4.5.3 Task Create
 
@@ -1671,3 +1717,67 @@ Task管理機能内でTask Create画面への遷移を行い、新しいTaskCrea
 Task Create画面はそのまま維持し、入力値とValidation Stateも変更しない。ユーザーは入力内容を修正するか、そのまま登録を再試行できる。
 
 #### 4.5.4 Task Edit
+
+##### Initial Display
+
+Task Editは、`TaskDetailPage`の`edit` Modeで表示する。
+
+ReferenceからEditへ切り替える際は、Referenceで保持しているTaskを初期値として利用し、Backendからの再取得は行わない。
+
+Mode切替の詳細は4.5.2 Task Detailに従う。
+
+##### Task Input
+
+Taskの各Propertyは`TaskEntry`で入力する。
+
+IDは参照専用として表示し、編集・Validation・変更判定の対象には含めない。
+
+Title、Description、Priority、Statusを編集対象とする。
+
+入力値に対するValidationは4.2 Validation Specificationに従う。
+
+##### Change Detection
+
+`TaskDetailPage`は、Edit開始時の初期値と`TaskEntry`の現在値を比較し、変更されたPropertyのみを抽出する。
+
+変更後に値を初期値へ戻した場合は、変更なしと判定する。
+
+変更判定は、Submitボタンの有効化、未保存変更の離脱確認、および更新要求の生成に共通して使用する。
+
+##### Task Submission
+
+Task Editでは、変更されたPropertyが存在する場合のみSubmitボタンを有効化する。
+
+Submitボタンの有効化およびSubmit時のValidationは4.2.4 Form Submission Validationに従う。
+
+Submit時のValidationが成功した場合、Confirmation Modalを表示する。
+
+Cancelされた場合は、更新処理を実行せず、Edit画面と入力値を維持する。
+
+##### Task Modification
+
+Confirmされた場合、`TaskDetailPage`は変更されたPropertyのみを`EditTaskRequest`に変換し、Wails Bindingを介してBackendの`ModifyTask`を呼び出す。
+
+更新対象のTask IDは、変更Propertyとは独立した引数として渡す。
+
+Descriptionを空文字列または空白のみの文字列に変更した場合も、その値を更新要求として渡す。BackendではBusiness Modelの成立時に未設定値へ正規化する。
+
+##### Modification Success
+
+更新に成功した場合、Info Toastで成功を通知する。
+
+Task管理機能内で同じTask Detail画面への再遷移を行い、`GetTask`で永続化されたTaskを再取得する。
+
+再遷移によって`TaskDetailPage`を再生成し、`reference` Modeで表示する。
+
+更新成功に伴う再遷移では、未保存変更の離脱確認を行わない。
+
+##### Modification Failure
+
+`ModifyTask`に失敗した場合、Error Toastで失敗を通知する。
+
+Confirmation Modalを閉じ、Edit Modeと入力値およびValidation Stateを維持する。ユーザーは入力内容を修正するか、そのまま更新を再試行できる。
+
+更新成功後の再取得に失敗した場合は、既存のNavigation Error Handlingに従い、遷移を確定せず、Edit Modeと入力値を維持する。
+
+成功通知と再取得失敗通知が連続した場合、Toastが上書きされることを許容する。
