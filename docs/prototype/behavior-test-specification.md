@@ -956,7 +956,27 @@ C04と共通の処理を使用するため、個別のBehavior Testは実施し�
 
 #### Frontend Module Test
 
-TODO: Frontend実装工程でTest Scenarioを定義する。
+##### Dependency
+
+- M01 `参照モードからEditモードへ切り替える`
+
+##### Given
+
+- Task詳細画面がEditモードで表示されている
+- DescriptionとPriorityを変更し、Confirmation Modalが表示されている
+- Wails Mockの`ModifyTask`が正常応答する
+- Wails Mockの`GetTask`が更新後のTaskを返す
+
+##### When
+
+- Confirmation ModalでConfirmを選択する
+
+##### Expected
+
+- Confirmation Modalが表示されなくなる
+- Info Toastが表示される
+- Task詳細画面が参照モードで表示される
+- 再取得したTaskの更新後の値が表示される
 
 #### Backend Module Test
 
@@ -987,7 +1007,26 @@ TODO: Frontend実装工程でTest Scenarioを定義する。
 
 #### Frontend Module Test
 
-TODO: Frontend実装工程でTest Scenarioを定義する。
+##### Dependency
+
+- M01 `参照モードからEditモードへ切り替える`
+
+##### Given
+
+- Task詳細画面がEditモードで表示されている
+- 有効な変更を行い、Confirmation Modalが表示されている
+- Wails Mockの`ModifyTask`がNot FoundのPublic Errorを返す
+
+##### When
+
+- Confirmation ModalでConfirmを選択する
+
+##### Expected
+
+- Confirmation Modalが表示されなくなる
+- Not FoundのError Toastが表示される
+- Task詳細画面のEditモードが維持される
+- 入力値が維持される
 
 #### Backend Module Test
 
@@ -1012,7 +1051,7 @@ TODO: Frontend実装工程でTest Scenarioを定義する。
 
 #### Frontend Module Test
 
-TODO: Frontend実装工程でTest Scenarioを定義する。
+N/A
 
 #### Backend Module Test
 
