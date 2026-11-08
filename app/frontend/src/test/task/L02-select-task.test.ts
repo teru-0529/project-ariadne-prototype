@@ -67,7 +67,7 @@ test("L02 Taskを選択する - Success", async () => {
   expect(listNavigation.getAttribute("aria-pressed")).toBe("false");
 
   // Main Area - Task詳細画面
-  expect(await screen.findByRole("heading", { name: "Task 詳細" })).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "Task 詳細（参照）" })).toBeTruthy();
   expect(screen.queryByRole("heading", { name: "Task 一覧" })).toBeNull();
 
   // Task詳細画面 - 参照モード
@@ -108,7 +108,7 @@ test("L02 Taskを選択する - Not Found", async () => {
 
   // Main Area（遷移しない）
   expect(screen.getByRole("heading", { name: "Task 一覧" })).toBeTruthy();
-  expect(screen.queryByRole("heading", { name: "Task 詳細" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Task 詳細（参照）" })).toBeNull();
 
   // Error Toast
   const errorToast = await screen.findByRole("alert");
@@ -142,7 +142,7 @@ test("L02 Taskを選択する - Read Failure", async () => {
 
   // Main Area（遷移しない）
   expect(screen.getByRole("heading", { name: "Task 一覧" })).toBeTruthy();
-  expect(screen.queryByRole("heading", { name: "Task 詳細" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "Task 詳細（参照）" })).toBeNull();
 
   // Error Toast
   const errorToast = await screen.findByRole("alert");

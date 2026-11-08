@@ -37,7 +37,7 @@ async function givenL02TaskSelected() {
 
 // INFO: M01 Editに切り替える
 async function givenM01EditSelected() {
-  await screen.findByRole("heading", { name: "Task 詳細" });
+  await screen.findByRole("heading", { name: "Task 詳細（更新）" });
   await fireEvent.click(screen.getByRole("button", { name: "Edit" }));
 }
 

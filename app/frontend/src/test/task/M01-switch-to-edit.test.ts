@@ -53,7 +53,7 @@ test("M01 ReferenceからEditへ切り替える - Success", async () => {
   // INFO: GIVEN
   await givenL01ListSelected();
   await givenL02TaskSelected();
-  await screen.findByRole("heading", { name: "Task 詳細" });
+  await screen.findByRole("heading", { name: "Task 詳細（参照）" });
 
   // INFO: ACTION
   await fireEvent.click(screen.getByRole("button", { name: "Edit" }));
