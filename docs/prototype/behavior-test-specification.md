@@ -867,7 +867,7 @@ N/A
 
 ---
 
-## 17. M02 Editモードから参照モードへ戻る
+## 13. M02 Editモードから参照モードへ戻る
 
 ### Result Pattern: Success
 
@@ -930,7 +930,7 @@ N/A
 
 ---
 
-## 18. M03 入力項目からFocus Outする
+## 14. M03 入力項目からFocus Outする
 
 ### Test Scenarioの考え方
 
@@ -941,19 +941,19 @@ TODO: Frontend実装工程で具体的なTest Scenarioを定義する。
 
 ---
 
-## 13. M04 Modify Buttonを押す
+## 15. M04 Modify Buttonを押す
 
 C03と共通の処理を使用するため、個別のBehavior Testは実施しない。
 
 ---
 
-## 14. M05 更新をCancelする
+## 16. M05 更新をCancelする
 
 C04と共通の処理を使用するため、個別のBehavior Testは実施しない。
 
 ---
 
-## 15. M06 更新をConfirmする
+## 17. M06 更新をConfirmする
 
 ### Result Pattern: Success
 
@@ -1036,7 +1036,7 @@ TODO: Frontend実装工程でTest Scenarioを定義する。
 
 ---
 
-## 16. Note
+## 18. Note
 
 CSS、Layout、Color、Spacing、Size等のVisual Designは実装対象とするが、自動Module Testによる保証対象とはしない。
 
