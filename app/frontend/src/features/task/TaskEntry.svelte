@@ -13,13 +13,15 @@
   import { PriorityDescriptionValidator } from "./PriorityDescriptionValidator.svelte";
 
   type Props = {
+    showId: boolean;
+    id?: string;
     submitLabel: string;
     initialValues: TaskValues;
     submitCondition?: (currentValues: TaskValues) => boolean;
     onConfirm?: () => Promise<void>;
   };
 
-  let { submitLabel, initialValues, submitCondition, onConfirm }: Props = $props();
+  let { showId, id, submitLabel, initialValues, submitCondition, onConfirm }: Props = $props();
 
   // INFO: 相関Validotor
   const initialPriority = () => initialValues.priority;
@@ -135,6 +137,9 @@
 <div class="entry-layout">
   <AriadneForm {submitLabel} {canSubmit} onSubmit={handleSubmit} {onConfirm}>
     <div class="entry-fields">
+      {#if showId}
+        <TextField variant="reference" label="ID" value={id ?? ""} maxLength={30} />
+      {/if}
       <TextField
         bind:this={titleField}
         variant="edit"

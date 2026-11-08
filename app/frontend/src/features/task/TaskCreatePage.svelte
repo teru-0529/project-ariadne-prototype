@@ -89,7 +89,7 @@
 </script>
 
 <AriadnePage title="Task 作成">
-  <TaskEntry bind:this={taskEntry} submitLabel="Create Task" {initialValues} onConfirm={handleCreate} />
+  <TaskEntry bind:this={taskEntry} showId={false} submitLabel="Create Task" {initialValues} onConfirm={handleCreate} />
 </AriadnePage>
 
 {#if pendingLeaveCallback}
