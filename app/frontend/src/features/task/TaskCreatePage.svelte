@@ -19,10 +19,10 @@
   type Props = {
     onSuccess: (message: string) => void;
     onError: (message: string) => void;
-    onCreated: () => void;
+    onReload: () => void;
   };
 
-  let { onSuccess, onError, onCreated }: Props = $props();
+  let { onSuccess, onError, onReload }: Props = $props();
 
   // INFO: taskEntryへの参照
   let taskEntry = $state<TaskEntry>();
@@ -46,7 +46,7 @@
 
       // INFO: 登録成功時の通知・再遷移
       onSuccess("Taskを登録しました。");
-      onCreated();
+      onReload();
     } catch (error) {
       onError(toErrorMessage(error));
     }

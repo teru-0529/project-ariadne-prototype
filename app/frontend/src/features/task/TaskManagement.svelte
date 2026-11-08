@@ -112,11 +112,6 @@
       void navigate(request);
     });
   }
-
-  // FUNCTION: Task登録成功後の再遷移
-  function handleTaskCreated(): void {
-    void navigate({ screen: TaskScreen.Create });
-  }
 </script>
 
 <div class="feature-area with-side-navigation">
@@ -129,7 +124,7 @@
       {:else if currentPage === TaskScreen.Detail}
         <TaskDetailPage bind:this={taskDetailPage} {context} />
       {:else if currentPage === TaskScreen.Create}
-        <TaskCreatePage bind:this={taskCreatePage} {onSuccess} {onError} onCreated={handleTaskCreated} />
+        <TaskCreatePage bind:this={taskCreatePage} {onSuccess} {onError} onReload={createReloadCallback()} />
       {:else}
         <p>Select an operation.</p>
       {/if}
