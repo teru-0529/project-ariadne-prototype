@@ -7,11 +7,13 @@
     children: Snippet;
     submitLabel: string;
     canSubmit: boolean;
+    modalTitle: string;
+    modalMessage: string;
     onSubmit?: () => boolean;
     onConfirm?: () => Promise<void>;
   };
 
-  let { children, submitLabel, canSubmit, onSubmit, onConfirm }: Props = $props();
+  let { children, submitLabel, canSubmit, modalTitle, modalMessage, onSubmit, onConfirm }: Props = $props();
 
   // INFO: Confirmation Modal表示状態
   let showConfirmation = $state(false);
@@ -55,8 +57,8 @@
 
 {#if showConfirmation}
   <AriadneModal
-    title="Task Registration"
-    message="Taskを登録しますか？"
+    title={modalTitle}
+    message={modalMessage}
     confirmLabel="Confirm"
     cancelLabel="Cancel"
     onCancel={handleCancel}

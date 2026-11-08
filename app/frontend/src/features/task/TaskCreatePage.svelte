@@ -89,7 +89,15 @@
 </script>
 
 <AriadnePage title="Task 作成">
-  <TaskEntry bind:this={taskEntry} showId={false} submitLabel="Create Task" {initialValues} onConfirm={handleCreate} />
+  <TaskEntry
+    bind:this={taskEntry}
+    showId={false}
+    submitLabel="Create Task"
+    modalTitle="Task Registration"
+    modalMessage="Taskを登録しますか？"
+    {initialValues}
+    onConfirm={handleCreate}
+  />
 </AriadnePage>
 
 {#if pendingLeaveCallback}

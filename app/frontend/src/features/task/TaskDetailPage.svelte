@@ -120,6 +120,8 @@
       showId={true}
       id={task.ID}
       submitLabel="Modify Task"
+      modalTitle="Task Registration"
+      modalMessage="Taskを変更しますか？"
       {initialValues}
       submitCondition={hasChanges}
     />

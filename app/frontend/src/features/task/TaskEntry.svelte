@@ -16,12 +16,15 @@
     showId: boolean;
     id?: string;
     submitLabel: string;
+    modalTitle: string;
+    modalMessage: string;
     initialValues: TaskValues;
     submitCondition?: (currentValues: TaskValues) => boolean;
     onConfirm?: () => Promise<void>;
   };
 
-  let { showId, id, submitLabel, initialValues, submitCondition, onConfirm }: Props = $props();
+  let { showId, id, submitLabel, modalTitle, modalMessage, initialValues, submitCondition, onConfirm }: Props =
+    $props();
 
   // INFO: 相関Validotor
   const initialPriority = () => initialValues.priority;
@@ -135,7 +138,7 @@
 </script>
 
 <div class="entry-layout">
-  <AriadneForm {submitLabel} {canSubmit} onSubmit={handleSubmit} {onConfirm}>
+  <AriadneForm {submitLabel} {canSubmit} {modalTitle} {modalMessage} onSubmit={handleSubmit} {onConfirm}>
     <div class="entry-fields">
       {#if showId}
         <TextField variant="reference" label="ID" value={id ?? ""} maxLength={30} />
