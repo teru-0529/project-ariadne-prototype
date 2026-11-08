@@ -65,6 +65,11 @@
     return calculateChanges(taskEntry!.getValues());
   }
 
+  // FUNCTION: Task更新（A08仮実装）
+  async function handleEdit(): Promise<void> {
+    window.alert("Task更新処理（仮実装）");
+  }
+
   // FUNCTION: 未保存変更判定
   function hasUnsavedChanges(): boolean {
     return Object.keys(getChanges()).length > 0;
@@ -120,10 +125,11 @@
       showId={true}
       id={task.ID}
       submitLabel="Modify Task"
-      modalTitle="Task Registration"
+      modalTitle="Task Modification"
       modalMessage="Taskを変更しますか？"
       {initialValues}
       submitCondition={hasChanges}
+      onConfirm={handleEdit}
     />
   {/if}
 </AriadnePage>

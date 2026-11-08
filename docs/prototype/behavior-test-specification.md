@@ -752,7 +752,7 @@ Frontend Module TestではWails BindingをMock化する。失敗系はWrite Fail
 - 既存Taskの内容が維持される
 
 ---
- 
+
 ### Result Pattern: Read Failure
 
 #### Frontend Module Test
@@ -934,10 +934,7 @@ N/A
 
 ### Test Scenarioの考え方
 
-単項目Validationおよび相関Validationの共通処理はC02で保証する。
-Edit固有のChanged FieldsによるModify Buttonの活性判定をテストする。
-
-TODO: Frontend実装工程で具体的なTest Scenarioを定義する。
+C02と共通の処理を使用するため、個別のBehavior Testは実施しない。
 
 ---
 
