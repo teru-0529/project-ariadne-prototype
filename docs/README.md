@@ -77,7 +77,7 @@ Phase 5：Windows Application
 │ Build
 │ └─ ariadne-prototype.exe
 │
-└── 🔨 NOW
+└── ✅ COMPLETE
 ↓
 Phase 6：Prototype Review
 │
@@ -89,7 +89,7 @@ Phase 6：Prototype Review
 │
 │ Phase 0 Definition of Done を最終確認
 │
-└── ⬜
+└── 🔨 NOW
 ↓
 🏁 Prototype COMPLETE
 ↓
